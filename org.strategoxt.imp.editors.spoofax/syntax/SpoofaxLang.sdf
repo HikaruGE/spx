@@ -1,0 +1,102 @@
+%% Grammar for the SpoofaxLang language
+%% By default, based on an example "entities" syntax
+module SpoofaxLang
+
+imports
+  Common
+  Concepts
+  EditorServiceMix[ESV]
+  Stratego-AttributesMix[STR] [
+    "imports" ImportModName* -> Decl {cons("Imports")}
+      => UNDEFINED -> IGNORED
+  ]
+  SDFMix[SDF] [
+    "definition" Definition -> SDF {cons("Definition")}
+      => UNDEFINED -> IGNORED
+    "module" ModuleName list:ImpSection* Sections -> Module {cons("module")}
+      => UNDEFINED -> IGNORED
+    "left":Grammar "right":Grammar -> Grammar {assoc, cons("conc-grammars")}
+      => UNDEFINED -> IGNORED
+    ImpSection -> Grammar {cons("imp-section")}
+      => UNDEFINED -> IGNORED
+  ]
+
+exports
+
+  context-free start-symbols
+    Start
+
+  lexical syntax
+    {ID "/"}+       -> QID 
+    {ID ("/"|".")}+ -> QIDWithDots
+
+  context-free syntax
+  
+    "module" ModuleName Section* -> Start {cons("Module")}
+    
+    Grammar[[SDF]] -> Section
+    Decl[[STR]]    -> Section
+    Section[[ESV]] -> Section
+    ImportSection  -> Section
+    ConceptSection -> Section
+    
+    ExportsOrHiddens Grammar[[SDF]] -> Section {ast("<2>"), non-assoc}    
+    "exports"                       -> ExportsOrHiddens {cons("Exports"), deprecated}
+    "hiddens"                       -> ExportsOrHiddens {cons("Hiddens"), deprecated}
+
+    
+    %% TODO: Support SDF .def "definitions"?
+    
+    %% TODO: Mark deprecated, ast, and maybe other attrs as keyword using a {prefer, ast} production
+  
+  context-free syntax %% Imports
+    
+    %% TODO: SDF: "retains" clause eliminates need for "hiddens" section. except we need something to hide the start symbols
+    %% Maybe a "with start symbols" clause, combined with a warning if the syntax has start symbols but the clause is not specified?
+    
+    "imports" Import*          -> ImportSection {cons("Imports")}
+    "unimports" Import*        -> ImportSection {cons("Unimports")}
+    
+    QID "[" Symbols[[SDF]] "]" -> ModuleName  {cons("ParamName")}
+    QID                        -> ModuleName  {cons("Name")}
+    
+    ModuleName                           -> Import {cons("Import")}
+    ModuleName "retain" Renamings[[SDF]] -> Import {cons("ImportRetain")}
+    ModuleName          Renamings[[SDF]] -> Import {cons("ImportRename")}
+    "package" QIDWithDots                -> Import {cons("PackageImport")}
+    "(" Import ")"                       -> Import {bracket, deprecated} %% SDF-style import
+    
+    "project"           -> ModuleName {reject}
+    "retain"            -> ModuleName {reject}
+    "with"              -> ModuleName {reject} %% future use?
+    "unimports"         -> ModuleName {reject}
+    
+    ReservedName[[ESV]] -> ModuleName {reject}
+    
+    "imports"           -> ModuleName {reject}
+    "overlays"          -> ModuleName {reject}
+    "rules"             -> ModuleName {reject}
+    "signature"         -> ModuleName {reject}
+    "strategies"        -> ModuleName {reject}
+    "attributes"        -> ModuleName {reject}
+    
+    "aliases"           -> ModuleName {reject}
+    "lexical"           -> ModuleName {reject}
+    "priorities"        -> ModuleName {reject}
+    "context-free"      -> ModuleName {reject}
+    "definition"        -> ModuleName {reject}
+    "syntax"            -> ModuleName {reject}
+    "variables"         -> ModuleName {reject}
+    "module"            -> ModuleName {reject}
+    "imports"           -> ModuleName {reject}
+    "exports"           -> ModuleName {reject}
+    "hiddens"           -> ModuleName {reject}
+    "left"              -> ModuleName {reject}
+    "right"             -> ModuleName {reject}
+    "assoc"             -> ModuleName {reject}
+    "non-assoc"         -> ModuleName {reject}
+    "bracket"           -> ModuleName {reject}
+    "sorts"             -> ModuleName {reject}
+    "bracket"           -> ModuleName {reject}
+    "sorts"             -> ModuleName {reject}
+    "restrictions"      -> ModuleName {reject}
