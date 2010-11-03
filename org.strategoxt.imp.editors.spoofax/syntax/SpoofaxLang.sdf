@@ -12,13 +12,13 @@ imports
   ]
   SDFMix[SDF] [
     "definition" Definition -> SDF {cons("Definition")}
-      => UNDEFINED -> IGNORED
+      => -> IGNORED
     "module" ModuleName list:ImpSection* Sections -> Module {cons("module")}
-      => UNDEFINED -> IGNORED
+      => -> IGNORED
     "left":Grammar "right":Grammar -> Grammar {assoc, cons("conc-grammars")}
-      => UNDEFINED -> IGNORED
+      => -> IGNORED
     ImpSection -> Grammar {cons("imp-section")}
-      => UNDEFINED -> IGNORED
+      => -> IGNORED
   ]
 
 exports
@@ -34,13 +34,13 @@ exports
   
     "module" ModuleName Section* -> Start {cons("Module")}
     
-    Grammar[[SDF]] -> Section
-    Decl[[STR]]    -> Section
-    Section[[ESV]] -> Section
+    Grammar[[SDF]] -> Section {cons("SDFSection")}
+    Decl[[STR]]    -> Section {cons("STRSection")}
+    Section[[ESV]] -> Section {cons("ESVSection")}
     ImportSection  -> Section
     ConceptSection -> Section
     
-    ExportsOrHiddens Grammar[[SDF]] -> Section {ast("<2>"), non-assoc}    
+    ExportsOrHiddens Grammar[[SDF]] -> Section {cons("SDFSectionEH"), non-assoc}    
     "exports"                       -> ExportsOrHiddens {cons("Exports"), deprecated}
     "hiddens"                       -> ExportsOrHiddens {cons("Hiddens"), deprecated}
 
