@@ -11,6 +11,9 @@ imports
   lib/editor-common.generated
   lib/sdf-desugar
   lib/sdf-parenthesize
+  to-stratego
+  to-sdf
+  to-esv
 
 signature constructors
   
@@ -57,52 +60,3 @@ rules
       Module(name, _) := def
     <+
       name := <remove-extension> <base-filename> path
-
-rules
-
-  to-sdf:
-    (path, def) -> 'module(name', [], [exports(sections')])
-    with
-      name := <find-spoofax-module-name>;
-      if !name => ParamName(n, p) then
-        name' := parameterized(n, p)
-      else
-        Name(name') := name
-      end;
-      sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def;
-      sections' := <list-to-conc-grammars> sections
-  
-  list-to-conc-grammars:
-    [g1, g2 | gs] -> conc-grammars(g1, <list-to-conc-grammars> [g2 | gs])
-  
-  list-to-conc-grammars:
-    [g1] -> g1
-  
-  list-to-conc-grammars:
-    [] -> []
-
-rules
-
-  to-str:
-    (path, def) -> Module(name', sections)
-    with
-      name := <find-spoofax-module-name>;
-      if !name => ParamName(n, p) then
-        name' := n
-      else
-        Name(name') := name
-      end;
-      sections  := <collect-om(?STRSection(<id>), conc)> def
-
-rules
-
-  to-esv:
-    (path, def) -> Module(name', [], sections)
-    with
-      name := <find-spoofax-module-name>;
-      if !name => ParamName(n, p) then
-        name' := n
-      else
-        Name(name') := name
-      end;
-      sections  := <collect-om(?ESVSection(<id>), conc)> def

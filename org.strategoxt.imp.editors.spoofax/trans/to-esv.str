@@ -1,0 +1,19 @@
+module to-esv
+
+imports
+  libstratego-lib
+  spoofaxlang
+  include/SpoofaxLang
+
+rules
+
+  to-esv:
+    (path, def) -> Module(name', [], sections)
+    with
+      name := <find-spoofax-module-name>;
+      if !name => ParamName(n, p) then
+        name' := n
+      else
+        Name(name') := name
+      end;
+      sections  := <collect-om(?ESVSection(<id>), conc)> def

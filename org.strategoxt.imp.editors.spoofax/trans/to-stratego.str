@@ -1,0 +1,27 @@
+module to-stratego
+
+imports
+  libstratego-lib
+  libstrc
+  include/SpoofaxLang
+  lib/editor-common.generated
+  lib/sdf-desugar
+  lib/sdf-parenthesize
+  spoofaxlang
+
+signature constructors
+  
+  Module : ID * List(Import) * List(Section) -> Module
+
+rules
+
+  to-str:
+    (path, def) -> Module(name', sections)
+    with
+      name := <find-spoofax-module-name>;
+      if !name => ParamName(n, p) then
+        name' := n
+      else
+        Name(name') := name
+      end;
+      sections  := <collect-om(?STRSection(<id>), conc)> def
