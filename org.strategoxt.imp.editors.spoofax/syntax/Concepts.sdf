@@ -1,0 +1,18 @@
+module Concepts
+
+imports
+  Common
+
+exports
+  
+context-free syntax
+  
+  %% TODO: consider using the "sorts" section for concepts?
+  
+  "concepts" ConceptDef* -> ConceptSection {cons("Concepts")}
+  "concepts"             -> ModuleName {reject}
+  
+  "concept" ID ":" Rule -> ConceptDef {cons("ConceptDef")}
+  "rule" Rule ":" ID*   -> ConceptDef {cons("RuleDef")}
+  ID                    -> Rule {cons("Rule1")}
+  ID "->" ID            -> Rule {cons("Rule2")}
