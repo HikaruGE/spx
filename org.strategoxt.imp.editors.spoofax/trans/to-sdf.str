@@ -25,6 +25,7 @@ rules
       sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def;
       sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
   
+  // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:
     term(default(fun(quoted(s)))) ->
     term(default(appl(unquoted("cons"), [fun(quoted(s))])))
