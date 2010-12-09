@@ -3,8 +3,8 @@
 <project name="build.generated">
 
         <target name="spoofaximp.default" depends="spoofaximp.default.ctree"/>
-        <target name="spoofaximp.default.ctree" depends="check-classpath,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,stratego.ctree,java.jar,sdf2imp,refresh"/>
-        <target name="spoofaximp.default.jar" depends="check-classpath,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,stratego.jar,  java.jar,sdf2imp,refresh"/>
+        <target name="spoofaximp.default.ctree" depends="check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,stratego.ctree,java.jar,sdf2imp,refresh"/>
+        <target name="spoofaximp.default.jar" depends="check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,stratego.jar,  java.jar,sdf2imp,refresh"/>
     
         <!-- Initialization -->
         <available file="${build}/org/strategoxt/imp/editors/spoofax/strategies/Main.class" property="java.jar.enabled"/>
@@ -50,9 +50,11 @@
         
         <target name="refresh" if="eclipse.running">
             <eclipse.convertPath fileSystemPath="${basedir}" property="projectdir"/>
-            <eclipse.refreshLocal resource="${projectdir}/lib" depth="infinite"/>
-            <eclipse.refreshLocal resource="${projectdir}/syntax/${sdfmodule}.pp.generated" depth="infinite"/>
-            <eclipse.refreshLocal resource="${projectdir}/lib/editor-common.generated.str" depth="infinite"/>
+            <eclipse.convertPath fileSystemPath="${syntax}" property="syntaxdir"/>
+            <eclipse.convertPath fileSystemPath="${lib}" property="libdir"/>
+            <eclipse.refreshLocal resource="${libdir}" depth="infinite"/>
+            <eclipse.refreshLocal resource="${syntaxdir}/${sdfmodule}.pp.generated" depth="infinite"/>
+            <eclipse.refreshLocal resource="${libdir}/editor-common.generated.str" depth="infinite"/>
             <eclipse.refreshLocal resource="${projectdir}/build.generated.xml" depth="infinite"/>
             <eclipse.refreshLocal resource="${projectdir}/editor/${sdfmodule}-Builders.generated.esv" depth="infinite"/>
             <eclipse.refreshLocal resource="${projectdir}/editor/${sdfmodule}-Colorer.generated.esv" depth="infinite"/>
@@ -81,6 +83,13 @@
         <target name="check-classpath">
             <available classname="org.strategoxt.imp.generator.sdf2imp" property="check-classpath.available"/>
             <antcall target="check-classpath.helper"/>  
+        </target>
+        
+        <target name="init" if="eclipse.running">
+            <!-- refresh one file/dir in the project to trigger an Ant rebuild with the next build command -->
+            <java classname="org.strategoxt.imp.metatooling.building.AntForceRefreshScheduler" failonerror="false">
+                <arg value="${include}"/>
+            </java>
         </target>
   
         <target name="check-classpath.helper" unless="check-classpath.available">
@@ -151,8 +160,11 @@
     
         <target name="pack-sdf" unless="externaldef">
             <dependset>
-                <srcfileset dir="${syntax}">
+                <srcfileset dir="${basedir}">
                     <include name="**/*.sdf"/>
+                </srcfileset>
+                <srcfileset dir="${lib}">
+                    <include name="**/*.def"/>
                 </srcfileset>
                 <targetfileset file="${include}/${sdfmodule}.def"/>
             </dependset>
