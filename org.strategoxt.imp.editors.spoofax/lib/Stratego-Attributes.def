@@ -1,12 +1,52 @@
 definition
-module Stratego-Sugar-Overlays
+module ResultTerms
+
 imports
-  Stratego-Core-Identifiers
-  Stratego-Sugar-Terms
+  Stratego-Sugar
 
 exports %% RECOVERY RULES START HERE
   lexical syntax
       -> ";" {recover, cons("INSERTION")}
+
+exports
+
+  sorts
+    LineEnd
+    TermNoApp
+    ResultTerm
+    SingleLineLayout
+
+  context-free syntax
+
+    TermNoApp -> ResultTerm
+
+    Term                  -> TermNoApp
+    StrategyAngle         -> TermNoApp {reject}
+    "<" Strategy ">" Term -> TermNoApp {reject}
+
+  lexical syntax
+  
+    ShortCom -> SingleLineLayout
+    LongCom  -> SingleLineLayout
+    [\ \t]+  -> SingleLineLayout
+    [\n\r]   -> LineEnd
+    Eof      -> LineEnd
+  
+  syntax
+  
+    %% <s>\n -> RootApp
+    
+    <StrategyAngle-CF> <SingleLineLayout*-LEX> <LineEnd-CF> -> <ResultTerm-CF> {ast("RootApp(<1>)")}
+    
+    %% <s>A -> App
+    
+    "<" <LAYOUT?-CF> <Strategy-CF> <LAYOUT?-CF> ">" <SingleLineLayout*-LEX>
+        <Term-CF>                                                           -> <ResultTerm-CF> {ast("App(<1>, <3>)")}
+
+module Stratego-Sugar-Overlays
+imports
+  Stratego-Core-Identifiers
+  Stratego-Sugar-Terms
 
 exports
   sorts Overlay
@@ -853,3 +893,195 @@ imports
 
 hiddens
   context-free start-symbols Module
+
+module Stratego-Attributes
+
+imports
+  Stratego-Sugar
+  ResultTerms
+
+hiddens
+  context-free start-symbols
+    Module
+    Decl
+
+exports
+  sorts
+    DefType
+    Pattern
+    ADef
+    AttributeDef
+    AttributeRef
+    AttributeCall
+    AttributeCallLHS
+    AttributeDecl
+    AttributeType
+    AttributeTypeNoSort
+    DecoratorRef
+    DecoratorRefNoArgs
+    DecoratorId
+    AttributeKeyword
+    ChildDot
+    DotChild
+    AttributeId
+    AttributeDeclId
+    OptChildDot
+    OptDotChild
+    OptSortDot
+    NoSortDot
+    AttributeNameValue
+    NameDefBlockDef
+    PatternDefBlockDef
+    Where
+    NoWhere
+    UNDEFINED %% matches nothing
+  
+  lexical syntax
+  
+    %% Unreserve some Id's specifically for (built-in) attributes
+
+    "all"       -> AttributeId
+    "one"       -> AttributeId
+    "some"      -> AttributeId
+    "test"      -> AttributeId
+    "in"        -> AttributeId
+    "signature" -> AttributeId
+  
+  context-free restrictions
+  
+    AttributeId -/- [a-zA-Z0-9\'\-\_\*]
+
+    DecoratorRefNoArgs -/- [\(]  %% decorator(arg,y) vs. decorator (tuple, y)
+  
+  context-free syntax %% identifiers
+  
+    Id               -> AttributeId {prefer}
+  
+    AttributeId      -> AttributeDeclId
+    AttributeKeyword -> AttributeDeclId {reject}
+
+    AttributeId      -> DecoratorId
+    "*"              -> DecoratorId
+    "plain"          -> DecoratorId {prefer} %% treat as keyword
+    AttributeKeyword -> DecoratorId {reject}
+  
+  context-free syntax %% attributes
+    
+    AttributeDeclId "(" { Typedid "," }* "|" { Term "," }* ")" -> AttributeDecl {cons("Attribute")}
+    AttributeDeclId "(" { Typedid "," }*                   ")" -> AttributeDecl {cons("AttributeNoTerms")}
+    AttributeDeclId                                            -> AttributeDecl {cons("AttributeNoArgs")}
+    
+    AttributeId "(" { Typedid "," }* "|" { Term "," }* ")" -> AttributeDef {cons("Attribute")}
+    AttributeId "(" { Typedid "," }*                   ")" -> AttributeDef {cons("AttributeNoTerms")}
+    AttributeId                                            -> AttributeDef {cons("AttributeNoArgs")}
+    
+    AttributeId "(" { Strategy "," }* "|" { Term "," }* ")" -> AttributeRef {cons("Attribute")}
+    AttributeId "(" { Strategy "," }*                   ")" -> AttributeRef {cons("AttributeNoTerms")}
+    AttributeId                                             -> AttributeRef {cons("AttributeNoArgs")}
+    
+    DecoratorId "(" { Strategy "," }* "|" { Term "," }* ")" -> DecoratorRef {cons("Decorator")}
+    DecoratorId "(" { Strategy "," }*                   ")" -> DecoratorRef {cons("DecoratorNoTerms")}
+    DecoratorRefNoArgs                                      -> DecoratorRef
+    DecoratorId                                             -> DecoratorRefNoArgs {cons("DecoratorNoArgs")}
+
+    AttributeCallLHS "." AttributeRef -> AttributeCall {cons("AttributeRef")}
+    Term                              -> AttributeCallLHS
+    "<" Strategy ">" Term             -> AttributeCallLHS {reject}
+    
+    AttributeCall -> Strategy {prefer}
+    AttributeCall -> PreTerm {cons("AttributeTerm")}
+   
+  context-free syntax %% attribute equations: core syntax
+
+    "attributes" ADef* -> Decl {cons("Attributes")}
+
+    AttributeType { AttributeDecl "," }+               -> ADef {cons("ADecl")}
+    AttributeTypeNoSort Pattern "." AttributeNameValue -> ADef {cons("ADef")}
+    
+    DefType DecoratorRef* OptSortDot -> AttributeType {cons("Type")}
+    DefType DecoratorRef* NoSortDot  -> AttributeTypeNoSort {cons("Type")}
+    
+    OptChildDot AttributeDef "="  Strategy -> AttributeNameValue {cons("ADefStrategy")}
+    
+    "eq"        -> DefType {cons("Eq")}
+    "def"       -> DefType {cons("Def")}
+    "decorator" -> DefType {cons("Decorator")}
+    
+    Id "."     -> ChildDot {cons("Child")}
+    "." Id     -> DotChild {cons("DotChild")}
+    "id" "."   -> ChildDot {cons("IdChild"), prefer}    %% sugar
+    "." "id"   -> DotChild {cons("DotIdChild"), prefer} %% sugar
+    "root" "." -> ChildDot {reject}                     %% confusing
+    "." "root" -> DotChild {reject}                     %% confusing
+    
+    ChildDot   -> OptChildDot
+               -> OptChildDot {cons("NoChild")}
+    DotChild   -> OptDotChild
+               -> OptDotChild {cons("NoChild")}
+    
+    Sort "." -> OptSortDot {cons("Sort")}
+             -> OptSortDot {cons("NoSort")}
+             -> NoSortDot {cons("NoSort")}
+    
+    Term             -> Pattern
+    AttributeKeyword -> Pattern {reject}
+    AttributeCall    -> Pattern {reject}
+    "root"           -> Pattern {cons("Root"), prefer}
+
+  context-free syntax %% attribute equations: syntactic sugar
+ 
+    "decorators" ADef* -> Decl {cons("Decorators")}
+
+    %% Single-line attribute definitions
+    AttributeTypeNoSort AttributeNameValue    -> ADef {cons("ADefNoPattern"), avoid}
+    OptChildDot AttributeDef ":=" Term Where* -> AttributeNameValue {cons("ADefTerm")}
+    
+    %% Attribute definition blocks/groups
+    AttributeType Pattern      ":" NameDefBlockDef+    -> ADef {cons("NameDefBlock")}
+    AttributeType AttributeDef ":" PatternDefBlockDef+ -> ADef {cons("PatternDefBlock")}
+    
+    %% Definitions grouped in a NameDefBlock
+    ChildDot AttributeDef ":=" Term     Where* -> NameDefBlockDef {cons("ADefTerm")}
+    ChildDot AttributeDef "="  Strategy        -> NameDefBlockDef {cons("ADefStrategy")}
+
+    %% Definitions grouped in a PatternDefBlock
+    Pattern OptDotChild "->" ResultTerm NoWhere* -> PatternDefBlockDef {cons("APDefTerm")}
+    Pattern OptDotChild "->" Term       Where+   -> PatternDefBlockDef {cons("APDefTerm")}
+
+    "where" Strategy -> Where {cons("Where")}
+    "with" Strategy  -> Where {cons("With")}
+    UNDEFINED        -> NoWhere
+
+  context-free syntax %% Misc.
+    
+    "rewrite" Pattern "->" Term Where* -> ADef {cons("AnonymousRewriteRule")}
+      
+    "id"   -> PreTerm {cons("IdTerm")}
+    "fail" -> Term {cons("FailTerm")}
+
+  context-free syntax
+
+    %%  Either reject suffices, but the first may be too specific/confusing
+    %%  "<" Strategy ">" AttributeKeyword -> Term {reject}
+    AttributeKeyword -> Var {reject}
+    
+    AttributeKeyword -> ImportModName {reject}
+  
+  lexical syntax
+    
+    "eq"         -> AttributeKeyword
+    "def"        -> AttributeKeyword
+    "attributes" -> AttributeKeyword
+    "decorators" -> AttributeKeyword
+    "decorator"  -> AttributeKeyword
+    "rewrite"    -> AttributeKeyword
+  
+  context-free restrictions
+  
+    "eq"
+    "def"
+    "root"
+    "rewrite"
+    "decorator"
+    "decorators"
+    "attributes" -/- [a-zA-Z0-9\'\-\_]
