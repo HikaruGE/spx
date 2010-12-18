@@ -11,17 +11,51 @@ imports
   lib/editor-common.generated
   lib/sdf-desugar
   lib/sdf-parenthesize
-  to-stratego
-  to-sdf
-  to-esv
+  stratego/main
+  stratego/to-stratego
+  
+  sdf/main
+  sdf/to-sdf
+  sdf/analysis 
+  sdf/check
+  esv/to-esv
+  analysis
 
 signature constructors
-  
   Module : ID * List(Import) * List(Section) -> Module
 
 rules
 
-  editor-analyze = !([], [], [])
+ 	editor-analyze:
+    (ast, path, project-path) -> (<flatten-list>[error-sdf*, error-str*], warning-sdf*, notes-sdf*)
+    where debug(!"1. spoofax-lang> inside editor-analysis >> ")
+    with
+      editor-init;
+      ast' := <analyze-ast> (ast, path, project-path) ;
+     	debug(!"3. spoofax-lang> Analysis is done. ");
+     	(error-sdf* , warning-sdf*, notes-sdf*):= <editor-analyze-sdf>(ast' , path, project-path);
+     	//(error-str* , warning-str*, notes-str*):= ([], [], []);
+     	(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(ast' , path, project-path);
+     	<debug(!"SDF Errors: ")>error-sdf*;
+     	<debug(!"Str Errors: ")>error-str*;
+     	<debug(!"Errors: ")><flatten-list>[error-sdf*, error-str*]  
+ 
+  editor-complete:
+    (node, position, ast, path, project-path) -> proposals
+    where
+      proposals := <propose-completion <+ ![]> node
+ 
+  editor-resolve:
+    (sort(x), position, ast, path, project-path) -> target
+    where
+      target := <Declaration> x
+ 
+  editor-resolve:
+    (unparameterized(x), position, ast, path, project-path) -> target
+    where
+      target := <parse-spoofaxlang-file> <resolve-import> x
+
+  override pp-sdf-string = fail // ensure compiler doesn't blow up
   
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
@@ -53,6 +87,7 @@ rules
     with
       filename := <guarantee-extension(|".packed.esv")> path;
       result   := <to-esv> (path, selected)
+  
   
   find-spoofax-module-name:
     (path, def) -> name

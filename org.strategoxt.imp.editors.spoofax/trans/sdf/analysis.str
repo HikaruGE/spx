@@ -1,0 +1,126 @@
+module sdf/analysis
+
+imports
+  analysis
+  libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  lib/editor-common.generated
+	include/SpoofaxLang
+
+rules
+	init-sdf-analysis:
+		(ast, path, project-path) -> ast'
+		with
+				current-file := $[[project-path]/[path]];
+      	rules(
+        	IsImported  :  current-file
+        )
+    where  
+  		ast' := <declare-globals-top> ast
+      
+	declare-globals-top =
+    	alltd(declare-globals)
+	
+	declare-globals:
+		unparameterized(x) -> unparameterized(x)
+    where
+      <open-import(
+        resolve-import
+      , parse-spoofaxlang-file
+      , declare-globals-top
+      )> x
+    <+
+      rules(IsImportFailed: _)
+
+	declare-globals:
+		parameterized(x, y) -> parameterized(x, y)
+  	where
+			<declare-globals> unparameterized(x);
+  		<alltd(declare-simple-global)> y
+  
+	resolve-import =
+    	// TODO: better import handling
+		\x -> $[[<ProjectDir>]/[x].sdf]\; file-exists
+  	<+
+    	\x -> $[[<ProjectDir>]/syntax/[x].sdf]\; file-exists
+  	<+
+   		 \x -> $[[<ProjectDir>]/lib/[x].def]\; file-exists
+  	<+
+    	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
+  
+ 
+	declare-globals:
+		prod @ prod(lhs, sort, _) -> <id>
+  		where
+      		!sort;
+      		try(?cf(<id>) + ?lex(<id>));
+      		repeat(?label(_, <id>));
+      		(?sort(x) + ?parameterized-sort(x, _))
+    	with
+      		<Declaration> x
+    	<+
+      		file := <CurrentFile>;
+      	rules(
+        	Declaration: x -> prod
+        	DeclarationFile: x -> file
+      		)
+			with
+      		<alltd(declare-use)> lhs
+  
+	declare-globals:
+    	'sorts(_) -> <id>
+	with
+    	 alltd(declare-use)
+  
+  	declare-globals:
+	    	context-free-start-symbols(_) -> <id>
+	with
+	      	alltd(declare-use)
+	  
+	  declare-globals:
+	    lexical-start-symbols(_) -> <id>
+	    with
+	      alltd(declare-use)
+	  
+	  declare-globals:
+	    kernel-start-symbols(_) -> <id>
+	    with
+	      alltd(declare-use)
+	  
+	  /**
+	   *Creating Declaration Dynamic Rule for all the Sorts
+	   **/
+	  declare-simple-global:
+	    sort(x) -> <id>
+		with
+	      rules(Declaration: x -> x)
+	    
+	  /**
+	   *Creating Usage Dynamic Rule for all the sorts 
+	   **/
+	  
+	  declare-use:
+	    sort(x) -> <id>
+	    with
+	      rules(Usage: x -> x)
+	  
+	  declare-use:
+	    parameterized-sort(x, y) -> <id>
+	    where
+	      if !y => [sort(y')]; <is-string> x; <is-string> y' then
+	        text := ${{x}[[{y'}]]};
+	        rules(Usage: text -> text)
+	      end
+	  
+	  propose-completion:
+	    sort(COMPLETION(x)) -> [decl*, use*]
+	    with
+	      decl* := <all-keys-Declaration> x;
+	      use*  := <all-keys-Usage> x
+	  
+	  propose-completion:
+	    NOCONTEXT(COMPLETION(x)) -> [decl*, use*]
+	    with
+	      decl* := <all-keys-Declaration> x;
+	      use*  := <all-keys-Usage> x

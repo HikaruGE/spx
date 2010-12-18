@@ -1,0 +1,75 @@
+module sdf/main
+
+imports
+  libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  libstrc
+  lib/editor-common.generated
+  sdf/to-sdf
+  sdf/analysis 
+  sdf/check
+  
+rules
+	
+	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
+    where debug(!"4. spoofax-lang>SDF> collecting errors & others... >> ")
+    with
+      // We only collect-om since we don't want inner warning dupes
+      error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+      warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+      if <file-exists> $[[project-path]/.disable-global-analysis] then
+        serror* := []
+      else
+        serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+      end;
+      if IsImportFailed then
+        error'*   := error*;
+        warning'* := <conc> (serror*, warning*)
+      else
+        error'*   := <conc> (serror*, error*);
+        warning'* := warning*
+      end 
+		
+  generate-pp-rules:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    where
+      filename  := <guarantee-extension(|"selection.pp")> path;
+      selected' := <add-context; sdf-desugar> selected;
+      result    := <ppgenerate; pp-pp-table> selected'
+    <+
+      fatal-err-msg(|$[Could not generate pretty printer rules for this selection.])
+  
+  generate-rtg:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    where
+      filename  := <guarantee-extension(|"rtg")> path;
+      selected' := <debug(!2); add-context; debug(!3); sdf-desugar> selected;
+      result    := <debug(!4); core-rtg2sig; debug(!5); pp-stratego-string> selected'
+    <+
+      fatal-err-msg(|$[Could not generate abstract syntax signatures for this selection.])
+    
+  add-context =
+    if not(oncetd(?context-free-syntax(_))) then
+      if is-list then
+        !context-free-syntax(<id>)
+      else
+        !context-free-syntax([<id>])
+      end
+      // !'module(unparameterized("Module"), [], [exports(<id>)])
+    end
+  
+
+rules // External tools not included in the standard libraries
+
+  ppgenerate =
+    <call> ("org.strategoxt.tools.ppgenerate", [<id>])
+
+  core-rtg2sig =
+    <call> ("org.strategoxt.tools.core-rtg2sig", [<id>])
+
+  pp-pp-table =
+    <call> ("org.strategoxt.tools.pp-pp-table", [<id>])
+  
+  sdf-desugar =
+    <call> ("org.strategoxt.tools.sdf-desugar", [<id>]) => [_, <id>]

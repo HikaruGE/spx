@@ -1,4 +1,4 @@
-module to-stratego
+module stratego/to-stratego
 
 imports
   libstratego-lib
@@ -8,10 +8,6 @@ imports
   lib/sdf-desugar
   lib/sdf-parenthesize
   spoofaxlang
-
-signature constructors
-  
-  Module : ID * List(Import) * List(Section) -> Module
 
 rules
 

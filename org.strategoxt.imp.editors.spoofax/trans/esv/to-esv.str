@@ -1,4 +1,4 @@
-module to-esv
+module esv/to-esv
 
 imports
   libstratego-lib

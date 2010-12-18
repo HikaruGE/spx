@@ -1,0 +1,22 @@
+module analysis
+
+imports 
+	sdf/analysis
+	stratego/analysis
+strategies
+	analyze-ast:
+  	(ast, path, project-path) -> ast''
+  where 
+		<debug(!"2. analysis spx . current-file:")> [$[[project-path]/[path]] , <base-filename> path]
+  with 
+  	rules(
+  		CurrentDir  := <dirname> $[[project-path]/[path]]
+    	CurrentFile := <base-filename> path
+  		ProjectDir  := project-path
+  	)
+  where
+  	ast' := <init-sdf-analysis>(ast, path, project-path);
+  	ast'' := <init-str-analysis>(ast', path, project-path)
+
+
+//TODO: combine the analysis of SDF and Stratego together

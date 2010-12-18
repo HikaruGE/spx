@@ -1,0 +1,28 @@
+module stratego/main
+
+imports
+  libstratego-lib
+  libstratego-gpp
+  libstratego-aterm
+  libstrc
+  lib/editor-common.generated
+  stratego/analysis
+  stratego/check
+  
+rules
+  editor-analyze-str:
+    (ast, path, project-path) -> ( errors, warnings, [])
+    where debug(!"5. spoofax-lang>STR>collecting errors & others... >> ")
+    with
+      if NoAnalysis then
+        errors   := <collect-all(constraint-error, conc)> ast;
+        warnings := <collect-all(constraint-warning, conc)> ast
+      else
+        if WarnAnalysis then
+          errors   := <collect-all(constraint-error, conc)> ast;
+          warnings := <collect-all(global-constraint-error + constraint-warning, conc)> ast
+        else
+          errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
+          warnings := <collect-all(constraint-warning, conc)> ast
+        end
+      end
