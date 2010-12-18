@@ -11,6 +11,6 @@ language General properties
   description   : "Spoofax/IMP-generated editor for the SpoofaxLang language"
   url           : http://strategoxt.org
                   
-  extensions    : spo
+  extensions    : spx
   table         : include/SpoofaxLang.tbl
   start symbols : Start
