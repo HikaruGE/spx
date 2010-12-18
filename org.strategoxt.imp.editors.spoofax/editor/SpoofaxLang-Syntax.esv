@@ -1,9 +1,57 @@
 module SpoofaxLang-Syntax
 
-imports SpoofaxLang-Syntax.generated
+language Syntax properties for spoofax lang
 
-language
-                                                                   
-  // This file can be used for custom syntax rules.                
-  //                                                               
-  // See the imported file for a brief introduction and examples.  
+	 // Comment constructs:  
+  line comment  : "//"		
+  line comment  : "%%"
+  block comment : "/*" * "*/"
+  block comment: % % %
+  
+  // Regular expression for identifiers: 
+  identifier lexical : "[a-zA-Z\_][a-zA-Z0-9\'\-\_]*\*?"
+  
+  // Fences (used for matching,            
+  // inserting, indenting brackets): 
+ 	fences        : [ ]
+                  ( )
+                  { }
+                  {| | // hack: interacts with { }
+                  <% %>
+                  |[ ]|
+                  (|[ "" // hack: interacts with |[ ]| 
+                  $[ ]
+                  ${ }
+                  $< >
+                  $( )
+                  // < is tricky since it interacts with <+ and < +
+                  //" <" > // hack: interacts with ->
+                  //"=<" > // hack: interacts with ->
+                  //"(<" > // hack: interacts with ->
+                  //"|<" > // hack: interacts with ->
+  
+  // Automatic indent hints                
+  // (indent after these tokens):  
+  indent after:
+    then
+    in
+    else
+    where
+    with
+    switch
+    ":"
+    "="
+    <
+    rules
+    strategies
+    overlays
+    constructors
+    imports
+    exports
+    sorts
+    syntax
+    restriction
+    priorities
+    hiddens
+    
+    
