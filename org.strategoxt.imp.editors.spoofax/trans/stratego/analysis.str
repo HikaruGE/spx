@@ -4,33 +4,45 @@ imports
 	analysis
 	libstratego-lib
  	libstrc
+ 	libstratego-gpp
+	libstratego-aterm
  	stratego/sourcedir
 	stratego/desugar
 	lib/editor-common.generated
+
+strategies 
+	enable-stratego-debugging  = rules(DebugStr: x -> x)
+	disable-stratego-debugging = rules(DebugStr:- _ )
+	debug-str = not(DebugStr) <+ debug
 	
 rules // Projections and lookup
-
+	pp-aterm = pp-aterm-box ; box2text-string(|100)
+	
 	init-str-analysis:
 		(ast, path, project-path) -> ast'
 		with
-			rules(
+			enable-stratego-debugging
+			;rules(
         		CurrentFileFullPath := $[[project-path]/[path]]
-        );
-  		try(get-source-base-dir);
-   		if <file-exists> $[[project-path]/.disable-global-analysis] then
+        )
+  		;try(get-source-base-dir)
+   		;if <file-exists> $[[project-path]/.disable-global-analysis] then
     		rules(NoAnalysis: _)
-    	end;
-   		if <file-exists> $[[project-path]/.warn-global-analysis] then
+    	end
+   		;if <file-exists> $[[project-path]/.warn-global-analysis] then
     		rules(WarnAnalysis: _)
     	end
     with
-      <basic-stratego-desugar-top> ast;
-      declare-stratego-globals-top; //TODO  : Refactor globals-top
-      ast' := <declare-bodies-top>;
+    	<basic-stratego-desugar-top> ast
+      ;declare-stratego-globals-top //TODO  : Refactor globals-top. Rewriting of the tree is done here.
+     	;ast' := <declare-bodies-top>;
       rules(
         DecoratedAst := ast'
       )
-    	
+    //where 
+    	//disable-stratego-debugging
+    	//;<debug-str> $[AST after analysis : [<pp-aterm>ast']]
+ rules   		
   signature-of:
     SDefT(x, s*, t*, s) -> (<remove-quote> x, <length> s*, <length> t*)
 
@@ -53,8 +65,8 @@ rules // Projections and lookup
     Op(x, t*) -> (<remove-quote> x, <length> t*)
 
   signature-of:
-    OpDecl(x, t) -> (<remove-quote> x, <dec> <occurrences(?ConstType(_))> t) 
-
+    OpDecl(x, t) -> (<remove-quote> x, <dec> <occurrences(?ConstType(_))> t)
+    
   signature-of:
     ExtOpDecl(x, t) -> (<remove-quote> x, <dec> <occurrences(?ConstType(_))> t)
     
@@ -114,41 +126,34 @@ rules // Helpers
   redeclare-definition:
     def -> cookie
     with
-      sig := <signature-of>;
+    	sig := <signature-of>;
       cookie := <newterm>;
       rules(
         DeclareCookie: sig -> cookie
         Declaration: cookie -> def
       )
-
-  /*internal*/ require(s) =
-    not(s)
-
-  is-declared =
-    one(?_{cookie} + ?SVar(_{cookie}))
-
   external SRTS-EXT-newint(|)
   
 rules // Declare globals
 
   declare-stratego-globals-top =
     if not(NoAnalysis) then
-      with(<declare-globals> Import("libstratego-lib"));
-      alltd(declare-globals)
+			with(<declare-str-globals>Import("libstratego-lib"))
+      ;alltd(declare-str-globals)
     end
 
-  declare-globals:
+  declare-str-globals:
     SDefT(x, s*, t*, s) -> SDefT(x', s*, t*, s')
     with
       x' := x{<declare-definition>};
       s' := <topdown(try(declare-dynrule))> s
 
-  declare-globals:
+  declare-str-globals:
     ExtSDef(x, s*, t*) -> <id>
     with
       redeclare-definition
 
-  declare-globals:
+  declare-str-globals:
     OpDecl(x, t) -> OpDecl(x', t)
     with
       cookie := <redeclare-definition>;
@@ -161,12 +166,12 @@ rules // Declare globals
         DeclareCookie: sig' -> cookie
       )
 
-  declare-globals:
+  declare-str-globals:
     ExtOpDecl(x, t) -> <id>
     with
      redeclare-definition
   
-  declare-globals:
+  declare-str-globals:
     Overlay(x, t, d) -> Overlay(x', t, d)
     with
       cookie := <redeclare-definition>;
@@ -184,14 +189,14 @@ rules // Declare globals
     with
       ast := <id>
   
-  declare-globals:
+  declare-str-globals:
     Import(x) -> Import(x)
     with
       <open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> x
     <+
       rules(IsImportedFailed: x)
 
-  declare-globals:
+  declare-str-globals:
     ImportWildcard(x) -> ImportWildcard(x)
     with
       <open-wildcard-import(file-exists <+ resolve-import-path, read-stratego-signatures, declare-stratego-globals-top, has-extension(|"str") + has-extension(|"rtree"))> x
