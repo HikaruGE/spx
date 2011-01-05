@@ -13,6 +13,7 @@ imports
 rules
 	
 	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
+    
     where debug(!"4. spoofax-lang>SDF> collecting errors & others... >> ")
     with
       // We only collect-om since we don't want inner warning dupes
@@ -30,7 +31,10 @@ rules
         error'*   := <conc> (serror*, error*);
         warning'* := warning*
       end 
-		
+			;if not(![]; ?<flatten-list>error'*) then  
+           rules ( get-sdf-errors := error'*)
+       end
+       
   generate-pp-rules:
     (selected, position, ast, path, project-path) -> (filename, result)
     where
@@ -58,8 +62,6 @@ rules
       end
       // !'module(unparameterized("Module"), [], [exports(<id>)])
     end
-  
-
 rules // External tools not included in the standard libraries
 
   ppgenerate =

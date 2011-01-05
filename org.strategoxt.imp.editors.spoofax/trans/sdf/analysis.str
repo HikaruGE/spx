@@ -5,9 +5,16 @@ imports
   libstratego-lib
   libstratego-sdf
   libstratego-sglr
+  libstratego-gpp
+	libstratego-aterm
   lib/editor-common.generated
 	include/SpoofaxLang
 
+strategies 
+	enable-sdf-debugging  = rules(DebugSDF: x -> x)
+	disable-sdf-debugging = rules(DebugSDF:- _ )
+	debug-sdf = not(DebugSDF) <+ debug
+	
 rules
 	init-sdf-analysis:
 		(ast, path, project-path) -> ast'
@@ -16,28 +23,191 @@ rules
       	rules(
         	IsImported  :  current-file
         )
+        ;enable-sdf-debugging
     where  
-  		ast' := <declare-globals-top> ast
-      
-	declare-globals-top =
-    	alltd(declare-globals)
+  		ast' := <declare-sdf-globals-top> ast
+  		//;disable-sdf-debugging
+		
+rules
+	/**
+   * Tests if something is a non-terminal in terms of the AST produced.
+   */
+  is-non-terminal =
+    ?sort(_) + ?opt(_) + is-iter
+  
+  is-iter =
+    ?iter(_) + ?iter-star(_) + ?iter-sep(_, _) + ?iter-star-sep(_, _)
 	
-	declare-globals:
+	pp-aterm = pp-aterm-box ; box2text-string(|100)
+	 
+  //TODO : give the rule more meaningful name 	
+  get-all-signatures-as-string 
+  		= <mapconcat(bagof-Get-Operation-Declaration);reverse;operation-decl-to-string><all-keys-Get-Operation-Singature>
+  
+  operation-decl-to-string : [] -> $[]
+  operation-decl-to-string : [first-op-decl | rest-op-decl* ] 
+  		-> $[[<opname-to-string>opname]: [<lhs-operands-to-string>operands*] -> [resultant-sort]
+  			[rest-op-decl-string]]		
+  		where 
+  			(opname, operands*, resultant-sort) := first-op-decl
+  			;rest-op-decl-string := <operation-decl-to-string> rest-op-decl* 
+ 	
+ 	opname-to-string : opname -> opname-string
+ 		where 
+ 				if (!opname => "") then 
+ 						opname-string := $[]
+				else
+					 opname-string  := opname
+				end
+				
+  lhs-operands-to-string : [] -> $[]
+  lhs-operands-to-string : [last] -> $[[last]] 
+  lhs-operands-to-string : [hd-operand|rest*] -> $[[hd-operand-string] * [rest-operand-string]]
+  		where
+  				not (![] => rest*) 
+  		where 
+  			  hd-operand-string := hd-operand 
+  			  ;rest-operand-string := <lhs-operands-to-string>rest* 
+
+rules  
+  	 
+  get-opration-name = alltd(find-operation-name)
+  
+  find-operation-name : fun(quoted( quoted-operation-name) ) -> fun(quoted( quoted-operation-name) )
+  	where <debug-sdf> $[operation name :  [<un-double-quote>quoted-operation-name]]
+  	where rules (get-op-name: _ -> <un-double-quote>quoted-operation-name )
+	
+	store-operation-declaration
+  	= ?p@prod(lhs , sort(rhs-sort-name), attrs(attribute-list))
+  		;{|lhs-sort, get-op-name:
+  					<find-sorts>lhs
+  					;<get-opration-name>attribute-list  
+  					;operation-name := <get-op-name>
+  					;lhs-operands-types := <reverse><bagof-lhs-sort>  
+  					;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p) 
+  		  |}
+			  
+	store-operation-declaration 
+  	= ?p@prod(lhs , sort( rhs-sort-name), no-attrs())
+  		; {|lhs-sort :
+			  				if IsInsideLexicalSyntaxBlock then 
+  								 rules ( lhs-sort :+ _ -> $[String] )
+								else
+									<find-sorts>lhs
+								end
+			  				;lhs-operands-types := <reverse><bagof-lhs-sort>
+			  				;operation-name := ""
+			  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
+			 |}
+			  
+	
+	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) = 
+							rules
+  					 		(
+  					 				Get-Operation-Singature:+ operation-name -> (operation-name , <length>opernand-sorts*)
+  					 				Get-Operation-Declaration :+ operation-name  -> (operation-name , opernand-sorts* , resultant-sort)
+  					 		)    
+  					 		; <debug-sdf> $[Stored operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
+  					 		; <debug-sdf> $[Stored operation signature: [<pp-aterm> operation-name] -> [<pp-aterm> (operation-name , <length>opernand-sorts*)].]  
+  					 		 
+  find-sorts 
+  	= alltd(get-sort-decl)
+	
+	get-sort-decl : seq( frst , rest*)-> seq( frst , rest*)
+		where
+			{| lhs-sort,is-inside-seq-block:
+					rules( is-inside-seq-block:_ )
+					;<find-sorts>frst
+					;<find-sorts>rest*
+					;inner-sort* := <bagof-lhs-sort;reverse>
+					;intermediate-resultant-sort-type :=<string-replace(|"(", "Of");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
+			|}
+			; create-opname2opdecl-mapping(|"", inner-sort*, intermediate-resultant-sort-type, "[N/A]" ) 	
+		 	; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
+	
+	
+  
+  
+  get-sort-decl : iter-star ( x ) -> <id>
+  	where 
+  		{| is-inside-iter-block, lhs-sort:
+  				rules( is-inside-iter-block :_)
+  				;<find-sorts>x
+  				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
+  		|}
+  		//;if is-inside-iter-block   then 
+  			//ret-string := $[ListPlusOf[inner-sorts-tostring]]
+  		//else
+  			;ret-string := $[List([<string-replace(|"(", "Of");string-replace(|")", "")> inner-sorts-tostring])]
+  		//end 	
+  		;rules ( lhs-sort :+ _ -> ret-string)
+	
+	
+	get-sort-decl : iter( x ) -> <id>
+  	where 
+  		{| is-inside-iter-block, lhs-sort:
+  				rules( is-inside-iter-block :_)
+  				;<find-sorts>x
+  				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
+  		|}
+  		//;if is-inside-iter-block  then
+  		//	ret-string := $[ListOf[inner-sorts-tostring]]
+  		//else
+  			;ret-string := $[List([<string-replace(|"(", "Of");string-replace(|")", "")>inner-sorts-tostring])]
+  		//end 	
+  		;rules ( lhs-sort :+ _ -> ret-string) 
+			  
+ 
+  get-sort-decl : sort(x) -> <id>
+  	with 
+  		rules( lhs-sort :+ _ -> x)
+	
+	get-sort-decl : opt(sort(x)) -> opt(sort(x))
+  	with rules( lhs-sort :+ _ -> $[Option([x])])
+	
+	get-sort-decl : iter-sep(operand1, operand2) -> <id>
+		with {|IsInsideIteratorWithSeperator,lhs-sort:
+			 					rules(IsInsideIteratorWithSeperator: _)
+			 					;<find-sorts>operand1
+		 					  ;<find-sorts>operand2
+		 					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>    
+				  |}
+				 // ;if is-inside-iter-block <+  is-inside-seq-block then
+  			 //			ret-string := $[ListOf[inner-sorts-tostring]]
+  				//else
+  				;		ret-string := $[List([<string-replace(|"(", "of");string-replace(|")", "")>inner-sorts-tostring])]
+  				//end 	
+  				;rules ( lhs-sort :+ _ -> ret-string)	 
+
+rules      
+	declare-sdf-globals-top =
+    	alltd(declare-sdf-globals)
+	
+	
+	declare-sdf-globals:
+		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
+		with{|
+					IsInsideLexicalSyntaxBlock:
+						rules (IsInsideLexicalSyntaxBlock :_)
+					 ;<declare-sdf-globals-top> lex-defintions
+				|}  
+				
+	declare-sdf-globals:
 		unparameterized(x) -> unparameterized(x)
     where
       <open-import(
         resolve-import
       , parse-spoofaxlang-file
-      , declare-globals-top
+      , declare-sdf-globals-top
       )> x
     <+
       rules(IsImportFailed: _)
 
-	declare-globals:
+	declare-sdf-globals:
 		parameterized(x, y) -> parameterized(x, y)
   	where
-			<declare-globals> unparameterized(x);
-  		<alltd(declare-simple-global)> y
+			<declare-sdf-globals> unparameterized(x);
+  		<alltd(declare-sdf-simple-global)> y
   
 	resolve-import =
     	// TODO: better import handling
@@ -50,48 +220,54 @@ rules
     	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
   
  
-	declare-globals:
-		prod @ prod(lhs, sort, _) -> <id>
-  		where
-      		!sort;
-      		try(?cf(<id>) + ?lex(<id>));
-      		repeat(?label(_, <id>));
-      		(?sort(x) + ?parameterized-sort(x, _))
-    	with
-      		<Declaration> x
-    	<+
-      		file := <CurrentFile>;
-      	rules(
-        	Declaration: x -> prod
-        	DeclarationFile: x -> file
-      		)
-			with
-      		<alltd(declare-use)> lhs
+	declare-sdf-globals:
+    prod @ prod(lhs, sort, _) -> <id>
+    where 
+    		<debug-sdf>$[Processing following production[<pp-aterm>prod]]
+    where
+      !sort;
+      try(?cf(<id>) + ?lex(<id>));
+      repeat(?label(_, <id>));
+      (?sort(x) + ?parameterized-sort(x, _))
+  	where 
+  		 <store-operation-declaration>prod
+    with
+      <Declaration> x
+    <+
+      file := <CurrentFile>
   
-	declare-globals:
+      ;rules(
+      	
+        Declaration: x -> prod
+        DeclarationFile: x -> file
+      )
+    with
+      <alltd(declare-sdf-use)> lhs
+  
+	declare-sdf-globals:
     	'sorts(_) -> <id>
 	with
-    	 alltd(declare-use)
+    	 alltd(declare-sdf-use)
   
-  	declare-globals:
+	declare-sdf-globals:
 	    	context-free-start-symbols(_) -> <id>
 	with
-	      	alltd(declare-use)
+    	alltd(declare-sdf-use)
 	  
-	  declare-globals:
+  declare-sdf-globals:
 	    lexical-start-symbols(_) -> <id>
 	    with
-	      alltd(declare-use)
+	      alltd(declare-sdf-use)
 	  
-	  declare-globals:
+	declare-sdf-globals:
 	    kernel-start-symbols(_) -> <id>
 	    with
-	      alltd(declare-use)
+	      alltd(declare-sdf-use)
 	  
 	  /**
 	   *Creating Declaration Dynamic Rule for all the Sorts
 	   **/
-	  declare-simple-global:
+	  declare-sdf-simple-global:
 	    sort(x) -> <id>
 		with
 	      rules(Declaration: x -> x)
@@ -100,12 +276,12 @@ rules
 	   *Creating Usage Dynamic Rule for all the sorts 
 	   **/
 	  
-	  declare-use:
+	  declare-sdf-use:
 	    sort(x) -> <id>
 	    with
 	      rules(Usage: x -> x)
 	  
-	  declare-use:
+	  declare-sdf-use:
 	    parameterized-sort(x, y) -> <id>
 	    where
 	      if !y => [sort(y')]; <is-string> x; <is-string> y' then
