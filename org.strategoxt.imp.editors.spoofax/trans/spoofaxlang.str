@@ -68,7 +68,29 @@ rules
     with
       filename := <guarantee-extension(|"sdf")> path;
       result   := <pp-sdf-string'> <to-sdf> (path, selected)
-
+	
+	generate-signatures-from-SDF:
+		(selected, position, ast, path, project-path) -> None()
+		where //verify that there is no errors exists. If exist, stop further signature generation process 
+			 <debug>$[Compiling SDF Definition.]
+			 ;<editor-analyze> (ast, path, project-path)
+			 ;if not(get-sdf-errors) <+ ([] := <flatten-list><get-sdf-errors>) then 
+					source-sdf		:= <remove-extension><base-filename> path
+					//;genpath		:= <remove-extension> path
+					//;<file-exists ; filemode ; isdir <+ mkdir> genpath
+					;genpath := <concat-strings>[ project-path , "/" , <dirname>path]
+					;<chdir>genpath
+					;<debug>$[Generating Signatures.]	   
+					;generated-signature-module-name := <concat-strings>[source-sdf, "-signature"] 
+					;generated-signatures :=  <get-signature-contents(|generated-signature-module-name)><get-all-signatures-as-string> 
+					;gen-file-name := $[[generated-signature-module-name].str]  
+					;<save-to-file>( gen-file-name, generated-signatures) 
+				else
+					errors := <get-sdf-errors>
+	        ;<debug(!"Compiling failed for following SDF definition: ")> <base-filename> path
+    			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
+				end	 
+				
   pp-sdf-string' =
     sdf-desugar;
     parenthesize-Sdf2;
