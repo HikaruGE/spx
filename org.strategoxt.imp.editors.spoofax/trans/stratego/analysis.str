@@ -453,7 +453,8 @@ rules // Declarations inside definition bodies
     VarDec(x, t) -> VarDec(x', t)
     with
       x' := x{<declare-definition>}
-
+      
+	//TODO : Check why this rule is failing for var(x)
   declare-var:
     Var(x) -> Var(x')
     with

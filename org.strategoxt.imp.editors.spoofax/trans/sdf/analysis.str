@@ -87,7 +87,7 @@ rules
 			  				if IsInsideLexicalSyntaxBlock then 
   								 rules ( lhs-sort :+ _ -> $[String] )
 								else
-									<find-sorts>lhs
+									<find-sorts>lhs //TODO : consider ignorig :ID->ID-Prime operation decl 
 								end
 			  				;lhs-operands-types := <reverse><bagof-lhs-sort>
 			  				;operation-name := ""
@@ -99,13 +99,18 @@ rules
 			?[hd|tl]
 			;(expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
 			;(
-			 			operation-name := expected-op-name 
+			 			 operation-name := expected-op-name 
 						;opernand-sorts* := expected-op-sorts*
 						;resultant-sort := ex-resultant-sort
 				  <+
 						<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
 				)	  
 	
+	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort  
+		where 
+			  alt-srt-lst := [alt-sort]
+			  ;create-opname2opdecl-mapping(|operation-name, alt-srt-lst, resultant-sort , production)
+			  
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
 								available-opdecl* := <bagof-Get-Operation-Declaration>operation-name  
 								;if (
@@ -125,48 +130,46 @@ rules
   find-sorts 
   	= alltd(get-sort-decl)
 	
+	get-sort-decl:a@alt(frstSort , restSort*) -> a
+		where
+			{| lhs-sort:
+						<find-sorts>frstSort
+					;	<find-sorts>restSort*
+					;	inner-sort* := <bagof-lhs-sort;reverse>
+					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
+			|}
+			; <map(create-opname2opdecl-mapping(|"", intermediate-resultant-sort-type, "[N/A]" ))>inner-sort*	
+			; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
+	
 	get-sort-decl : seq( frst , rest*)-> seq( frst , rest*)
 		where
-			{| lhs-sort,is-inside-seq-block:
-					rules( is-inside-seq-block:_ )
-					;<find-sorts>frst
-					;<find-sorts>rest*
-					;inner-sort* := <bagof-lhs-sort;reverse>
-					;intermediate-resultant-sort-type :=<string-replace(|"(", "Of");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
+			{| lhs-sort:
+						<find-sorts>frst
+					;	<find-sorts>rest*
+					;	inner-sort* := <bagof-lhs-sort;reverse>
+					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
+					  
 			|}
 			; create-opname2opdecl-mapping(|"", inner-sort*, intermediate-resultant-sort-type, "[N/A]" ) 	
 		 	; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
 	
-	
-  
-  
-  get-sort-decl : iter-star ( x ) -> <id>
+	get-sort-decl : i@iter-star ( x ) -> i
   	where 
-  		{| is-inside-iter-block, lhs-sort:
-  				rules( is-inside-iter-block :_)
-  				;<find-sorts>x
+  		{| 	lhs-sort:
+  					<find-sorts>x
   				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
   		|}
-  		//;if is-inside-iter-block   then 
-  			//ret-string := $[ListPlusOf[inner-sorts-tostring]]
-  		//else
-  			;ret-string := $[List([<string-replace(|"(", "Of");string-replace(|")", "")> inner-sorts-tostring])]
-  		//end 	
+  		;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")> inner-sorts-tostring])]
   		;rules ( lhs-sort :+ _ -> ret-string)
 	
 	
-	get-sort-decl : iter( x ) -> <id>
+	get-sort-decl : i@iter( x ) -> i
   	where 
-  		{| is-inside-iter-block, lhs-sort:
-  				rules( is-inside-iter-block :_)
-  				;<find-sorts>x
+  		{| lhs-sort:
+  					<find-sorts>x
   				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
   		|}
-  		//;if is-inside-iter-block  then
-  		//	ret-string := $[ListOf[inner-sorts-tostring]]
-  		//else
-  			;ret-string := $[List([<string-replace(|"(", "Of");string-replace(|")", "")>inner-sorts-tostring])]
-  		//end 	
+  		;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
   		;rules ( lhs-sort :+ _ -> ret-string) 
 			  
  
@@ -177,20 +180,23 @@ rules
 	get-sort-decl : opt(sort(x)) -> opt(sort(x))
   	with rules( lhs-sort :+ _ -> $[Option([x])])
 	
-	get-sort-decl : iter-sep(operand1, operand2) -> <id>
-		with {|IsInsideIteratorWithSeperator,lhs-sort:
-			 					rules(IsInsideIteratorWithSeperator: _)
-			 					;<find-sorts>operand1
+	get-sort-decl : i@iter-star-sep(operand1, operand2) -> i
+	 		with {|lhs-sort:
+			 					 <find-sorts>operand1
 		 					  ;<find-sorts>operand2
 		 					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>    
 				  |}
-				 // ;if is-inside-iter-block <+  is-inside-seq-block then
-  			 //			ret-string := $[ListOf[inner-sorts-tostring]]
-  				//else
-  				;		ret-string := $[List([<string-replace(|"(", "of");string-replace(|")", "")>inner-sorts-tostring])]
-  				//end 	
+				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
   				;rules ( lhs-sort :+ _ -> ret-string)	 
-
+  				 
+	get-sort-decl: i@iter-sep(operand1, operand2) -> i
+		with {|lhs-sort:
+			 					 <find-sorts>operand1
+		 					  ;<find-sorts>operand2
+		 					  ;inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>    
+				  |}
+				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
+  				;rules ( lhs-sort :+ _ -> ret-string)	 
 rules      
 	declare-sdf-globals-top =
     	alltd(declare-sdf-globals)
