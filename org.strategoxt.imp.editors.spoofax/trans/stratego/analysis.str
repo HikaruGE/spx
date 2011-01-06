@@ -3,21 +3,19 @@ module stratego/analysis
 imports
 	analysis
 	libstratego-lib
- 	libstrc
+ 	libstrc						
  	libstratego-gpp
 	libstratego-aterm
  	stratego/sourcedir
 	stratego/desugar
 	lib/editor-common.generated
-
+	common
 strategies 
 	enable-stratego-debugging  = rules(DebugStr: x -> x)
 	disable-stratego-debugging = rules(DebugStr:- _ )
 	debug-str = not(DebugStr) <+ debug
 	
 rules // Projections and lookup
-	pp-aterm = pp-aterm-box ; box2text-string(|100)
-	
 	init-str-analysis:
 		(ast, path, project-path) -> ast'
 		with

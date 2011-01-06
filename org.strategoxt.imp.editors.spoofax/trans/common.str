@@ -1,0 +1,22 @@
+module common
+
+imports 
+	libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  libstratego-gpp
+  libstratego-aterm
+  libstrc
+  lib/editor-common.generated
+  lib/sdf-desugar
+  lib/sdf-parenthesize
+
+strategies 
+	pp-aterm = pp-aterm-box ; box2text-string(|100)
+	
+  pp-sdf-string' =
+    sdf-desugar;
+    parenthesize-Sdf2;
+  	sdf-ppfix;
+    ast2box(|[<pp-table-sdf>]);
+    box2text-string(|80)

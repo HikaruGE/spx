@@ -2,11 +2,8 @@ module sdf/analysis
 
 imports
   analysis
-  libstratego-lib
+  common
   libstratego-sdf
-  libstratego-sglr
-  libstratego-gpp
-	libstratego-aterm
   lib/editor-common.generated
 	include/SpoofaxLang
 
@@ -27,10 +24,6 @@ rules
     where  
   		ast' := <declare-sdf-globals-top> ast
   		//;disable-sdf-debugging
-
-strategies 
-	pp-aterm = pp-aterm-box ; box2text-string(|100)
-	
 strategies
 	is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter

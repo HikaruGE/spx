@@ -1,12 +1,13 @@
 module stratego/check
 
 imports
+	 common
+	 libstratego-lib
+ 	 libstrc
 	 stratego/analysis
 	 Sdf/analysis
 	 include/SpoofaxLang
-	 libstratego-lib
- 	 libstrc
-   lib/editor-common.generated
+	 lib/editor-common.generated
 
 rules 
 	/*internal*/ require(s) = not(s)
@@ -38,8 +39,9 @@ rules // Constraints
   global-constraint-error:
     CallT(SVar(x), s*, t*) -> (x, $[Strategy or rule '[x]' not defined])
     where
-      require(is-declared)
-
+      //require(is-declared)
+			require(is-declared <+ is-declared(|<length> t*))
+			
   global-constraint-error:
     Op(x, t*) -> (x, $[Constructor [x]/[<length> t*] not declared])
     where
@@ -49,7 +51,7 @@ rules // Constraints
     Var(x) -> (x, $[Variable '[x]' is not declared])
     where
       require(is-declared)
-
+      
   global-constraint-error:
     Import(x) -> (x, $[Unable to import '[x]'])
     where

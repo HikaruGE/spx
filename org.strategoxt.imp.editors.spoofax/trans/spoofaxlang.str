@@ -8,19 +8,17 @@ imports
   libstratego-sdf
   libstrc
   include/SpoofaxLang
-  lib/editor-common.generated
-  lib/sdf-desugar
-  lib/sdf-parenthesize
   stratego/main
   stratego/to-stratego
-  
+  common
   sdf/main
   sdf/to-sdf
   sdf/analysis 
   sdf/check
   esv/to-esv
   analysis
-
+	lib/editor-common.generated
+	
 signature constructors
   Module : ID * List(Import) * List(Section) -> Module
 
@@ -38,7 +36,7 @@ rules
      	(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(ast' , path, project-path);
      	<debug(!"SDF Errors: ")>error-sdf*;
      	<debug(!"Str Errors: ")>error-str*;
-     	<debug(!"Errors: ")><flatten-list>[error-sdf*, error-str*]  
+     	<debug(!"Errors: ")><flatten-list; pp-aterm>[error-sdf*, error-str*]  
  
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
@@ -91,12 +89,7 @@ rules
     			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
 				end	 
 				
-  pp-sdf-string' =
-    sdf-desugar;
-    parenthesize-Sdf2;
-  	sdf-ppfix;
-    ast2box(|[<pp-table-sdf>]);
-    box2text-string(|80)
+
 
   generate-str:
     (selected, position, ast, path, project-path) -> (filename, result)
