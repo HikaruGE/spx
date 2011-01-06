@@ -27,21 +27,19 @@ rules
     where  
   		ast' := <declare-sdf-globals-top> ast
   		//;disable-sdf-debugging
-		
-rules
-	/**
-   * Tests if something is a non-terminal in terms of the AST produced.
-   */
-  is-non-terminal =
+
+strategies 
+	pp-aterm = pp-aterm-box ; box2text-string(|100)
+	
+strategies
+	is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter
   
   is-iter =
     ?iter(_) + ?iter-star(_) + ?iter-sep(_, _) + ?iter-star-sep(_, _)
-	
-	pp-aterm = pp-aterm-box ; box2text-string(|100)
-	 
-  //TODO : give the rule more meaningful name 	
-  get-all-signatures-as-string 
+			
+rules
+	get-all-signatures-as-string 
   		= <mapconcat(bagof-Get-Operation-Declaration);reverse;operation-decl-to-string><all-keys-Get-Operation-Singature>
   
   operation-decl-to-string : [] -> $[]
@@ -73,9 +71,12 @@ rules
   	 
   get-opration-name = alltd(find-operation-name)
   
-  find-operation-name : fun(quoted( quoted-operation-name) ) -> fun(quoted( quoted-operation-name) )
-  	where <debug-sdf> $[operation name :  [<un-double-quote>quoted-operation-name]]
-  	where rules (get-op-name: _ -> <un-double-quote>quoted-operation-name )
+  find-operation-name : f@fun(quoted( quoted-operation-name) ) -> f
+  	with
+  		opname := <un-double-quote>quoted-operation-name  
+			;rules (get-op-name: _ -> opname)
+  	where 
+  		<debug-sdf> $[Operation Name :  [opname]]
 	
 	store-operation-declaration
   	= ?p@prod(lhs , sort(rhs-sort-name), attrs(attribute-list))
@@ -99,17 +100,35 @@ rules
 			  				;operation-name := ""
 			  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
 			 |}
-			  
 	
-	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) = 
-							rules
-  					 		(
-  					 				Get-Operation-Singature:+ operation-name -> (operation-name , <length>opernand-sorts*)
-  					 				Get-Operation-Declaration :+ operation-name  -> (operation-name , opernand-sorts* , resultant-sort)
-  					 		)    
-  					 		; <debug-sdf> $[Stored operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
-  					 		; <debug-sdf> $[Stored operation signature: [<pp-aterm> operation-name] -> [<pp-aterm> (operation-name , <length>opernand-sorts*)].]  
-  					 		 
+	
+	assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)= 
+			?[hd|tl]
+			;(expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
+			;(
+			 			operation-name := expected-op-name 
+						;opernand-sorts* := expected-op-sorts*
+						;resultant-sort := ex-resultant-sort
+				  <+
+						<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
+				)	  
+	
+	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
+								available-opdecl* := <bagof-Get-Operation-Declaration>operation-name  
+								;if (
+								 		(!available-opdecl* => []) 
+										<+ not (<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*)
+								) then 
+									 	rules
+		  					 		(
+		  					 				Get-Operation-Singature:+ operation-name -> (operation-name , <length>opernand-sorts*)
+		  					 				Get-Operation-Declaration :+ operation-name  -> (operation-name , opernand-sorts* , resultant-sort)
+		  					 		)    
+		  					 		; <debug-sdf> $[Stored operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
+		  					 		; <debug-sdf> $[Stored operation signature: [<pp-aterm> operation-name] -> [<pp-aterm> (operation-name , <length>opernand-sorts*)].]  
+					 		 	else 
+					 		 			<debug-sdf> $[There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
+		  					end 
   find-sorts 
   	= alltd(get-sort-decl)
 	
@@ -222,8 +241,6 @@ rules
  
 	declare-sdf-globals:
     prod @ prod(lhs, sort, _) -> <id>
-    where 
-    		<debug-sdf>$[Processing following production[<pp-aterm>prod]]
     where
       !sort;
       try(?cf(<id>) + ?lex(<id>));

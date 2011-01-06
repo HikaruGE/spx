@@ -9,13 +9,12 @@ imports
    lib/editor-common.generated
 
 rules 
-		  /*internal*/ require(s) =
-    												not(s)
+	/*internal*/ require(s) = not(s)
 	
 	//TODO : Use new Is-declared in other cases where needed. 		
   is-declared( |actual-no-of-arguments) = 	one(
     		(?opName + ?SVar(opName))
-    		;<debug-str>$[operation name : [<pp-aterm>opName] , [<bagof-Get-Operation-Singature;pp-aterm> opName]]
+    		;<debug-str>$[operation name : [<pp-aterm>opName] . Associated Signatures Found :  [<bagof-Get-Operation-Singature;pp-aterm> opName]]
     		;candidate-op-signatures := <bagof-Get-Operation-Singature> opName
     		;<assert-eq-opname-arity(|opName, actual-no-of-arguments)>candidate-op-signatures
       )
@@ -25,7 +24,7 @@ rules
 	
 	assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)= 
 			?[hd|tl]
-			; <debug-str>$[assert eq opname and arity : [<pp-aterm><id>]] 
+			; <debug-str>$[assert opname and arity : [<pp-aterm><id>]] 
 			;(
 			 			(expected-op-name , expected-no-of-arguments) := hd 
 						;	actual-opname := expected-op-name 
