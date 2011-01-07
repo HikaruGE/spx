@@ -20,7 +20,7 @@ rules
       	rules(
         	IsImported  :  current-file
         )
-        ;enable-sdf-debugging
+        //;enable-sdf-debugging
     where  
   		ast' := <declare-sdf-globals-top> ast
   		//;disable-sdf-debugging
