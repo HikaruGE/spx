@@ -13,6 +13,7 @@ imports
   common
   sdf/main
   sdf/to-sdf
+  sdf/to-signature
   sdf/analysis 
   sdf/check
   esv/to-esv
