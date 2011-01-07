@@ -136,8 +136,8 @@ rules // Declare globals
 
   declare-stratego-globals-top =
     if not(NoAnalysis) then
-			with(<declare-str-globals>Import("libstratego-lib"))
-      ;alltd(declare-str-globals)
+			//with(<declare-str-globals>Import("libstratego-lib"))
+      alltd(declare-str-globals)
     end
 
   declare-str-globals:

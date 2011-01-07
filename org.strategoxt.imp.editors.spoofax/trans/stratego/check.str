@@ -25,7 +25,6 @@ rules
 	
 	assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)= 
 			?[hd|tl]
-			; <debug-str>$[assert opname and arity : [<pp-aterm><id>]] 
 			;(
 			 			(expected-op-name , expected-no-of-arguments) := hd 
 						;	actual-opname := expected-op-name 
