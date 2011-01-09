@@ -3,7 +3,7 @@
 module SpoofaxLang
 
 imports
-  Common
+  SPXCommon
   Concepts
   EditorServiceMix[ESV]
   Stratego-AttributesMix[STR] [
