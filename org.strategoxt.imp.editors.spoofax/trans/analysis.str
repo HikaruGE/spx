@@ -9,7 +9,7 @@ strategies
 	analyze-ast:
   	(ast, path, project-path) -> ast''' 
   where 
-		<debug(!"2. analysis spx . current-file:")> [$[[project-path]/[path]] , <base-filename> path]
+		<debug> $[Spoofax-lang|Starting analysis of the following SPX file:$[$[<base-filename> path]$]$]
   with 
   	rules(
   		CurrentDir  := <dirname> $[[project-path]/[path]]

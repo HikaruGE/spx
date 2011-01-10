@@ -13,8 +13,6 @@ imports
 rules
 	
 	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
-    where 
-    		<debug>$[4. spoofax-lang>SDF> collecting errors & others... >> ]
     with
       // We only collect-om since we don't want inner warning dupes
       error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;

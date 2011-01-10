@@ -17,14 +17,13 @@ imports
   
 rules // editor analysis
 	
-	editor-analyze-esv: (ast, path, project-path) -> (error*, warning*, [])
-    where 
-    	<debug>$[5. spoofax-lang>ESV> collecting errors & others.]
+	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning*, note*)
     with
       <chdir> project-path
       ;<record-all-sdfs> "."
-      ;error*   := <collect-all(constraint-esv-error, conc)> ast
+      ;error-esv*   := <collect-all(constraint-esv-error, conc)> ast
       ;warning* := []
+      ;note* := []  
  
  rules // rules related to editor complete 
 	
@@ -92,7 +91,7 @@ rules // editor analysis
       (?sort(x) + ?parameterized-sort(x, _))
     with
       rules(
-        SortDeclaration   :  x -> x
+        SortDeclaration   :+  x -> x
         SortProductionLHS :+ x -> lhs
       )
  
