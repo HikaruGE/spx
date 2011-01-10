@@ -7,24 +7,29 @@ imports
   libstratego-sglr
   libstratego-sdf
   libstrc
+imports
+  common
+  analysis
   include/SpoofaxLang
+  lib/editor-common.generated
+imports
   stratego/main
   stratego/to-stratego
-  common
+imports  
   sdf/main
   sdf/to-sdf
   sdf/to-signature
   sdf/analysis 
   sdf/check
+imports
   esv/to-esv
-  analysis
-	lib/editor-common.generated
-	
+  esv/main
+
+//TODO : does the following signature is needed ? 
 signature constructors
   Module : ID * List(Import) * List(Section) -> Module
 
 rules
-
  	editor-analyze:
     (ast, path, project-path) -> (<flatten-list>[error-sdf*, error-str*], warning-sdf*, notes-sdf*)
     where debug(!"1. spoofax-lang> inside editor-analysis >> ")
@@ -33,11 +38,11 @@ rules
       ast' := <analyze-ast> (ast, path, project-path) ;
      	debug(!"3. spoofax-lang> Analysis is done. ");
      	(error-sdf* , warning-sdf*, notes-sdf*):= <editor-analyze-sdf>(ast' , path, project-path);
-     	//(error-str* , warning-str*, notes-str*):= ([], [], []);
      	(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(ast' , path, project-path);
+     	(error-esv* , warning-esv*, notes-esv*):= <editor-analyze-str>(ast' , path, project-path);
      	<debug(!"SDF Errors: ")>error-sdf*;
      	<debug(!"Str Errors: ")>error-str*;
-     	<debug(!"Errors: ")><flatten-list; pp-aterm>[error-sdf*, error-str*]  
+     	<debug(!"Errors: ")><flatten-list; pp-aterm>[error-sdf*, error-str* , error-esv*]  
  
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
@@ -62,12 +67,15 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := selected // we just return the input term
 
-  generate-sdf:
+rules //Generate SDF Defnition from SPX
+	
+  generate-sdf: 
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"sdf")> path;
       result   := <pp-sdf-string'> <to-sdf> (path, selected)
-	
+
+rules	 // Generate Signature for SDF Definition
 	generate-signatures-from-SDF:
 		(selected, position, ast, path, project-path) -> None()
 		where //verify that there is no errors exists. If exist, stop further signature generation process 
@@ -91,20 +99,21 @@ rules
 				end	 
 				
 
-
+rules //Generate Stratego Definition from SPX
   generate-str:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"str")> path;
       result   := <pp-stratego-string> <parenthesize-Stratego> <to-str> (path, selected)
-
+      
+rules //Generate ESV Definition from SPX
   generate-esv:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|".packed.esv")> path;
       result   := <to-esv> (path, selected)
   
-  
+rules   
   find-spoofax-module-name:
     (path, def) -> name
     with
