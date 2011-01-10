@@ -5,7 +5,7 @@ imports
 	 libstratego-lib
  	 libstrc
 	 stratego/analysis
-	 Sdf/analysis
+	 sdf/analysis
 	 include/SpoofaxLang
 	 lib/editor-common.generated
 
