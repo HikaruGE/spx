@@ -1,17 +1,11 @@
 module sdf/to-signature
 
-imports
-  libstratego-lib
-  libstratego-gpp
-  libstratego-sglr
-  libstratego-sdf
-  include/SpoofaxLang
-  lib/editor-common.generated
-  lib/sdf-desugar
-  lib/sdf-parenthesize
-  sdf/analysis
-  spoofaxlang
-  common
+imports 
+	common
+imports 
+	sdf/map-signatures
+	sdf/analysis
+	  
 rules 
 	//generate signature 
 	get-signature-contents(|moduleName): signatures-string ->
@@ -45,14 +39,16 @@ signature
   		= <mapconcat(bagof-Get-Operation-Declaration);operation-decl-to-string><all-keys-Get-Operation-Singature>
   
   operation-decl-to-string : [] -> $[]
-  operation-decl-to-string : [first-op-decl | rest-op-decl* ] 
+  operation-decl-to-string : 
+  	[first-op-decl | rest-op-decl* ] 
   		-> $[[<opname-to-string>opname]: [<lhs-operands-to-string>operands*] -> [resultant-sort]
   			[rest-op-decl-string]]		
   		where 
   			(opname, operands*, resultant-sort) := first-op-decl
   			;rest-op-decl-string := <operation-decl-to-string> rest-op-decl* 
  	
- 	opname-to-string : opname -> opname-string
+ 	opname-to-string : 
+ 		opname -> opname-string
  		where 
  				if (!opname => "") then 
  						opname-string := $[]
@@ -60,9 +56,12 @@ signature
 					 opname-string  := opname
 				end
 				
-  lhs-operands-to-string : [] -> $[]
-  lhs-operands-to-string : [last] -> $[[last]] 
-  lhs-operands-to-string : [hd-operand|rest*] -> $[[hd-operand-string] * [rest-operand-string]]
+  lhs-operands-to-string : 
+		[] -> $[]
+  lhs-operands-to-string : 
+  	[last] -> $[[last]] 
+  lhs-operands-to-string : 
+  		[hd-operand|rest*] -> $[[hd-operand-string] * [rest-operand-string]]
   		where
   				not (![] => rest*) 
   		where 

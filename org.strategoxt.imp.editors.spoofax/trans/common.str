@@ -20,3 +20,9 @@ strategies
   	sdf-ppfix;
     ast2box(|[<pp-table-sdf>]);
     box2text-string(|80)
+  
+strategies // Dubug switches  
+	enable-sdf-debugging  = rules(DebugSDF: x -> x)
+	disable-sdf-debugging = rules(DebugSDF:- _ )
+	debug-sdf = not(DebugSDF) <+ debug
+ 

@@ -1,17 +1,17 @@
 module sdf/analysis
 
 imports
-  analysis
-  common
   libstratego-sdf
   lib/editor-common.generated
 	include/SpoofaxLang
+imports
+	  analysis
+	  common
+imports  
+		sdf/map-signatures
 
-strategies 
-	enable-sdf-debugging  = rules(DebugSDF: x -> x)
-	disable-sdf-debugging = rules(DebugSDF:- _ )
-	debug-sdf = not(DebugSDF) <+ debug
-	
+
+			
 rules
 	init-sdf-analysis:
 		(ast, path, project-path) -> ast'
@@ -24,6 +24,7 @@ rules
     where  
   		ast' := <declare-sdf-globals-top> ast
   		//;disable-sdf-debugging
+
 strategies
 	is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter
@@ -31,146 +32,6 @@ strategies
   is-iter =
     ?iter(_) + ?iter-star(_) + ?iter-sep(_, _) + ?iter-star-sep(_, _)
 			
-
-rules  
-  
-  //todo : refactor common functionallity  to separate strategy
-  	 
-  get-opration-name = alltd(find-operation-name)
-  
-  find-operation-name : f@fun(quoted( quoted-operation-name) ) -> f
-  	with
-  		opname := <un-double-quote>quoted-operation-name  
-			;rules (get-op-name: _ -> opname)
-  	where 
-  		<debug-sdf> $[Operation Name :  [opname]]
-	
-	store-operation-declaration
-  	= ?p@prod(lhs , sort(rhs-sort-name), attrs(attribute-list))
-  		;{|lhs-sort, get-op-name:
-  					<find-sorts>lhs
-  					;<get-opration-name>attribute-list  
-  					;operation-name := <get-op-name>
-  					;lhs-operands-types := <reverse><bagof-lhs-sort>  
-  					;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p) 
-  		  |}
-			  
-	store-operation-declaration 
-  	= ?p@prod(lhs , sort( rhs-sort-name), no-attrs())
-  		; {|lhs-sort :
-			  				if IsInsideLexicalSyntaxBlock then 
-  								 rules ( lhs-sort :+ _ -> $[String] )
-								else
-									<find-sorts>lhs //TODO : consider ignorig :ID->ID-Prime operation decl 
-								end
-			  				;lhs-operands-types := <reverse><bagof-lhs-sort>
-			  				;operation-name := ""
-			  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
-			 |}
-	
-	
-	assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)= 
-			?[hd|tl]
-			;(expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
-			;(
-			 			 operation-name := expected-op-name 
-						;opernand-sorts* := expected-op-sorts*
-						;resultant-sort := ex-resultant-sort
-				  <+
-						<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
-				)	  
-	
-	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort  
-		where 
-			  alt-srt-lst := [alt-sort]
-			  ;create-opname2opdecl-mapping(|operation-name, alt-srt-lst, resultant-sort , production)
-			  
-	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
-		available-opdecl* := <bagof-Get-Operation-Declaration>operation-name  
-		;if((!available-opdecl* => []) 
-				<+ not (<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*)
-			)then 
-					rules
-				 		(
-				 				Get-Operation-Singature:+ operation-name -> (operation-name , <length>opernand-sorts*)
-				 				Get-Operation-Declaration :+ operation-name  -> (operation-name , opernand-sorts* , resultant-sort)
-				 		)    
-				 		; <debug-sdf> $[Stored operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
-				 		; <debug-sdf> $[Stored operation signature: [<pp-aterm> operation-name] -> [<pp-aterm> (operation-name , <length>opernand-sorts*)].]  
- 		 	else 
- 		 			<debug-sdf> $[There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
-			end
-			 
-  find-sorts 
-  	= alltd(get-sort-decl)
-	
-	get-sort-decl:a@alt(frstSort , restSort*) -> a
-		where
-			{| lhs-sort:
-						<find-sorts>frstSort
-					;	<find-sorts>restSort*
-					;	inner-sort* := <bagof-lhs-sort;reverse>
-					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
-			|}
-			; <map(create-opname2opdecl-mapping(|"", intermediate-resultant-sort-type, "[N/A]" ))>inner-sort*	
-			; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
-	
-	get-sort-decl : seq( frst , rest*)-> seq( frst , rest*)
-		where
-			{| lhs-sort:
-						<find-sorts>frst
-					;	<find-sorts>rest*
-					;	inner-sort* := <bagof-lhs-sort;reverse>
-					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort* 
-					  
-			|}
-			; create-opname2opdecl-mapping(|"", inner-sort*, intermediate-resultant-sort-type, "[N/A]" ) 	
-		 	; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
-	
-	get-sort-decl : i@iter-star ( x ) -> i
-  	where 
-  		{| 	lhs-sort:
-  					<find-sorts>x
-  				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
-  		|}
-  		;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")> inner-sorts-tostring])]
-  		;rules ( lhs-sort :+ _ -> ret-string)
-	
-	
-	get-sort-decl : i@iter( x ) -> i
-  	where 
-  		{| lhs-sort:
-  					<find-sorts>x
-  				; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
-  		|}
-  		;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
-  		;rules ( lhs-sort :+ _ -> ret-string) 
-			  
- 
-  get-sort-decl : sort(x) -> <id>
-  	with 
-  		rules( lhs-sort :+ _ -> x)
-	
-	get-sort-decl : opt(sort(x)) -> opt(sort(x))
-  	with rules( lhs-sort :+ _ -> $[Option([x])])
-	
-	get-sort-decl : i@iter-star-sep(operand1, operand2) -> i
-	 		with {|lhs-sort:
-			 					 <find-sorts>operand1
-		 					  ;<find-sorts>operand2
-		 					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>    
-				  |}
-				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
-  				;rules ( lhs-sort :+ _ -> ret-string)	 
-  				 
-	get-sort-decl: i@iter-sep(operand1, operand2) -> i
-		with {|lhs-sort:
-			 					 <find-sorts>operand1
-		 					  ;<find-sorts>operand2
-		 					  ;inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>    
-				  |}
-				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
-  				;rules ( lhs-sort :+ _ -> ret-string)	 
 rules      
 	declare-sdf-globals-top =
     	alltd(declare-sdf-globals)
@@ -225,11 +86,13 @@ rules
       <Declaration> x
     <+
       file := <CurrentFile>
-  
       ;rules(
-      	
-        Declaration: x -> prod
+       	Declaration: x -> prod
         DeclarationFile: x -> file
+        
+        // Added following two dynamic rules for the ESV Def. analysis
+        SortDeclaration:  x -> x
+       	SortProductionLHS :+ x -> lhs
       )
     with
       <alltd(declare-sdf-use)> lhs

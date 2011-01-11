@@ -6,6 +6,7 @@ imports
   esv/check
  
 imports
+	common
 	lib/editor-common.generated
 	include/SpoofaxLang
 	
@@ -17,13 +18,15 @@ imports
   
 rules // editor analysis
 	
-	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning*, note*)
+	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning-esv*, note-esv*)
     with
-      <chdir> project-path
-      ;<record-all-sdfs> "."
-      ;error-esv*   := <collect-all(constraint-esv-error, conc)> ast
-      ;warning* := []
-      ;note* := []  
+    	//Already SDF productions are recorded during previous analysis phase 
+      //<chdir> project-path
+      //;<record-all-sdfs> "."
+      //; <debug>$[all keys : [<pp-aterm> <mapconcat(bagof-SortDeclaration)><all-keys-SortDeclaration>]] 
+      error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+      ;warning-esv* := []
+      ;note-esv* := []  
  
  rules // rules related to editor complete 
 	
@@ -72,9 +75,11 @@ rules // editor analysis
   
   record-sdf:
     filename -> filename
+    
     where
       <has-extension(|"sdf")> filename;
-      <open-import(abspath, parse-sdf-module-file, topdown(try(record-prod)))> filename
+      <debug> $[opening file : [filename]]
+      ;<open-import(abspath, parse-sdf-module-file, topdown(try(record-prod)))> filename
   
   record-sdf:
     filename -> filename
@@ -91,7 +96,7 @@ rules // editor analysis
       (?sort(x) + ?parameterized-sort(x, _))
     with
       rules(
-        SortDeclaration   :+  x -> x
+        SortDeclaration   :  x -> x
         SortProductionLHS :+ x -> lhs
       )
  
