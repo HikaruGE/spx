@@ -41,10 +41,15 @@ signature
   operation-decl-to-string : [] -> $[]
   operation-decl-to-string : 
   	[first-op-decl | rest-op-decl* ] 
-  		-> $[[<opname-to-string>opname]: [<lhs-operands-to-string>operands*] -> [resultant-sort]
-  			[rest-op-decl-string]]		
+  		-> $[[current-op-decl-string] 
+  			[rest-op-decl-string]]
   		where 
   			(opname, operands*, resultant-sort) := first-op-decl
+  			;if (!operands* => []) then
+  			 	current-op-decl-string := $[[<opname-to-string>opname]: [resultant-sort]]
+  			else
+  				current-op-decl-string := $[[<opname-to-string>opname]: [<lhs-operands-to-string>operands*] -> [resultant-sort]]
+  			end		 
   			;rest-op-decl-string := <operation-decl-to-string> rest-op-decl* 
  	
  	opname-to-string : 
