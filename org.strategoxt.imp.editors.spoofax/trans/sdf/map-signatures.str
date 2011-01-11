@@ -1,6 +1,5 @@
 module sdf/map-signatures
 
-
 imports 
 		common 
 		include/SpoofaxLang
@@ -10,11 +9,14 @@ imports
 
 
 //TODO : refactor common functionily in seperate rules/strategy
-
+strategies 
+	get-rhs-sort-name = 
+			try(?cf(<id>) + ?lex(<id>));
+      repeat(?label(_, <id>));
+      (?sort(<id>) + ?parameterized-sort(<id>, _))
+		
 rules //Stores operation name and operation declarations 
-	   
-  
-  /**
+	/**
   * Gets the operation name from the Production. It actually search all the attributes 
   * in the attribute list and create  a dynamic rule that stores operation name. 
   */
@@ -33,7 +35,8 @@ rules //Stores operation name and operation declarations
   		<debug-sdf> $[Operation Name :  [opname]]
 	
 	store-operation-declaration
-  	= ?p@prod(lhs , sort(rhs-sort-name), attrs(attribute-list))
+  	=  ?p@prod(lhs , rhs-sort, attrs(attribute-list))
+  		;rhs-sort-name := <get-rhs-sort-name>rhs-sort	
   		;{|lhs-sort, get-op-name:
   					<find-sorts>lhs
   					;<get-opration-name>attribute-list  
@@ -43,19 +46,30 @@ rules //Stores operation name and operation declarations
   		  |}
 			  
 	store-operation-declaration 
-  	= ?p@prod(lhs , sort( rhs-sort-name), no-attrs())
-  		; {|lhs-sort :
-			  				if IsInsideLexicalSyntaxBlock then 
-  								 rules ( lhs-sort :+ _ -> $[String] )
-								else
-									<find-sorts>lhs //TODO : consider ignorig :ID->ID-Prime operation decl 
-								end
-			  				;lhs-operands-types := <reverse><bagof-lhs-sort>
-			  				;operation-name := ""
-			  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
+  	= 	?p@prod(lhs , rhs-sort, no-attrs()) 
+  		;rhs-sort-name := <get-rhs-sort-name>rhs-sort	
+  	  ; {|lhs-sort :
+	  				if (IsInsideLexicalSyntaxBlock<+ (!rhs-sort; ?lex(sort(rhs-sort-name))))then 
+							 rules ( lhs-sort :+ _ -> $[String] )
+						else
+							<find-sorts>lhs //TODO : consider ignorig :ID->ID-Prime operation decl 
+						end
+	  				;lhs-operands-types := <reverse><bagof-lhs-sort>
+	  				;operation-name := ""
+	  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
 			 |}
 
-	 
+	/*
+	store-operation-declaration 
+  	= ?p@prod(_ , lex(sort(rhs-sort-name)), no-attrs())
+  		; {|lhs-sort :
+							rules ( lhs-sort :+ _ -> $[String] )
+		  				;lhs-operands-types := <reverse><bagof-lhs-sort>
+		  				;operation-name := ""
+		  				;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)  
+			 |}
+	*/
+			 
   find-sorts 
   	= alltd(get-sort-decl)
 

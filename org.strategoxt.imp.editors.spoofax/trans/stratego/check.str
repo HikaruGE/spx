@@ -1,14 +1,17 @@
 module stratego/check
 
 imports
-	 common
 	 libstratego-lib
  	 libstrc
-	 stratego/analysis
-	 sdf/analysis
-	 include/SpoofaxLang
-	 lib/editor-common.generated
-
+imports 
+	common
+	lib/editor-common.generated
+	include/SpoofaxLang
+imports 
+	sdf/analysis 
+	sdf/map-signatures 
+	stratego/analysis
+	
 rules 
 	/*internal*/ require(s) = not(s)
 	

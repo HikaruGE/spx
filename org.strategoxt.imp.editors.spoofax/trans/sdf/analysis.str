@@ -10,8 +10,6 @@ imports
 imports  
 		sdf/map-signatures
 
-
-			
 rules
 	init-sdf-analysis:
 		(ast, path, project-path) -> ast'
@@ -20,10 +18,11 @@ rules
       	rules(
         	IsImported  :  current-file
         )
-        //;enable-sdf-debugging
+        ;enable-sdf-debugging
+        ;disable-sdf-debugging 
     where  
   		ast' := <declare-sdf-globals-top> ast
-  		//;disable-sdf-debugging
+  			
 
 strategies
 	is-non-terminal =
@@ -76,12 +75,9 @@ rules
 	declare-sdf-globals:
     prod @ prod(lhs, sort, _) -> <id>
     where
-      !sort;
-      try(?cf(<id>) + ?lex(<id>));
-      repeat(?label(_, <id>));
-      (?sort(x) + ?parameterized-sort(x, _))
-  	where 
-  		 <store-operation-declaration>prod
+      x:= <get-rhs-sort-name>sort
+   where
+  		<store-operation-declaration>prod
     with
       <Declaration> x
     <+
