@@ -1,0 +1,152 @@
+module esv/main
+
+imports
+  esv/to-esv
+  esv/analysis 
+  esv/check
+ 
+imports
+	common
+	lib/editor-common.generated
+	include/SpoofaxLang
+	
+imports 	
+	libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  libstrc
+  
+rules // editor analysis
+	
+	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning-esv*, note-esv*)
+    with
+    	//Already SDF productions are recorded during previous analysis phase 
+      //<chdir> project-path
+      //;<record-all-sdfs> "."
+      //; <debug>$[all keys : [<pp-aterm> <mapconcat(bagof-SortDeclaration)><all-keys-SortDeclaration>]] 
+      error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+      ;warning-esv* := []
+      ;note-esv* := []  
+ 
+ rules // rules related to editor complete 
+	
+  editor-complete:
+    (Sort(x), position, ast, path, project-path) -> proposals
+    where
+      proposals := <all-keys-SortDeclaration>
+
+  editor-complete:
+    (CompletionTemplate(COMPLETION(_), parts, _), position, ast, path, project-path) -> proposals
+    where
+      if [] := parts then
+        suffix := " =\n\t\t"
+      else
+        suffix := " = "
+      end;
+      proposals := <map(<conc-strings> (<id>, suffix))> <all-keys-SortDeclaration>
+
+  editor-complete:
+    (CompletionTemplateWithSort(Sort(sort), COMPLETION(_), _, _), position, ast, path, project-path) -> proposals
+    where
+      lhs*      := <bagof-SortProductionLHS> sort;
+      lhs'*     := <topdown(repeat(remove-completion-irrelevant))> lhs*;
+      proposals := <make-set> <filter(to-completion-parts-top)> lhs'*
+
+  editor-complete:
+    (Sort(COMPLETION(_)), position, ast, path, project-path) -> proposals
+    where
+      proposals := <map(<conc-strings> (<id>, " = "))> <all-keys-SortDeclaration>
+ 
+ 
+ rules
+ 	
+ 	//TODO : I think following rules are not required as ESV DEF only subjected to the current SPX
+  record-all-sdfs =
+    <readdir> ".";
+    list-loop(
+      if <isdir> <filemode> then
+        chdir;
+        record-all-sdfs;
+        <chdir> ".."
+      else
+        try(record-sdf)
+      end
+    )
+  
+  record-sdf:
+    filename -> filename
+    
+    where
+      <has-extension(|"sdf")> filename;
+      <debug> $[opening file : [filename]]
+      ;<open-import(abspath, parse-sdf-module-file, topdown(try(record-prod)))> filename
+  
+  record-sdf:
+    filename -> filename
+    where
+      <has-extension(|"def")> filename;
+      <open-import(abspath, parse-sdf-definition-file, topdown(try(record-prod)))> filename
+   
+  record-prod:
+    prod @ prod(lhs, sort, attrs) -> <id>
+    where
+      !sort;
+      try(?cf(<id>) + ?lex(<id>));
+      repeat(?label(_, <id>));
+      (?sort(x) + ?parameterized-sort(x, _))
+    with
+      rules(
+        SortDeclaration   :  x -> x
+        SortProductionLHS :+ x -> lhs
+      )
+ 
+ rules 
+ 	to-completion-parts:
+    [lit(x) | tail] -> ["\"", lits', "\" " | tail']
+    where
+      lits  := <map(?lit(<id>))> <take-while(?lit(_))>;
+      lits' := <escape> <concat-strings> <separate-by(|" ")> lits;
+      tail' := <to-completion-parts> <drop-while(?lit(_))> tail
+  
+  to-completion-parts-top:
+    [lit(first) | tail] -> $[[trigger'] [rest']]
+    where
+      trigger  := [lit(first) | <take-while(?lit(<is-alpha>))> tail];
+      trigger' := <to-completion-parts> trigger;
+      rest     := <drop-while(?lit(<is-alpha>))> tail;
+      rest'    := <to-completion-parts> <separate-by(|lit(" "))> rest
+  
+  to-completion-parts:
+    [sort(x) | tail] -> ["<", x, "> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [iter-star(sort(x)) | tail] -> ["<", x, "*> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [iter-star-sep(sort(x), _) | tail] -> ["<", x, "*> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [iter(sort(x)) | tail] -> ["<", x, "*> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [iter-sep(sort(x), _) | tail] -> ["<", x, "*> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [opt(sort(x)) | tail] -> ["<", x, "> " | <to-completion-parts> tail]
+  
+  to-completion-parts:
+    [] -> []
+
+rules  
+  remove-completion-irrelevant:
+    parameterized-sort(x, _) -> sort(x)
+  
+  remove-completion-irrelevant:
+    cf(x) -> x
+  
+  remove-completion-irrelevant:
+    lex(x) -> x
+  
+  remove-completion-irrelevant:
+    opt(layout()) -> lit(" ")
+  

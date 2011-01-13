@@ -9,8 +9,10 @@ imports
   lib/editor-common.generated
   lib/sdf-desugar
   lib/sdf-parenthesize
+  sdf/analysis
   spoofaxlang
-
+  common
+      
 rules
 
   to-sdf:

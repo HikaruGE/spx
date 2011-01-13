@@ -1,0 +1,26 @@
+module esv/analysis
+
+imports
+ libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  libstrc
+imports
+	common  
+  analysis
+  
+imports  
+  lib/editor-common.generated
+	include/SpoofaxLang
+
+imports
+	esv/main
+  
+  
+rules
+	/**
+	* Initializes analysis for ESV definition.
+	* This rule defines additional dynamic rules needed for 
+	* further analysis.
+	*/
+	init-esv-analysis: (ast, path, project-path) -> ast

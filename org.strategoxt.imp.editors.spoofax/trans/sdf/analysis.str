@@ -1,12 +1,14 @@
 module sdf/analysis
 
 imports
-  analysis
-  libstratego-lib
   libstratego-sdf
-  libstratego-sglr
   lib/editor-common.generated
 	include/SpoofaxLang
+imports
+	  analysis
+	  common
+imports  
+		sdf/map-signatures
 
 rules
 	init-sdf-analysis:
@@ -16,28 +18,48 @@ rules
       	rules(
         	IsImported  :  current-file
         )
+        ;enable-sdf-debugging
+        ;disable-sdf-debugging 
     where  
-  		ast' := <declare-globals-top> ast
-      
-	declare-globals-top =
-    	alltd(declare-globals)
+  		ast' := <declare-sdf-globals-top> ast
+  			
+
+strategies
+	is-non-terminal =
+    ?sort(_) + ?opt(_) + is-iter
+  
+  is-iter =
+    ?iter(_) + ?iter-star(_) + ?iter-sep(_, _) + ?iter-star-sep(_, _)
+			
+rules      
+	declare-sdf-globals-top =
+    	alltd(declare-sdf-globals)
 	
-	declare-globals:
+	
+	declare-sdf-globals:
+		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
+		with{|
+					IsInsideLexicalSyntaxBlock:
+						rules (IsInsideLexicalSyntaxBlock :_)
+					 ;<declare-sdf-globals-top> lex-defintions
+				|}  
+				
+	declare-sdf-globals:
 		unparameterized(x) -> unparameterized(x)
     where
       <open-import(
         resolve-import
       , parse-spoofaxlang-file
-      , declare-globals-top
+      , declare-sdf-globals-top
       )> x
     <+
       rules(IsImportFailed: _)
 
-	declare-globals:
+	declare-sdf-globals:
 		parameterized(x, y) -> parameterized(x, y)
   	where
-			<declare-globals> unparameterized(x);
-  		<alltd(declare-simple-global)> y
+			<declare-sdf-globals> unparameterized(x);
+  		<alltd(declare-sdf-simple-global)> y
   
 	resolve-import =
     	// TODO: better import handling
@@ -50,48 +72,51 @@ rules
     	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
   
  
-	declare-globals:
-		prod @ prod(lhs, sort, _) -> <id>
-  		where
-      		!sort;
-      		try(?cf(<id>) + ?lex(<id>));
-      		repeat(?label(_, <id>));
-      		(?sort(x) + ?parameterized-sort(x, _))
-    	with
-      		<Declaration> x
-    	<+
-      		file := <CurrentFile>;
-      	rules(
-        	Declaration: x -> prod
-        	DeclarationFile: x -> file
-      		)
-			with
-      		<alltd(declare-use)> lhs
+	declare-sdf-globals:
+    prod @ prod(lhs, sort, _) -> <id>
+    where
+      x:= <get-rhs-sort-name>sort
+   where
+  		<store-operation-declaration>prod
+    with
+      <Declaration> x
+    <+
+      file := <CurrentFile>
+      ;rules(
+       	Declaration: x -> prod
+        DeclarationFile: x -> file
+        
+        // Added following two dynamic rules for the ESV Def. analysis
+        SortDeclaration:  x -> x
+       	SortProductionLHS :+ x -> lhs
+      )
+    with
+      <alltd(declare-sdf-use)> lhs
   
-	declare-globals:
+	declare-sdf-globals:
     	'sorts(_) -> <id>
 	with
-    	 alltd(declare-use)
+    	 alltd(declare-sdf-use)
   
-  	declare-globals:
+	declare-sdf-globals:
 	    	context-free-start-symbols(_) -> <id>
 	with
-	      	alltd(declare-use)
+    	alltd(declare-sdf-use)
 	  
-	  declare-globals:
+  declare-sdf-globals:
 	    lexical-start-symbols(_) -> <id>
 	    with
-	      alltd(declare-use)
+	      alltd(declare-sdf-use)
 	  
-	  declare-globals:
+	declare-sdf-globals:
 	    kernel-start-symbols(_) -> <id>
 	    with
-	      alltd(declare-use)
+	      alltd(declare-sdf-use)
 	  
 	  /**
 	   *Creating Declaration Dynamic Rule for all the Sorts
 	   **/
-	  declare-simple-global:
+	  declare-sdf-simple-global:
 	    sort(x) -> <id>
 		with
 	      rules(Declaration: x -> x)
@@ -100,12 +125,12 @@ rules
 	   *Creating Usage Dynamic Rule for all the sorts 
 	   **/
 	  
-	  declare-use:
+	  declare-sdf-use:
 	    sort(x) -> <id>
 	    with
 	      rules(Usage: x -> x)
 	  
-	  declare-use:
+	  declare-sdf-use:
 	    parameterized-sort(x, y) -> <id>
 	    where
 	      if !y => [sort(y')]; <is-string> x; <is-string> y' then

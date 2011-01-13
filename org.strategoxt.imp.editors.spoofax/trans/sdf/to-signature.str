@@ -1,0 +1,74 @@
+module sdf/to-signature
+
+imports 
+	common
+imports 
+	sdf/map-signatures
+	sdf/analysis
+	  
+rules 
+	//generate signature 
+	get-signature-contents(|moduleName): signatures-string ->
+$[module [moduleName]
+signature
+    constructors
+       [signatures-string]
+				
+signature
+    constructors
+          Some : a -> Option(a) 
+          None : Option(a)
+
+signature
+    constructors
+          Cons : a * List(a) -> List(a)
+          Nil  : List(a)
+          Conc : List(a) * List(a) -> List(a)
+]  
+  save-to-file:(fileName, fileContent) -> None()  
+      where
+          not(<eq>("", fileContent))
+      with  
+      		<debug> $[Writing the following content: [<pp-aterm>fileContent] to the following file: [fileName]]
+          ;handle := <fopen> (fileName, "w+")
+          ;<fputs>(fileContent , handle)
+          ;fclose
+    rules
+    	
+	get-all-signatures-as-string 
+  		= <mapconcat(bagof-Get-Operation-Declaration);operation-decl-to-string><all-keys-Get-Operation-Singature>
+  
+  operation-decl-to-string : [] -> $[]
+  operation-decl-to-string : 
+  	[first-op-decl | rest-op-decl* ] 
+  		-> $[[current-op-decl-string] 
+  			[rest-op-decl-string]]
+  		where 
+  			(opname, operands*, resultant-sort) := first-op-decl
+  			;if (!operands* => []) then
+  			 	current-op-decl-string := $[[<opname-to-string>opname]: [resultant-sort]]
+  			else
+  				current-op-decl-string := $[[<opname-to-string>opname]: [<lhs-operands-to-string>operands*] -> [resultant-sort]]
+  			end		 
+  			;rest-op-decl-string := <operation-decl-to-string> rest-op-decl* 
+ 	
+ 	opname-to-string : 
+ 		opname -> opname-string
+ 		where 
+ 				if (!opname => "") then 
+ 						opname-string := $[]
+				else
+					 opname-string  := opname
+				end
+				
+  lhs-operands-to-string : 
+		[] -> $[]
+  lhs-operands-to-string : 
+  	[last] -> $[[last]] 
+  lhs-operands-to-string : 
+  		[hd-operand|rest*] -> $[[hd-operand-string] * [rest-operand-string]]
+  		where
+  				not (![] => rest*) 
+  		where 
+  			  hd-operand-string := hd-operand 
+  			  ;rest-operand-string := <lhs-operands-to-string>rest* 

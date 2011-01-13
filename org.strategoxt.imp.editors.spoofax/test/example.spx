@@ -1,22 +1,43 @@
 module example
 
+exports
+
 context-free start-symbols
   Start
 
 context-free syntax
-  MethodDecl -> Start{"test", left-assoc}
-  "public" ID "(" {Param ","}+ ")""{" "}" -> MethodDecl{cons("Method")}
-	"int " ID  -> Param {cons ("Parameter")}
-lexical syntax 
-	[a-zA-B][a-zA-B0-9]+ -> ID
-
-signature constructors
+  MethodDecl -> Start{cons("Test"), left-assoc}
+ 	"public" Type ID Params -> MethodDecl{cons("Method")}
+ 	{Param? "," }+ -> Params{cons("Args")}
+ 	{Param+*  "," }+ -> Params{cons("Args1")}
+ 	Type ID -> Param{cons ("Parameter")}
+ 	
+ 	 MethodDecl -> Start{"Test", left-assoc}  MethodDecl1 -> Start{"Test", left-assoc}
+ 	
+ 	"public" ID "(" {(Param ID Type) ","}+ ")""{" "}" -> MethodDecl{non-assoc, cons("Method")}
+ 	%%{"," {Param ","}+ }+  ID  Param -> MethodDecl{cons("Method")}
+  	%%{"," Param? }+ -> MethodDecl{cons("Method")}
+ 	%%Param* -> MethodDecl{cons("Method")}
+ 	(ID-prime (Type Param)+ Param)* -> MethodDecl{cons("Method")}
+ 	(Param Type)+ -> MethodDecl1{cons("Method1")}
+ 	(Param?*)* -> MethodDecl1{cons("Method1")}
+ 	
+	"int " ID  -> Param {cons ("Parameter")}  
+	%%"int " ID|Type|ID-prime  -> Param {cons ("Parameter")} 
+	 Type ID  -> ID-prime{cons("ID-Prime1")}
+	((Type Param)+ Type*)+ -> MethodDecl1{cons("Method2")}
+	Type+*+ -> MethodDecl1{cons("Method3")}    
 	
-	Parameter : Term -> Term
+	
 
+lexical syntax
+	[a-zA-B0-9]+ ID -> Type  
+	[a-zA-B][a-zA-B0-9]+ -> ID      
+	[0-9]+            -> INT          
+     
 rules
-  test-id: ID -> ID
-  test-id1: A -> Parameter(1)
- 
-  
-
+	  test-id1: A ->  ID-Prime1(1,2)
+	  test-id2: A ->  Entity(1,2)     
+	  test-id3: A ->  Adil(1,2)      
+	         
+	    

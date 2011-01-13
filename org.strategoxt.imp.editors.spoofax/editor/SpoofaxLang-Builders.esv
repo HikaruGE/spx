@@ -27,5 +27,8 @@ builders
     
   builder : "Show Editor Descriptor (for selection)" =
     generate-esv (openeditor) (realtime)              
-                                                                                                                               
-  // on save: generate-java                                                                                                    
+  
+  builder: "generate signatures" = 
+		generate-signatures-from-SDF (realtime) (openeditor) (meta)
+		                                                                                                                             
+  //on save: generate-java                                                                                                    
