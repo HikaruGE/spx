@@ -5,18 +5,24 @@ imports
   libstratego-gpp
   libstratego-sglr
   libstratego-sdf
-  include/SpoofaxLang
-  lib/editor-common.generated
+imports
+	include/SpoofaxLang
+	lib/editor-common.generated
   lib/sdf-desugar
-  lib/sdf-parenthesize
-  sdf/analysis
-  spoofaxlang
-  common
+  lib/sdf-parenthesize  
+imports 
+	sdf/analysis  
+imports 
+	common
+	spoofaxlang
+	
       
 rules
-
+  /**
+  * Converting def to SDF definition. 
+  **/
   to-sdf:
-    (path, def) -> 'module(name', [], [exports(sections')])
+    (path, def) -> 'module(name', [sdf-import-stmt*], [exports(sections')])
     with
       name := <find-spoofax-module-name>;
       if !name => ParamName(n, p) then
@@ -24,12 +30,12 @@ rules
       else
         Name(name') := name
       end;
-      
-      sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
-      ;debug
-      ;<debug>sections
+      import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
+      ;sdf-import-stmt* := 'imports( <map(spximport-to-sdfimport)>import-stmt* )
+      ;sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
-      ;debug 
+		where 
+			<debug>$[ debugsdf| import statments [<pp-aterm>import-stmt*]] 
   
   // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:
@@ -44,3 +50,10 @@ rules
   
   list-to-conc-grammars:
     [] -> []
+    
+rules 
+	/**
+	* Converts import statements of SPX to import statements of SDF
+	**/
+	spximport-to-sdfimport :  
+			Import(Name( package-name) ) -> 'module( unparameterized(package-name))

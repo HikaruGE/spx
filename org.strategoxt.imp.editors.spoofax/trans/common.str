@@ -15,11 +15,11 @@ strategies
 	pp-aterm = pp-aterm-box ; box2text-string(|100)
 	
   pp-sdf-string' =
-    sdf-desugar; debug;
-    parenthesize-Sdf2; debug;
-  	sdf-ppfix; debug;
-    ast2box(|[<pp-table-sdf>]); debug;
-    box2text-string(|80); debug
+    sdf-desugar; 
+    parenthesize-Sdf2; 
+  	sdf-ppfix; 
+    ast2box(|[<pp-table-sdf>]); 
+    box2text-string(|80)
   
 strategies // Dubug switches  
 	enable-sdf-debugging  = rules(DebugSDF: x -> x)

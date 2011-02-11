@@ -25,9 +25,6 @@ imports
   esv/to-esv
   esv/main
 
-//TODO : does the following signature is needed ? 
-signature constructors
-  Module : ID * List(Import) * List(Section) -> Module
 
 rules
  	editor-analyze:
