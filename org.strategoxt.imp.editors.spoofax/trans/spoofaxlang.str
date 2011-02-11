@@ -99,7 +99,7 @@ rules //Generate SDF Defnition from SPX
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"sdf")> path;
-      result   := <pp-sdf-string'> <to-sdf> (path, selected)
+      result   := <pp-sdf-string'> <to-sdf;debug> (path, selected)
 
 
 rules //Generate Stratego Definition from SPX

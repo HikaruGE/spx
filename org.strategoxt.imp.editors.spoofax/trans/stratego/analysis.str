@@ -10,6 +10,9 @@ imports
 	stratego/desugar
 	lib/editor-common.generated
 	common
+imports 
+	include/SpoofaxLang
+	
 strategies 
 	enable-stratego-debugging  = rules(DebugStr: x -> x)
 	disable-stratego-debugging = rules(DebugStr:- _ )
@@ -191,10 +194,16 @@ rules // Declare globals
   
   declare-str-globals:
     Import(x) -> Import(x)
-    with
-      <open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> x
+  	with
+	  	if (!x => Name(mName)) then
+  			moduleName := mName 
+  		else
+  			moduleName :=  x 
+  		end
+		with
+  		<open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> moduleName
     <+
-      rules(IsImportedFailed: x)
+      rules(IsImportedFailed: moduleName)
 
   declare-str-globals:
     ImportWildcard(x) -> ImportWildcard(x)
@@ -206,7 +215,10 @@ rules // Declare globals
    resolve-import-decl:
      x -> full-path
      where
-       fetch-library-ast; full-path := x
+       fetch-library-ast; 
+       full-path := x 
+     <+
+       full-path := <resolve-import-path> $[[x].spx]
      <+
        full-path := <resolve-import-path> $[[x].str]
      <+
@@ -224,7 +236,8 @@ rules // Declare globals
      <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
      <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
      <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
-  
+ 
+ 	 
   read-stratego-signatures:
     str -> <to-signatures> file
     where

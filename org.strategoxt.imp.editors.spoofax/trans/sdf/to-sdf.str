@@ -24,8 +24,12 @@ rules
       else
         Name(name') := name
       end;
-      sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def;
-      sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
+      
+      sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
+      ;debug
+      ;<debug>sections
+      ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
+      ;debug 
   
   // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:

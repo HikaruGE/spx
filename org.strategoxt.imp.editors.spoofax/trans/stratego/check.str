@@ -28,12 +28,11 @@ rules
 	
 	assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)= 
 			?[hd|tl]
-			;(
-			 			(expected-op-name , expected-no-of-arguments) := hd 
-						;	actual-opname := expected-op-name 
-						; actual-no-of-arguments := expected-no-of-arguments
-				  <+
-						<assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)>tl
+			;(	(expected-op-name , expected-no-of-arguments) := hd 
+					;	actual-opname := expected-op-name 
+					; actual-no-of-arguments := expected-no-of-arguments
+			  <+
+					<assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)>tl
 				)	  
        
 rules // Constraints

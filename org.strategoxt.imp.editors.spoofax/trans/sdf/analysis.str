@@ -35,43 +35,12 @@ rules
 	declare-sdf-globals-top =
     	alltd(declare-sdf-globals)
 	
-	
-	declare-sdf-globals:
-		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
-		with{|
-					IsInsideLexicalSyntaxBlock:
-						rules (IsInsideLexicalSyntaxBlock :_)
-					 ;<declare-sdf-globals-top> lex-defintions
-				|}  
-				
-	declare-sdf-globals:
-		unparameterized(x) -> unparameterized(x)
-    where
-      <open-import(
-        resolve-import
-      , parse-spoofaxlang-file
-      , declare-sdf-globals-top
-      )> x
-    <+
-      rules(IsImportFailed: _)
+	//TODO : Ignore ESVSection and STRSection 
+	declare-sdf-globals : 
+		s@STRSection(_) -> s
 
-	declare-sdf-globals:
-		parameterized(x, y) -> parameterized(x, y)
-  	where
-			<declare-sdf-globals> unparameterized(x);
-  		<alltd(declare-sdf-simple-global)> y
-  
-	resolve-import =
-    	// TODO: better import handling
-		\x -> $[[<ProjectDir>]/[x].sdf]\; file-exists
-  	<+
-    	\x -> $[[<ProjectDir>]/syntax/[x].sdf]\; file-exists
-  	<+
-   		 \x -> $[[<ProjectDir>]/lib/[x].def]\; file-exists
-  	<+
-    	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
-  
- 
+	//TODO : ESVSection 
+				
 	declare-sdf-globals:
     prod @ prod(lhs, sort, _) -> <id>
     where
@@ -92,7 +61,61 @@ rules
       )
     with
       <alltd(declare-sdf-use)> lhs
+      
+	declare-sdf-globals:
+		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
+		where 
+			debug
+		with{|
+					IsInsideLexicalSyntaxBlock:
+						rules (IsInsideLexicalSyntaxBlock :_)
+				 ;<declare-sdf-globals-top> lex-defintions
+				|}  
+				
+	declare-sdf-globals:
+		unparameterized(x) -> unparameterized(x)
+    where
+      <open-import(
+        resolve-import
+      , parse-spoofaxlang-file
+      , declare-sdf-globals-top
+      )> x
+    <+
+      rules(IsImportFailed: _)
+
+	declare-sdf-globals:
+		i@Import(Name(x)) -> i
+    where 
+    	<debug>$[importing  - [<CurrentDir>]/[x]]
+  	where
+      <open-import(
+        resolve-import
+      , parse-spoofaxlang-file
+      , declare-sdf-globals-top
+      )> x
+    <+
+      rules(IsImportFailed: _)
+
+
+	declare-sdf-globals:
+		parameterized(x, y) -> parameterized(x, y)
+  	where
+			<declare-sdf-globals> unparameterized(x);
+  		<alltd(declare-sdf-simple-global)> y
   
+	resolve-import =
+    	// TODO: better import handling
+		\x -> $[[<ProjectDir>]/[x].sdf]\; file-exists
+  	<+
+    	\x -> $[[<ProjectDir>]/syntax/[x].sdf]\; file-exists
+  	<+
+   		 \x -> $[[<ProjectDir>]/lib/[x].def]\; file-exists
+  	<+
+    	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
+  	<+
+    	\x -> $[[<CurrentDir>]/[x].spx]\; file-exists
+ 
+ 
 	declare-sdf-globals:
     	'sorts(_) -> <id>
 	with
