@@ -23,13 +23,16 @@ rules
   **/
   to-sdf:
     (path, def) -> 'module(name, [sdf-import-stmt*], [exports(sections')])
+    with 
+    	import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
+    	
     with
       name := <find-spoofax-module-name-str>(path, def)
-      ;import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
       ;sdf-import-stmt* := 'imports( <map(spximport-to-sdfimport)>import-stmt* )
       ;sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
-		
+		 
+			
   // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:
     term(default(fun(quoted(s)))) ->

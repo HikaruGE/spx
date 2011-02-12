@@ -1,14 +1,16 @@
 module esv/to-esv
+imports 
+	libstratego-lib
 imports
-  libstratego-lib
+  common
   spoofaxlang
-  include/SpoofaxLang
-
+imports 
+	include/SpoofaxLang
+	
 signature constructors
   Module : ID * List(Import) * List(Section) -> Module
 
 rules
-
   to-esv:
     (path, def) -> Module(name', [], sections)
     with

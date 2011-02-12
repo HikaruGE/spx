@@ -36,7 +36,11 @@ strategies // Dubug switches
 				package-name := 	<find-spoofax-module-name-str>(resolved-path, def)
 				;concept-name := "concept-name" //TODO : get concept-name 
 			with 
-				rules( DeclaredConcept :+ (package-name, concept-name ) -> def ) 
+				rules
+					( 
+							DeclaredConcept :+ (package-name, concept-name ) -> def
+							FilePath-of-DeclaredConcept:+ (package-name, concept-name ) -> resolved-path //TODO: not sure yet whether we need it.
+					) 
 			where
 				<debug>$[ Storing following declaration - DeclaredConcept : ([package-name],[concept-name])]
 		 
@@ -44,19 +48,23 @@ rules
 	find-spoofax-module-name:
     (path, def) -> name
    	 with
-      	Module(name, _) := def
-    	<+
-      	name := <remove-extension> <base-filename> path
-
-	find-spoofax-module-name-str:
+   	 		Module(name, _) := def
+   	 	<+
+   	 		if not(!path => "") then
+      		name := <remove-extension> <base-filename> path
+    		end
+ 	find-spoofax-module-name-str: 
 		  (path,def) ->name'
 			with
 				name := <find-spoofax-module-name> (path,def)
       	;if !name => ParamName(n, p) then
         	name' := parameterized(n, p)
       	else
-	        Name(name') := name
+       			(Name(name') := name) 
+       		<+ 
+       			(name' := name) 
   	    end
+  	    
 rules 
 	get-declarations = ?(namespace, conceptname) ; bagof-DeclaredConcept
 	is-declared = get-declarations ; ?[_|_]
