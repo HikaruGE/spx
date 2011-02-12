@@ -1,14 +1,26 @@
 module spoofax-test
-
+imports
+A
+C
+imports 
+A 
+B
+imports 
+		common 
+		include/SpoofaxLang
+		
+imports 
+		sdf/analysis
+				
 exports
 
 context-free start-symbols
-  Start
+  Start 
 
 context-free syntax
 	A -> Start{cons("Program")}
 	INT ID -> A{cons("IntVar")} 
-	ID 		 -> A{cons("IntVar-prime")}
+	ID 		 -> A{cons("IntVar-prime")} 
 	ID 		 -> A{cons("IntVar-prime")} 
  	
 lexical syntax

@@ -15,7 +15,9 @@ strategies
       repeat(?label(_, <id>));
       (?sort(<id>) + ?parameterized-sort(<id>, _))
 		
-rules //Stores operation name and operation declarations 
+rules 
+	
+	//Stores operation name and operation declarations 
 	/**
   * Gets the operation name from the Production. It actually search all the attributes 
   * in the attribute list and create  a dynamic rule that stores operation name. 
@@ -73,7 +75,9 @@ rules //Stores operation name and operation declarations
   find-sorts 
   	= alltd(get-sort-decl)
 
-rules  // Gets sort declaration from the production	
+rules  
+	
+	// Gets sort declaration from the production	
 	get-sort-decl:
 		a@alt(frstSort , restSort*) -> a
 		where

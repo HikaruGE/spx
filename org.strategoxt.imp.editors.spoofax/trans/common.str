@@ -10,7 +10,9 @@ imports
   lib/editor-common.generated
   lib/sdf-desugar
   lib/sdf-parenthesize
-
+imports 
+	include/SpoofaxLang
+	
 strategies 
 	pp-aterm = pp-aterm-box ; box2text-string(|100)
 	
@@ -26,3 +28,39 @@ strategies // Dubug switches
 	disable-sdf-debugging = rules(DebugSDF:- _ )
 	debug-sdf = not(DebugSDF) <+ debug
  
+ 
+ rules
+ 		store-declaration(|resolved-path): 
+			def@definition -> def
+			with
+				package-name := 	<find-spoofax-module-name-str>(resolved-path, def)
+				;concept-name := "concept-name" //TODO : get concept-name 
+			with 
+				rules( DeclaredConcept :+ (package-name, concept-name ) -> def ) 
+			where
+				<debug>$[ Storing following declaration - DeclaredConcept : ([package-name],[concept-name])]
+		 
+rules 
+	find-spoofax-module-name:
+    (path, def) -> name
+   	 with
+      	Module(name, _) := def
+    	<+
+      	name := <remove-extension> <base-filename> path
+
+	find-spoofax-module-name-str:
+		  (path,def) ->name'
+			with
+				name := <find-spoofax-module-name> (path,def)
+      	;if !name => ParamName(n, p) then
+        	name' := parameterized(n, p)
+      	else
+	        Name(name') := name
+  	    end
+rules 
+	get-declarations = ?(namespace, conceptname) ; bagof-DeclaredConcept
+	is-declared = get-declarations ; ?[_|_]
+	get-declarations-by-namespace= ?namespace ; all-keys-DeclaredConcept ; filter(?(namespace, _)); mapconcat(bagof-DeclaredConcept)
+	get-all-declared-entries = all-keys-DeclaredConcept 
+	
+					 

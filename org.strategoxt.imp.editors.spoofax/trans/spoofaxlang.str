@@ -43,7 +43,9 @@ rules
       	 ;<debug>$[Spoofax-lang|STR Errors: [<flatten-list;pp-aterm>error-str*]]
       	 ;<debug>$[Spoofax-lang|ESV Errors: [<flatten-list;pp-aterm>error-esv*]]
       end  
- 
+ 	with 
+    	<debug><get-all-declared-entries>
+    
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
     where
@@ -89,6 +91,7 @@ rules	 // Generate Signature for SDF Definition
 	        ;<debug(!"Compiling failed for following SDF definition: ")> <base-filename> path
     			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
 				end	 
+		
 				
 rules //Generate SDF Defnition from SPX
 	
@@ -96,7 +99,8 @@ rules //Generate SDF Defnition from SPX
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"sdf")> path;
-      result   := <pp-sdf-string'> <to-sdf;debug> (path, selected)
+      result   := <pp-sdf-string'> <to-sdf> (path, selected)
+    
 
 
 rules //Generate Stratego Definition from SPX
@@ -111,12 +115,4 @@ rules //Generate ESV Definition from SPX
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|".packed.esv")> path;
-      result   := <to-esv> (path, selected)
-  
-rules   
-  find-spoofax-module-name:
-    (path, def) -> name
-    with
-      Module(name, _) := def
-    <+
-      name := <remove-extension> <base-filename> path
+      result   := <to-esv> (path, selected) 

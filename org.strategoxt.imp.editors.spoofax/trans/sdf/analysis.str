@@ -64,8 +64,6 @@ rules
       
 	declare-sdf-globals:
 		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
-		where 
-			debug
 		with{|
 					IsInsideLexicalSyntaxBlock:
 						rules (IsInsideLexicalSyntaxBlock :_)
@@ -91,7 +89,7 @@ rules
       <open-import(
         resolve-import
       , parse-spoofaxlang-file
-      , declare-sdf-globals-top
+      , (store-declaration(|<resolve-import>x);declare-sdf-globals-top)
       )> x
     <+
       rules(IsImportFailed: _)

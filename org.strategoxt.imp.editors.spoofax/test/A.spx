@@ -1,0 +1,6 @@
+module A
+exports
+	
+lexical syntax
+	[0-9]+ -> INT1
+	 
