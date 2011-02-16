@@ -2,13 +2,12 @@ module str/to-stratego
 
 imports
   libstratego-lib
-  libstrc
+	lib/editor-common.generated
+imports
   include/SpoofaxLang
-  lib/editor-common.generated
-  lib/sdf-desugar
-  lib/sdf-parenthesize
-  spoofaxlang
-
+imports 
+	common
+	
 rules
 
   to-str:
