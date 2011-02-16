@@ -25,15 +25,7 @@ signature
           Nil  : List(a)
           Conc : List(a) * List(a) -> List(a)
 ]  
-  save-to-file:(fileName, fileContent) -> None()  
-      where
-          not(<eq>("", fileContent))
-      with  
-      		<debug> $[Writing the following content: [<pp-aterm>fileContent] to the following file: [fileName]]
-          ;handle := <fopen> (fileName, "w+")
-          ;<fputs>(fileContent , handle)
-          ;fclose
-    rules
+ 
     	
 	get-all-signatures-as-string 
   		= <mapconcat(bagof-Get-Operation-Declaration);operation-decl-to-string><all-keys-Get-Operation-Singature>
