@@ -78,8 +78,22 @@ strategies
 		  ;result := <declaration-adapter>(namespace,conceptname , concept)  
 		where
 				<debug>$[projecting declaration : [<pp-aterm>result]]
-		
-			 
+	
+	project-allkeys-declared(adapter): 
+		list* -> result
+		where 
+			result :=<map(project-key-declared(adapter))>list*
+		where 
+			<debug>$[projecting allkey declared: [<pp-aterm>list*][<pp-aterm>result]]
+	
+	
+	project-key-declared (key-adapter):
+		n@(namespace, conceptname) -> result
+ 		where 
+		  result := <key-adapter>(namespace,conceptname)  
+		where
+				<debug>$[projecting key declared: [<pp-aterm>n] -> [<pp-aterm>result]]
+	
 rules 
 	
 	find-spoofax-module-name:
