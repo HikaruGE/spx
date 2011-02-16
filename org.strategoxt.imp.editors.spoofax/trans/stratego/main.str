@@ -1,14 +1,13 @@
 module stratego/main
-
 imports
-  libstratego-lib
-  libstratego-gpp
-  libstratego-aterm
-  libstrc
+	libstrc
+imports 
   lib/editor-common.generated
+imports   
   stratego/analysis
   stratego/check
-  
+  stratego/to-stratego
+
 rules
   editor-analyze-str:
     (ast, path, project-path) -> ( errors, warnings, [])
@@ -25,3 +24,11 @@ rules
           warnings := <collect-all(constraint-warning, conc)> ast
         end
       end
+rules 
+
+	//Generate Stratego Definition from SPX
+  generate-str:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"str")> path;
+      result   := <pp-stratego-string> <parenthesize-Stratego> <to-str> (path, selected)

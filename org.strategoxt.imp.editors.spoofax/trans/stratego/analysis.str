@@ -1,24 +1,24 @@
 module stratego/analysis
 
 imports
-	analysis
 	libstratego-lib
  	libstrc						
  	libstratego-gpp
 	libstratego-aterm
+imports
+	lib/editor-common.generated
+imports  	
  	stratego/sourcedir
 	stratego/desugar
-	lib/editor-common.generated
+imports	
+	analysis
 	common
 imports 
 	include/SpoofaxLang
 	
-strategies 
-	enable-stratego-debugging  = rules(DebugStr: x -> x)
-	disable-stratego-debugging = rules(DebugStr:- _ )
-	debug-str = not(DebugStr) <+ debug
+rules 
 	
-rules // Projections and lookup
+	// Projections and lookup
 	init-str-analysis:
 		(ast, path, project-path) -> ast'
 		with

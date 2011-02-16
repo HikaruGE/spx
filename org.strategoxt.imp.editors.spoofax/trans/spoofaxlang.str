@@ -93,14 +93,6 @@ rules
 		
 				
 
-rules 
-
-	//Generate Stratego Definition from SPX
-  generate-str:
-    (selected, position, ast, path, project-path) -> (filename, result)
-    with
-      filename := <guarantee-extension(|"str")> path;
-      result   := <pp-stratego-string> <parenthesize-Stratego> <to-str> (path, selected)
       
 rules 
 	

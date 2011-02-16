@@ -16,9 +16,17 @@ imports
 strategies 
 	pp-aterm = pp-aterm-box ; box2text-string(|100)
 	
-  
+
 strategies 
 	
+	enable-stratego-debugging  = rules(DebugStr: x -> x)
+	
+	disable-stratego-debugging = rules(DebugStr:- _ )
+	
+	debug-str = not(DebugStr) <+ debug
+  
+strategies 
+
 	// Dubug switches  
 	enable-sdf-debugging  = rules(DebugSDF: x -> x)
 	
