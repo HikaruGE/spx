@@ -1,4 +1,4 @@
-module A
+module common/A
 exports
 	
 lexical syntax
