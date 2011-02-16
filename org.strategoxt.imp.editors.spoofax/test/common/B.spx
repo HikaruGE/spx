@@ -1,0 +1,9 @@
+module common/B
+
+
+	
+exports
+	
+lexical syntax
+	[0-9]+ -> INT2
+	 
