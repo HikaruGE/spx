@@ -1,4 +1,4 @@
-module stratego/analysis
+module str/analysis
 
 imports
 	libstratego-lib
@@ -8,8 +8,8 @@ imports
 imports
 	lib/editor-common.generated
 imports  	
- 	stratego/sourcedir
-	stratego/desugar
+ 	str/sourcedir
+	str/desugar
 imports	
 	analysis
 	common

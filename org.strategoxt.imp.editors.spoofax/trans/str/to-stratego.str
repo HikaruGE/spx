@@ -1,4 +1,4 @@
-module stratego/to-stratego
+module str/to-stratego
 
 imports
   libstratego-lib

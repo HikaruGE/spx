@@ -1,4 +1,4 @@
-module stratego/check
+module str/check
 
 imports
 	 libstratego-lib
@@ -10,7 +10,7 @@ imports
 imports 
 	sdf/analysis 
 	sdf/map-signatures 
-	stratego/analysis
+	str/analysis
 	
 rules 
 	/*internal*/ require(s) = not(s)

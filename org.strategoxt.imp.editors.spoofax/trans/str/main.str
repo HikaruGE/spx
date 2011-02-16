@@ -1,12 +1,12 @@
-module stratego/main
+module str/main
 imports
 	libstrc
 imports 
   lib/editor-common.generated
 imports   
-  stratego/analysis
-  stratego/check
-  stratego/to-stratego
+  str/analysis
+  str/check
+  str/to-stratego
 
 rules
   editor-analyze-str:

@@ -1,5 +1,5 @@
 // Based on org.strategoxt.imp.editors.stratego/trans/desugar.str
-module stratego/desugar
+module str/desugar
 
 imports
   libstratego-lib

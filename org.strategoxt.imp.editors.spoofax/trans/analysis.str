@@ -1,7 +1,7 @@
 module analysis
 imports 
 	sdf/analysis
-	stratego/analysis
+	str/analysis
 	esv/analysis
 imports 
 	common

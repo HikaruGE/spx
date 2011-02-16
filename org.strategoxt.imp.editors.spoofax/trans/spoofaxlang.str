@@ -13,8 +13,8 @@ imports
   include/SpoofaxLang
   lib/editor-common.generated
 imports
-  stratego/main
-  stratego/to-stratego
+  str/main
+  str/to-stratego
 imports  
   sdf/main
   sdf/to-sdf
