@@ -22,9 +22,14 @@ rules
   		ProjectDir  := project-path
   	)
   where
-    	ast' := <init-sdf-analysis>(ast, path, project-path)
-  	 ;ast'' := <init-str-analysis>(ast', path, project-path)
+    	ast' := <analyze-sdf-ast>(ast, path, project-path)
+     ;ast'' := <analyze-str-ast>(ast', path, project-path)
   	 ;ast''' := <init-esv-analysis>(ast'', path, project-path)
+  with 
+  	rules
+  	(
+  		Analyzed-ast := ast'''	
+  	)
 	where 
 		<debug> $[Spoofax-lang|Starting analysis of the following SPX file:$[$[<base-filename> path]$]$]
   

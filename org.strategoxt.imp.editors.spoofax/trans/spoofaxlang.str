@@ -29,13 +29,17 @@ imports
 rules
  	editor-analyze:
     (ast, path, project-path) -> (all-error*, all-warning*, notes-sdf*)
-    with
-      ast' := <analyze-ast> (ast, path, project-path)
-   		;<debug>$[Spoofax-lang|Analysis is done.]
-   	 	;(error-sdf* , warning-sdf*, notes-sdf*):= <editor-analyze-sdf>(ast' , path, project-path)
-     	;(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(ast' , path, project-path)
-     	;(error-esv* , warning-esv*, notes-esv*):= <editor-analyze-esv>(ast' , path, project-path)
-     	;all-error* := <flatten-list>[error-sdf*, error-str*,error-esv*]
+    with 
+    	<analyze-ast> (ast, path, project-path)
+    	;<debug>$[Spoofax-lang|Analysis is done.]
+    where 
+     	(error-sdf* , warning-sdf*, notes-sdf*):= <editor-analyze-sdf>(<Analyzed-ast> , path, project-path)
+   	where   
+   	 	(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(<Analyzed-ast>  , path, project-path)
+    where 
+     (error-esv* , warning-esv*, notes-esv*):= <editor-analyze-esv>(<Analyzed-ast>  , path, project-path)
+   	where
+     	 all-error* := <flatten-list>[error-sdf*, error-str*,error-esv*]
      	;all-warning* := <flatten-list>[warning-sdf*, warning-str*,warning-esv*]
      	;if not(![]; ?all-error*) then  
       	  <debug>$[Spoofax-lang|SDF Errors: [<flatten-list;pp-aterm>error-sdf*]]
@@ -64,7 +68,7 @@ rules
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm")> path;
-      result   := selected // we just return the input term
+      result   := ast // we just return the input term
 
 rules	 
 	

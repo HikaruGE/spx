@@ -16,11 +16,13 @@ rules
 	/*internal*/ require(s) = not(s)
 	
 	//TODO : Use new Is-declared in other cases where needed. 		
-  is-declared( |actual-no-of-arguments) = 	one(
+  is-declared( |actual-no-of-arguments)=
+  	one(
     		(?opName + ?SVar(opName))
     		;<debug-str>$[operation name : [<pp-aterm>opName] . Associated Signatures Found :  [<bagof-Get-Operation-Singature;pp-aterm> opName]]
     		;candidate-op-signatures := <bagof-Get-Operation-Singature> opName
     		;<assert-eq-opname-arity(|opName, actual-no-of-arguments)>candidate-op-signatures
+    		;!opName 
       )
   	   
   is-declared =

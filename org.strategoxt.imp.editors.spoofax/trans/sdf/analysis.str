@@ -12,7 +12,7 @@ imports
 
 rules
 	
-	init-sdf-analysis:
+	analyze-sdf-ast:
 		(ast, path, project-path) -> ast'
 		with
 				current-file := $[[project-path]/[path]];
@@ -23,9 +23,8 @@ rules
         ;disable-sdf-debugging 
     where  
   		ast' := <declare-sdf-globals-top> ast
-  			
-
-strategies
+ 
+ strategies
 	
 	is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter

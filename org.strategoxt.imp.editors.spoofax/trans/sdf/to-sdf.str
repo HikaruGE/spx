@@ -76,6 +76,7 @@ imports
     with
       sdf-import-stmt* := 'imports( <map(spximport-to-sdfimport)>import-stmt* )
       ;sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
+      ;debug(!"sdf-sections : ") 
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
  		where 
  			sdf-string := <pp-sdf-string'> 'module(name, [sdf-import-stmt*], [exports(sections')])
@@ -99,8 +100,7 @@ rules
 rules
   // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:
-    term(default(fun(quoted(s)))) ->
-    term(default(appl(unquoted("cons"), [fun(quoted(s))])))
+    term(default(fun(quoted(s)))) -> term(default(appl(unquoted("cons"), [fun(quoted(s))])))
   
   list-to-conc-grammars:
     [g1, g2 | gs] -> conc-grammars(g1, <list-to-conc-grammars> [g2 | gs])

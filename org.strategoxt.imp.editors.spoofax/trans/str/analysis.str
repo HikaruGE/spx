@@ -19,14 +19,14 @@ imports
 rules 
 	
 	// Projections and lookup
-	init-str-analysis:
+	analyze-str-ast:
 		(ast, path, project-path) -> ast'
 		with
 			enable-stratego-debugging
 			;rules(
         		CurrentFileFullPath := $[[project-path]/[path]]
         )
-  		;try(get-source-base-dir)
+      ;<try(get-source-base-dir)>ast
    		;if <file-exists> $[[project-path]/.disable-global-analysis] then
     		rules(NoAnalysis: _)
     	end
