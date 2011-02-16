@@ -5,7 +5,14 @@ imports
   libstratego-sdf
   libstratego-sglr
   libstrc
+  
+imports  
   lib/editor-common.generated
+imports 
+	analysis
+	common
+	  
+imports 
   sdf/to-sdf
   sdf/analysis 
   sdf/check
@@ -33,6 +40,26 @@ rules
            rules ( get-sdf-errors := error'*)
        end
   
+rules 
+	
+	//Generate SDF Defnition from SPX
+	/*
+	generate-sdf: 
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with 
+    	<analyze-ast>(ast, path, project-path)
+    with
+      filename := <guarantee-extension(|"sdf")> path;
+      result   := <pp-sdf-string'> <to-sdf> (selected, path , project-path)
+    */  
+      
+    generate-sdf: 
+    	(selected, position, ast, path, project-path) -> None()
+    with 
+    	<analyze-ast>(ast, path, project-path)
+    with
+      <to-sdf-all> (selected, path , project-path)
+      
 rules //TODO : Possibly Reduntant RULES . Mark for deletion      
   generate-pp-rules:
     (selected, position, ast, path, project-path) -> (filename, result)

@@ -30,8 +30,7 @@ rules
  	editor-analyze:
     (ast, path, project-path) -> (all-error*, all-warning*, notes-sdf*)
     with
-      editor-init
-      ;ast' := <analyze-ast> (ast, path, project-path)
+      ast' := <analyze-ast> (ast, path, project-path)
    		;<debug>$[Spoofax-lang|Analysis is done.]
    	 	;(error-sdf* , warning-sdf*, notes-sdf*):= <editor-analyze-sdf>(ast' , path, project-path)
      	;(error-str* , warning-str*, notes-str*):= <editor-analyze-str>(ast' , path, project-path)
@@ -43,9 +42,7 @@ rules
       	 ;<debug>$[Spoofax-lang|STR Errors: [<flatten-list;pp-aterm>error-str*]]
       	 ;<debug>$[Spoofax-lang|ESV Errors: [<flatten-list;pp-aterm>error-esv*]]
       end  
- 	with 
-    	<debug><get-all-declared-entries>
-    
+ 		
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
     where
@@ -61,7 +58,7 @@ rules
     where
       target := <parse-spoofaxlang-file> <resolve-import> x
 
-  override pp-sdf-string = fail // ensure compiler doesn't blow up
+  
   
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
@@ -69,7 +66,9 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := selected // we just return the input term
 
-rules	 // Generate Signature for SDF Definition
+rules	 
+	
+	// Generate Signature for SDF Definition
 	generate-signatures-from-SDF:
 		(selected, position, ast, path, project-path) -> None()
 		where //verify that there is no errors exists. If exist, stop further signature generation process 
@@ -93,24 +92,19 @@ rules	 // Generate Signature for SDF Definition
 				end	 
 		
 				
-rules //Generate SDF Defnition from SPX
-	
-  generate-sdf: 
-    (selected, position, ast, path, project-path) -> (filename, result)
-    with
-      filename := <guarantee-extension(|"sdf")> path;
-      result   := <pp-sdf-string'> <to-sdf> (path, selected)
-    
 
+rules 
 
-rules //Generate Stratego Definition from SPX
+	//Generate Stratego Definition from SPX
   generate-str:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"str")> path;
       result   := <pp-stratego-string> <parenthesize-Stratego> <to-str> (path, selected)
       
-rules //Generate ESV Definition from SPX
+rules 
+	
+	//Generate ESV Definition from SPX
   generate-esv:
     (selected, position, ast, path, project-path) -> (filename, result)
     with

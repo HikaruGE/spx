@@ -1,15 +1,20 @@
 module analysis
-
 imports 
 	sdf/analysis
 	stratego/analysis
 	esv/analysis
-	
-strategies
+imports 
+	common
+imports
+	lib/editor-common.generated
+			
+rules
 	analyze-ast:
-  	(ast, path, project-path) -> ast''' 
-  where 
-		<debug> $[Spoofax-lang|Starting analysis of the following SPX file:$[$[<base-filename> path]$]$]
+  	i@(ast, path, project-path) -> ast''' 
+  with 
+  	editor-init
+  with 
+  		<pre-analyze-ast> i
   with 
   	rules(
   		CurrentDir  := <dirname> $[[project-path]/[path]]
@@ -20,6 +25,22 @@ strategies
     	ast' := <init-sdf-analysis>(ast, path, project-path)
   	 ;ast'' := <init-str-analysis>(ast', path, project-path)
   	 ;ast''' := <init-esv-analysis>(ast'', path, project-path)
-
-
-
+	where 
+		<debug> $[Spoofax-lang|Starting analysis of the following SPX file:$[$[<base-filename> path]$]$]
+  
+rules 
+	/* 
+	* Performs pre-analysis steps on AST
+	*
+	**/ 
+	pre-analyze-ast:
+		i@(ast, path, project-path) -> i
+ 	with 
+		initialize-configuration //sets up various configuration
+	with 
+		<store-definition(|$[[project-path]/[path]])>ast
+	where 
+		<debug> $[Spoofax-lang|Pre-analysis]
+  
+		
+		 	  	

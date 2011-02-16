@@ -18,21 +18,56 @@ imports
 	
       
 rules
+  
   /**
   * Converting def to SDF definition. 
-  **/
+  */
   to-sdf:
-    (path, def) -> 'module(name, [sdf-import-stmt*], [exports(sections')])
+    (def, path , project-path) -> 'module(name, [sdf-import-stmt*], [exports(sections')])
     with 
     	import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
-    	
     with
-      name := <find-spoofax-module-name-str>(path, def)
+      name := <find-spoofax-module-name-string>(path, def)
       ;sdf-import-stmt* := 'imports( <map(spximport-to-sdfimport)>import-stmt* )
       ;sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
-		 
-			
+ 
+ 
+ //TODO : package-wide sdf generation on SAVE 
+ //i.e. get the package name , find all the sdf definition of the package 
+ //generate sdf definition 
+	to-sdf-all: (def, path , project-path)  -> None()
+ 		with 
+ 			declared-concept-entries := <get-all-declared-entries>
+ 		where 
+ 			<debug>$[Namespace-reference-table : [<pp-aterm>declared-concept-entries]]
+ 		where
+ 			sdf-string := <map-declarations(to-sdf(|project-path))>declared-concept-entries
+ 	
+ 	to-sdf(|project-path):
+		(spx-module-name,conceptname,def) -> sdf-string
+		with 
+    	import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
+    	;name := spx-module-name 
+    with
+      sdf-import-stmt* := 'imports( <map(spximport-to-sdfimport)>import-stmt* )
+      ;sections  := <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> def
+      ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
+ 		where 
+ 			sdf-string := <pp-sdf-string'> 'module(name, [sdf-import-stmt*], [exports(sections')])	
+
+rules
+
+	override pp-sdf-string = fail // ensure compiler doesn't blow up
+	
+  pp-sdf-string' =
+    sdf-desugar; 
+    parenthesize-Sdf2; 
+  	sdf-ppfix; 
+    ast2box(|[<pp-table-sdf>]); 
+    box2text-string(|80)			 
+
+rules
   // TODO: also support {"Module(<2>, <1>)"}
   desugar-sdf-redux:
     term(default(fun(quoted(s)))) ->
@@ -48,8 +83,10 @@ rules
     [] -> []
     
 rules 
+	
 	/**
 	* Converts import statements of SPX to import statements of SDF
-	**/
+	*/
 	spximport-to-sdfimport :  
 			Import(Name( package-name) ) -> 'module( unparameterized(package-name))
+			

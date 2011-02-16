@@ -11,6 +11,7 @@ imports
 		sdf/map-signatures
 
 rules
+	
 	init-sdf-analysis:
 		(ast, path, project-path) -> ast'
 		with
@@ -25,6 +26,7 @@ rules
   			
 
 strategies
+	
 	is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter
   
@@ -32,6 +34,7 @@ strategies
     ?iter(_) + ?iter-star(_) + ?iter-sep(_, _) + ?iter-star-sep(_, _)
 			
 rules      
+	
 	declare-sdf-globals-top =
     	alltd(declare-sdf-globals)
 	
@@ -89,7 +92,7 @@ rules
       <open-import(
         resolve-import
       , parse-spoofaxlang-file
-      , (store-declaration(|<resolve-import>x);declare-sdf-globals-top)
+      , (store-definition(|<resolve-import>x);declare-sdf-globals-top)
       )> x
     <+
       rules(IsImportFailed: _)
@@ -134,24 +137,23 @@ rules
 	    with
 	      alltd(declare-sdf-use)
 	  
-	  /**
-	   *Creating Declaration Dynamic Rule for all the Sorts
-	   **/
-	  declare-sdf-simple-global:
+  /**
+   *Creating Declaration Dynamic Rule for all the Sorts
+   */
+	declare-sdf-simple-global:
 	    sort(x) -> <id>
 		with
 	      rules(Declaration: x -> x)
 	    
-	  /**
-	   *Creating Usage Dynamic Rule for all the sorts 
-	   **/
-	  
-	  declare-sdf-use:
+  /**
+   *Creating Usage Dynamic Rule for all the sorts 
+   */
+	 declare-sdf-use:
 	    sort(x) -> <id>
 	    with
 	      rules(Usage: x -> x)
 	  
-	  declare-sdf-use:
+	declare-sdf-use:
 	    parameterized-sort(x, y) -> <id>
 	    where
 	      if !y => [sort(y')]; <is-string> x; <is-string> y' then
@@ -159,7 +161,7 @@ rules
 	        rules(Usage: text -> text)
 	      end
 	  
-	  propose-completion:
+	propose-completion:
 	    sort(COMPLETION(x)) -> [decl*, use*]
 	    with
 	      decl* := <all-keys-Declaration> x;
