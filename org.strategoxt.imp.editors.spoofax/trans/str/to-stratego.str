@@ -6,9 +6,11 @@ imports
 	lib/editor-common.generated
 imports
   include/SpoofaxLang
+
 imports 
 	common
-	
+	sdf/to-signature
+		
 rules
 
   to-str:
@@ -17,14 +19,15 @@ rules
       name := <find-spoofax-module-name-string>(path, def)
       ;sections  := <collect-om(?STRSection(<id>), conc)> def
     with 
-    	import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
+    	import-stmt* := <make-set> <import-signatures> <collect-om(?Imports(<id>) , conc);flatten-list> def
       ;str-import-stmt* := [Imports(<map(spximport-to-strimport)>import-stmt* )]
    	with 
    		str-section := <conc> (str-import-stmt* , sections) 
 
 rules
 
-	to-str-all: (def, path , project-path)  -> None()
+	to-str-all: 
+		(def, path , project-path)-> None()
  		with 
  			declared-concept-entries := <get-all-declared-entries>
  			;name := <find-spoofax-module-name-string>(path, def)
@@ -45,7 +48,11 @@ rules
     	;<debug>output-path-str  
     	;<debug>output-path-rtree  
     where
-    	import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> def
+    	if signature-file-name then 
+    		import-stmt* := <make-set> <import-signatures> <collect-om(?Imports(<id>) , conc);flatten-list> def
+  		else
+  			import-stmt* := <make-set> <collect-om(?Imports(<id>) , conc);flatten-list> def
+			end   
       ;str-import-stmt* := [Imports(<map(spximport-to-strimport)>import-stmt* )]
    		;sections  := <collect-om(?STRSection(<id>), conc)> def
    		;str-section := <conc>(str-import-stmt* , sections) 
@@ -59,7 +66,7 @@ rules
 			<dirname; ensure-directory-exists>output-path-rtree 
 			;<save-to-file>(output-path-rtree , <pp-aterm>str-aterm)
 	 
-		generate-str-main(|project-path , main-package-name)=
+	generate-str-main(|project-path , main-package-name)=
 		  declared-concept-entries := <get-all-declared-entries>
 		  ;main-package-name' := $[[main-package-name]-main]
 		  ;str-aterm := Module( main-package-name' , [Imports(<project-allkeys-declared(to-str-import)>declared-concept-entries)])
@@ -92,3 +99,8 @@ rules
 		where 
 				result := $[[<get-qualified-spxmodulename>(p-name,c-name)]
 									 ]
+
+	import-signatures : import* -> <conc>([Import(Name(<signature-file-name>))] , import*)
+		where debug 
+		where <debug><signature-file-name>
+		

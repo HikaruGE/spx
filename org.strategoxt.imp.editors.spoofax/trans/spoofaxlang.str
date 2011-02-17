@@ -68,6 +68,18 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := ast // we just return the input term
 
+
+rules 
+	generate-all:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			<analyze-ast>(ast, path, project-path)
+    with
+      <to-sdf-all> (selected, path , project-path)
+     ;<to-signature-all> (selected, path,project-path)
+		with	
+			<to-str-all>(selected, path , project-path)
+
 rules	 
 
 	// Generate Signature for SDF Definition
@@ -92,10 +104,6 @@ rules
 	        ;<debug(!"Compiling failed for following SDF definition: ")> <base-filename> path
     			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
 				end	 
-		
-				
-
-      
 rules 
 	
 	//Generate ESV Definition from SPX

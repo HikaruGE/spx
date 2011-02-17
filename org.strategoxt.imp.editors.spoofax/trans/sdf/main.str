@@ -5,18 +5,16 @@ imports
   libstratego-sdf
   libstratego-sglr
   libstrc
-  
 imports  
   lib/editor-common.generated
 imports 
 	analysis
 	common
-	  
 imports 
   sdf/to-sdf
   sdf/analysis 
   sdf/check
-  
+  sdf/to-signature
 rules
 	
 	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
@@ -53,12 +51,16 @@ rules
       result   := <pp-sdf-string'> <to-sdf> (selected, path , project-path)
     */  
       
-    generate-sdf: 
+	generate-sdf: 
     	(selected, position, ast, path, project-path) -> None()
     with 
     	<analyze-ast>(ast, path, project-path)
     with
       <to-sdf-all> (selected, path , project-path)
+    <+
+      fatal-err-msg(|$[Could not generate sdf definition for this selection.])
+    with
+      <to-signature-all> (selected, path , project-path)
       
 rules //TODO : Possibly Reduntant RULES . Mark for deletion      
   generate-pp-rules:
