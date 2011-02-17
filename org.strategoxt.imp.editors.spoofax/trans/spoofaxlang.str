@@ -62,8 +62,6 @@ rules
     where
       target := <parse-spoofaxlang-file> <resolve-import> x
 
-  
-  
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
@@ -71,7 +69,7 @@ rules
       result   := ast // we just return the input term
 
 rules	 
-	
+
 	// Generate Signature for SDF Definition
 	generate-signatures-from-SDF:
 		(selected, position, ast, path, project-path) -> None()
