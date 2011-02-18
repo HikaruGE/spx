@@ -1,8 +1,8 @@
 module str/analysis
 
 imports
+	libstrc		
 	libstratego-lib
- 	libstrc						
  	libstratego-gpp
 	libstratego-aterm
 imports
@@ -17,7 +17,6 @@ imports
 	include/SpoofaxLang
 	
 rules 
-	
 	// Projections and lookup
 	analyze-str-ast:
 		(ast, path, project-path) -> ast'
@@ -139,10 +138,15 @@ rules // Helpers
   
 rules // Declare globals
 
+  declare-stratego-globals-top:
+  	p@(package-name,concept-name,def) -> p
+  	with
+  		<declare-stratego-globals-top>def 			 
+  
   declare-stratego-globals-top =
     if not(NoAnalysis) then
     	// with(<declare-str-globals>Import("libstratego-lib"))
-      alltd(declare-str-globals)
+      debug(!"inside stratego-globals-top : "); alltd(declare-str-globals)
     end
 
   declare-str-globals:
@@ -200,15 +204,25 @@ rules // Declare globals
   		else
   			moduleName :=  x 
   		end
-		with
+  	with 
+  		<get-all-declared-entries-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
+  	<+	
   		<open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> moduleName
     <+
       rules(IsImportedFailed: moduleName)
 
   declare-str-globals:
     ImportWildcard(x) -> ImportWildcard(x)
-    with
-      <open-wildcard-import(file-exists <+ resolve-import-path, read-stratego-signatures, declare-stratego-globals-top, has-extension(|"str") + has-extension(|"rtree"))> x
+   with
+	  	if (!x => Name(mName)) then
+  			moduleName := mName 
+  		else
+  			moduleName :=  x 
+  		end
+  	with 
+  		<get-declarations-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
+  	<+	
+  	  <open-wildcard-import(file-exists <+ resolve-import-path, read-stratego-signatures, declare-stratego-globals-top, has-extension(|"str") + has-extension(|"rtree"))> x
     <+
       rules(IsImportedFailed: x)
 
