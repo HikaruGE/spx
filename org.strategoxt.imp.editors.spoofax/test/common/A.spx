@@ -1,8 +1,15 @@
 module common/A
 imports 
 	common/B
+
 exports
-	
+
+
+context-free syntax
+	INT ID -> A{cons("IntVar")} 
+	ID 		 -> A{cons("IntVar-prime")} 
+	ID 		 -> A{cons("IntVar-prime")} 
+
 lexical syntax
 	[0-9]+ -> INT1
 	 
