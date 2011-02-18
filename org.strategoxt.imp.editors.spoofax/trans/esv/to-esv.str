@@ -21,3 +21,8 @@ rules
         Name(name') := name
       end;
       sections  := <collect-om(?ESVSection(<id>), conc)> def
+
+
+rules 
+	
+	to-esv-all: (def, path , project-path)  -> None()
