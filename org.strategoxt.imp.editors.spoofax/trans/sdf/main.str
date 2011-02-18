@@ -15,8 +15,8 @@ imports
   sdf/analysis 
   sdf/check
   sdf/to-signature
+
 rules
-	
 	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
     with
       // We only collect-om since we don't want inner warning dupes

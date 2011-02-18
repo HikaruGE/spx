@@ -31,8 +31,6 @@ rules
  		with 
  			declared-concept-entries := <get-all-declared-entries>
  			;name := <find-spoofax-module-name-string>(path, def)
- 		where 
- 			<debug>$[Namespace-reference-table : [<pp-aterm>declared-concept-entries]]
  		where
  			<map-declarations(to-str(|project-path))>declared-concept-entries
 			;generate-str-main(|project-path , name)

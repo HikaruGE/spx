@@ -25,7 +25,6 @@ imports
   esv/to-esv
   esv/main
 
-
 rules
  	editor-analyze:
     (ast, path, project-path) -> (all-error*, all-warning*, notes-sdf*)
@@ -79,7 +78,8 @@ rules
      ;<to-signature-all> (selected, path,project-path)
 		with	
 			<to-str-all>(selected, path , project-path)
-
+		with	
+			<to-esv-all>(selected, path , project-path)
 rules	 
 
 	// Generate Signature for SDF Definition
@@ -104,11 +104,4 @@ rules
 	        ;<debug(!"Compiling failed for following SDF definition: ")> <base-filename> path
     			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
 				end	 
-rules 
-	
-	//Generate ESV Definition from SPX
-  generate-esv:
-    (selected, position, ast, path, project-path) -> (filename, result)
-    with
-      filename := <guarantee-extension(|".packed.esv")> path;
-      result   := <to-esv> (path, selected) 
+

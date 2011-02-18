@@ -4,18 +4,29 @@ imports
   esv/to-esv
   esv/analysis 
   esv/check
- 
 imports
 	common
+	analysis
+imports 
 	lib/editor-common.generated
 	include/SpoofaxLang
-	
 imports 	
 	libstratego-lib
   libstratego-sdf
   libstratego-sglr
   libstrc
-  
+
+
+rules 
+	//Generate ESV Definition from SPX
+  generate-esv:
+    (selected, position, ast, path, project-path) -> None()
+     with 
+    	<analyze-ast>(ast, path, project-path)
+     with
+      <to-esv-all> (selected, path, project-path)
+      
+        
 rules // editor analysis
 	
 	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning-esv*, note-esv*)

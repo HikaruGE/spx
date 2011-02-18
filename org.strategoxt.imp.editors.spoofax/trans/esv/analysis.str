@@ -23,4 +23,6 @@ rules
 	* This rule defines additional dynamic rules needed for 
 	* further analysis.
 	*/
-	analyze-esv-ast: (ast, path, project-path) -> ast
+	analyze-esv-ast: 
+		(ast, path, project-path) -> ast
+		
