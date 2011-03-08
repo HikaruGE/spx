@@ -22,7 +22,7 @@ completions
 
 rules
 	  test-rule1: Program(_) ->  IntVar(1,2) 
-	  test-rule1: Program(_) ->  IntVar-prime(1)     
+	  test-rule1: Program(_) ->  IntVar-prime(1)        
 	      
  
    
