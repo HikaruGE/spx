@@ -46,9 +46,10 @@ strategies
  	store-definition(|resolved-path): 
 			def@definition -> def
 			with
-				package-name := 	<find-spoofax-module-name-string>(resolved-path, def)
+				debug(!"ok 1")
+				;(package-name, package-gen-relative-path)  := 	<find-spoofax-module-name-string>(resolved-path, def)
+				;debug(!"ok 2")
 				;concept-name := <base-filename>package-name //TODO : get concept-name 
-				;package-gen-relative-path := <Package-Gen-Root> 
 			with 
 				if not(<is-declared>(package-name, concept-name)) then 
 					rules
@@ -117,8 +118,7 @@ rules
   
   //TODO : improve its performance by adding caching  		
  	find-spoofax-module-name-string: 
-		(path,def) ->module-name
-	  
+		(path,def) ->(package-name, relative-autogen-path)
 	  with
 				name := <find-spoofax-module-name> (path,def)
 	      ;if !name => ParamName(n, p) then
@@ -128,24 +128,16 @@ rules
 	      	<+ 
      			(name' := name) 
   	    end
-  	    ;<debug(!"common| package name :")> name'
-	 		 	;modname-part* := <string-tokenize> (['/'], name')
-  	 		;<debug(!"common| mod-name-parts :")> modname-part*
+  	  	;modname-part* := <string-tokenize> (['/'], name')
   	 		;if <eq>(<length>modname-part* , 1) then
-  	 		 		module-name  := name'
-  	 		 		;pack-gen-main := ""
+  	 		 		package-name  := name'
+  	 		 		;relative-autogen-path := ""
   	 		 else
-  	 		 		module-name  := <last>modname-part*
-  	 		 		;pack-gen-main := <dirname>name'  
+  	 		 	 package-name   := <last>modname-part*
+  	 		 	;relative-autogen-path := <dirname>name'  
   	 		 end
-		  	 ;rules ( 
-  	 						Main-Package-Name:= module-name
-  	 						Package-Gen-Root := pack-gen-main  
-  	 					)	 	
-	  	 		;<debug(!"common >>>> ")> <Main-Package-Name>
-	  	 		;<debug(!"common >>>> ")> <Package-Gen-Root> 	 			     
-							 
-				    
+		  	 
+	  		    
   
   get-qualified-spxmodulename: 
   	(package-name,concept-name) -> result
