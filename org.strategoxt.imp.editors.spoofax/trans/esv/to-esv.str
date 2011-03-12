@@ -12,9 +12,6 @@ signature constructors
 
 rules 
 
-//TODO : add the ctree as a provider 
-
-	
 	/**
 	* Packs all the esv definitions for the namespace and combine them as a 
 	* single *.main.packed.esv and store it in .showdow dir
