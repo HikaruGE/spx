@@ -64,7 +64,7 @@ rules
       ;debug(!"sdf-sections : ") 
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
  		where 
- 			sdf-string := <pp-sdf-string'> 'module(<get-qualified-spxmodulename1>(package-name,concept-name), [sdf-import-stmt*], [exports(sections')])
+ 			sdf-string := <pp-sdf-string'> 'module(<get-qualified-importpath>(package-name,concept-name), [sdf-import-stmt*], [exports(sections')])
  		where 
 			<ensure-exists>(project-path, autogen-directory) 
 			;<save-to-file>(output-path , sdf-string )
@@ -120,6 +120,6 @@ rules
 
 	to-sdf-import:(p-name , c-name) -> result 
 		where 
-				result := $[[<get-qualified-spxmodulename1>(p-name,c-name)]
+				result := $[[<get-qualified-importpath>(p-name,c-name)]
 									 ]
 	

@@ -50,7 +50,7 @@ rules
    		;sections  := <collect-om(?STRSection(<id>), conc)> def
    		;str-section := <conc>(str-import-stmt* , sections) 
     where 
-    	str-aterm := Module(<get-qualified-spxmodulename1>(package-name,concept-name), str-section);
+    	str-aterm := Module(<get-qualified-importpath>(package-name,concept-name), str-section);
  			str-string := <pp-stratego-string> <parenthesize-Stratego> str-aterm
  		where 
 			<ensure-exists>(project-path, autogen-directory) 
@@ -95,7 +95,7 @@ rules
 	*/		
 	to-str-import:(p-name , c-name) -> Import(result) 
 		where 
-				result := $[[<get-qualified-spxmodulename1>(p-name,c-name)]]
+				result := $[[<get-qualified-importpath>(p-name,c-name)]]
 
 	
 	add-signature-import : import* -> <conc>([Import(Name(<signature-import-path>))] , import*)

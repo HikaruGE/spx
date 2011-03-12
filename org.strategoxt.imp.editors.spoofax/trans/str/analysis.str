@@ -12,7 +12,7 @@ imports
 	str/desugar
 imports	
 	analysis
-	common
+	utils/debugger
 imports 
 	include/SpoofaxLang
 	

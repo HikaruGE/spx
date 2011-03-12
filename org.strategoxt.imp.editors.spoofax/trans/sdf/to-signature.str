@@ -37,7 +37,8 @@ rules
 			 	;<ensure-exists>( project-path , autogen-dir )
 				;<save-to-file>( output-path-str, generated-signatures-string)
 				;<save-to-file>( output-path-rtree, signatures-as-aterm-string)
-				;rules (signature-import-path:=$[[relative-autogen-path]/[sig-file-name]])  
+				;rules (signature-import-path:= <append-if-not-empty(|relative-autogen-path, "/")> sig-file-name)
+						  
 rules 
 	
 	//generate signature 

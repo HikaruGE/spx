@@ -119,21 +119,27 @@ rules
 		  	 
 	
   get-qualified-spxmodulename: 
-  	(namespace-name,concept-name) -> result
+  	(namespace-name,module-name) -> result
 	where
 		result := namespace-name//TODO : when there is a concept-name added in spx , result will be package-name/conceptname 
    		    
   
   //TODO : remove followind temp fix  
-  get-qualified-spxmodulename1: 
-  	(package-name,concept-name) -> result
+  get-qualified-importpath: 
+  	(package-name,module-name) -> result
 	where
-		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(package-name,concept-name)
-		;if <eq>("", autogen-dir) then 
-		 		result := package-name
+		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(package-name,module-name)
+		;<append-if-not-empty(|autogen-dir , "/")>package-name => result //TODO : when there is a module-name added in spx , result will be package-name/conceptname
+	
+  append-if-not-empty(|string-to-append, seperator) : operand ->result
+  where 
+  	if <eq>("", string-to-append) then 
+			result := operand
 		else
-			result := $[[autogen-dir]/[package-name]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
+			result := $[[string-to-append][seperator][operand]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
 		end 
+   
+   
   
   
   get-fullyqualified-autogen-path(|extension): 
