@@ -1,0 +1,19 @@
+module utils/debug
+
+strategies 
+	
+	enable-stratego-debugging  = rules(DebugStr: x -> x)
+	
+	disable-stratego-debugging = rules(DebugStr:- _ )
+	
+	debug-str = not(DebugStr) <+ debug
+  
+strategies 
+
+	// Dubug switches  
+	enable-sdf-debugging  = rules(DebugSDF: x -> x)
+	
+	disable-sdf-debugging = rules(DebugSDF:- _ )
+	
+	debug-sdf = not(DebugSDF) <+ debug
+ 

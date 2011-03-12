@@ -1,4 +1,4 @@
-module sdf/map-signatures
+module sdf/signatures-mappers
 
 imports 
 		common 

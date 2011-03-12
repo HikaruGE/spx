@@ -12,30 +12,15 @@ imports
   lib/sdf-parenthesize
 imports 
 	include/SpoofaxLang
+
+imports 
+	utils/debug
 	
 strategies 
 	pp-aterm = pp-aterm-box ; box2text-string(|100)
-	
 
-strategies 
-	
-	enable-stratego-debugging  = rules(DebugStr: x -> x)
-	
-	disable-stratego-debugging = rules(DebugStr:- _ )
-	
-	debug-str = not(DebugStr) <+ debug
-  
-strategies 
 
-	// Dubug switches  
-	enable-sdf-debugging  = rules(DebugSDF: x -> x)
-	
-	disable-sdf-debugging = rules(DebugSDF:- _ )
-	
-	debug-sdf = not(DebugSDF) <+ debug
- 
- 
- rules
+rules
  	
  	/**
  	* Creates a namespace reference table. It stores following in the reference table . 
@@ -144,8 +129,6 @@ rules
   	(package-name,concept-name) -> result
 	where
 		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(package-name,concept-name)
-		;<debug(!"------------> ")>(package-name,concept-name)
-		 ;<debug(!"dir : ")>autogen-dir 
 		;if <eq>("", autogen-dir) then 
 		 		result := package-name
 		else

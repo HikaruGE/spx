@@ -8,7 +8,7 @@ imports
 	  analysis
 	  common
 imports  
-		sdf/map-signatures
+		sdf/signatures-mapper
 
 rules
 	

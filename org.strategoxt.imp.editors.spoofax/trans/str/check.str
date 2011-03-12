@@ -9,7 +9,7 @@ imports
 	include/SpoofaxLang
 imports 
 	sdf/analysis 
-	sdf/map-signatures 
+	sdf/signatures-mapper
 	str/analysis
 	
 rules 

@@ -7,7 +7,7 @@ imports
 	common
 	analysis
 imports 
-	sdf/map-signatures
+	sdf/signatures-mapper
 	sdf/analysis
 	sdf/to-sdf
 
@@ -60,10 +60,10 @@ signature
 ]  
  
     	
-	get-all-signatures-as-string 
-  		= <mapconcat(bagof-Get-Operation-Declaration);operation-decl-to-string><all-keys-Get-Operation-Singature>
+	get-all-signatures-as-string = <mapconcat(bagof-Get-Operation-Declaration);operation-decl-to-string><all-keys-Get-Operation-Singature>
   
-  operation-decl-to-string : [] -> $[]
+  operation-decl-to-string : 
+		[] -> $[]
   operation-decl-to-string : 
   	[first-op-decl | rest-op-decl* ] 
   		-> $[[current-op-decl-string] 
