@@ -64,7 +64,7 @@ rules
       ;debug(!"sdf-sections : ") 
       ;sections' := <alltd(desugar-sdf-redux)> <list-to-conc-grammars> sections
  		where 
- 			sdf-string := <pp-sdf-string'> 'module(name, [sdf-import-stmt*], [exports(sections')])
+ 			sdf-string := <pp-sdf-string'> 'module(<get-qualified-spxmodulename1>(package-name,concept-name), [sdf-import-stmt*], [exports(sections')])
  		where 
 			<ensure-exists>(project-path, autogen-directory) 
 			;<save-to-file>(output-path , sdf-string )
@@ -74,7 +74,7 @@ rules
 		  declared-concept-entries := <get-all-declared-entries>
 		  ;main-sdf-file-name := $[[main-package-name]-main]
 		  ;sdf-string := 
-$[module [main-sdf-file-name]
+$[module [relative-autogen-path]/[main-sdf-file-name]
 imports
 	[<project-allkeys-declared(to-sdf-import)>declared-concept-entries]   									 
 ]

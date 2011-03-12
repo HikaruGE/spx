@@ -114,6 +114,8 @@ rules
     	\x -> $[[<CurrentDir>]/[x].sdf]\; file-exists
   	<+
     	\x -> $[[<CurrentDir>]/[x].spx]\; file-exists
+  	<+
+  		\x -> $[[<ProjectDir>]/test/[x].spx]\; file-exists // TODO : temporarily adding this. will remove it later
  
  
 	declare-sdf-globals:

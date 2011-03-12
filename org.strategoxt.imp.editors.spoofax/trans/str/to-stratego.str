@@ -19,7 +19,7 @@ rules
       (name,relative-autogen-path) := <find-spoofax-module-name-string>(path, def)
       ;sections  := <collect-om(?STRSection(<id>), conc)> def
     with 
-    	import-stmt* := <make-set> <import-signatures> <collect-om(?Imports(<id>) , conc);flatten-list> def
+    	import-stmt* := <make-set> <add-signature-import> <collect-om(?Imports(<id>) , conc);flatten-list> def
       ;str-import-stmt* := [Imports(<map(spximport-to-strimport)>import-stmt* )]
    	with 
    		str-section := <conc> (str-import-stmt* , sections) 
@@ -46,8 +46,8 @@ rules
     	;<debug>output-path-str  
     	;<debug>output-path-rtree  
     where
-    	if signature-file-name then 
-    		import-stmt* := <make-set> <import-signatures> <collect-om(?Imports(<id>) , conc);flatten-list> def
+    	if signature-import-path then 
+    		import-stmt* := <make-set> <add-signature-import> <collect-om(?Imports(<id>) , conc);flatten-list> def
   		else
   			import-stmt* := <make-set> <collect-om(?Imports(<id>) , conc);flatten-list> def
 			end   
@@ -94,10 +94,7 @@ rules
 	*/		
 	to-str-import:(p-name , c-name) -> Import(result) 
 		where 
-				result := $[[<get-qualified-spxmodulename1>(p-name,c-name)]
-									 ]
+				result := $[[<get-qualified-spxmodulename1>(p-name,c-name)]]
 
-	import-signatures : import* -> <conc>([Import(Name(<signature-file-name>))] , import*)
-		where debug 
-		where <debug><signature-file-name>
+	add-signature-import : import* -> <conc>([Import(Name(<signature-import-path>))] , import*)
 		

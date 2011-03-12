@@ -55,7 +55,8 @@ strategies
 							DeclaredConcept :+ (package-name, concept-name ) -> def
 							FilePath-of-DeclaredConcept:+ (package-name, concept-name ) -> resolved-path //TODO: not sure yet whether we need it.
 							Package-Gen-Root-of-DeclaredConcept:+(package-name, concept-name )  -> package-gen-relative-path
-					) 
+					)
+					  
 					;<debug>$[SymbolTable|Storing following declaration - DeclaredConcept : ([package-name],[concept-name]) -> [<pp-aterm>def]]
 				else
 					<debug>$[ SymbolTable|Already exists in the namespace table : ([package-name],[concept-name])]	
@@ -140,13 +141,15 @@ rules
   
   //TODO : remove followind temp fix  
   get-qualified-spxmodulename1: 
-  	(namespace-name,concept-name) -> result
+  	(package-name,concept-name) -> result
 	where
-		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(namespace-name,concept-name)
+		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(package-name,concept-name)
+		;<debug(!"------------> ")>(package-name,concept-name)
+		 ;<debug(!"dir : ")>autogen-dir 
 		;if <eq>("", autogen-dir) then 
-		 		result := namespace-name 
+		 		result := package-name
 		else
-			result := $[[autogen-dir]/[namespace-name]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
+			result := $[[autogen-dir]/[package-name]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
 		end 
   
   
