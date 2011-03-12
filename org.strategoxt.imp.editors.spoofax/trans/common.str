@@ -46,9 +46,7 @@ strategies
  	store-definition(|resolved-path): 
 			def@definition -> def
 			with
-				debug(!"ok 1")
-				;(package-name, package-gen-relative-path)  := 	<find-spoofax-module-name-string>(resolved-path, def)
-				;debug(!"ok 2")
+				(package-name, package-gen-relative-path)  := 	<find-spoofax-module-name-string>(resolved-path, def)
 				;concept-name := <base-filename>package-name //TODO : get concept-name 
 			with 
 				if not(<is-declared>(package-name, concept-name)) then 
@@ -58,9 +56,9 @@ strategies
 							FilePath-of-DeclaredConcept:+ (package-name, concept-name ) -> resolved-path //TODO: not sure yet whether we need it.
 							Package-Gen-Root-of-DeclaredConcept:+(package-name, concept-name )  -> package-gen-relative-path
 					) 
-					;<debug>$[ Storing following declaration - DeclaredConcept : ([package-name],[concept-name]) -> [<pp-aterm>def]]
+					;<debug>$[SymbolTable|Storing following declaration - DeclaredConcept : ([package-name],[concept-name]) -> [<pp-aterm>def]]
 				else
-					<debug>$[ Already exists in the namespace table : ([package-name],[concept-name])]	
+					<debug>$[ SymbolTable|Already exists in the namespace table : ([package-name],[concept-name])]	
 				end 
 	
 	is-declared = get-declarations ; ?[_|_]
@@ -80,8 +78,6 @@ strategies
 	map-declarations( declaration-adapter): 
 		list* -> result
 		where 
-				<debug(!"common| mapping declaration >>>> ")> list*
-		where 
 			result :=<map(project-declaration(declaration-adapter))>list*
 		
 				
@@ -89,8 +85,6 @@ strategies
 	project-declaration(declaration-adapter):
 		n@(namespace, conceptname) -> result
  		where 
-				<debug(!"common| projecting declaration>>>> ")> n
-		where 
 		 	concept := <get-unique-declaration> n
 		  ;result := <declaration-adapter>(namespace,conceptname , concept)  
 		
@@ -137,12 +131,23 @@ rules
   	 		 	;relative-autogen-path := <dirname>name'  
   	 		 end
 		  	 
-	  		    
-  
+	
   get-qualified-spxmodulename: 
-  	(package-name,concept-name) -> result
+  	(namespace-name,concept-name) -> result
 	where
-		result := package-name //TODO : when there is a concept-name added in spx , result will be package-name/conceptname 
+		result := namespace-name//TODO : when there is a concept-name added in spx , result will be package-name/conceptname 
+   		    
+  
+  //TODO : remove followind temp fix  
+  get-qualified-spxmodulename1: 
+  	(namespace-name,concept-name) -> result
+	where
+		autogen-dir := <Package-Gen-Root-of-DeclaredConcept>(namespace-name,concept-name)
+		;if <eq>("", autogen-dir) then 
+		 		result := namespace-name 
+		else
+			result := $[[autogen-dir]/[namespace-name]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
+		end 
   
   
   get-fullyqualified-autogen-path(|extension): 

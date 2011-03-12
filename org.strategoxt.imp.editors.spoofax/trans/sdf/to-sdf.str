@@ -120,6 +120,6 @@ rules
 
 	to-sdf-import:(p-name , c-name) -> result 
 		where 
-				result := $[[<get-qualified-spxmodulename>(p-name,c-name)]
+				result := $[[<get-qualified-spxmodulename1>(p-name,c-name)]
 									 ]
 	
