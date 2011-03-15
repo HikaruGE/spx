@@ -49,6 +49,12 @@ rules
 			//;<save-to-file>(output-path-esv,<pp-aterm>esv-aterm)
 			;<WriteToBinaryFile>(output-path-esv,esv-aterm)
 
+	
+	/*
+	* Adding package ctree as the default semantic provider0
+	* 
+	* @type packagename -> default semantic provider 
+	*/
 	add-package-ctree : package-name -> [SemanticProvider(package-output-ctree)]
 		where 
 				package-output-ctree := $[include/[package-name].ctree]
