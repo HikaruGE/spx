@@ -12,7 +12,8 @@ imports
 	str/desugar
 imports	
 	analysis
-	utils/debugger
+	utils/debug
+	common
 imports 
 	include/SpoofaxLang
 	
@@ -145,7 +146,7 @@ rules // Declare globals
   
   declare-stratego-globals-top =
     if not(NoAnalysis) then
-    	// with(<declare-str-globals>Import("libstratego-lib"))
+    	//with(<declare-str-globals>Import("libstratego-lib"))
       debug(!"inside stratego-globals-top : "); alltd(declare-str-globals)
     end
 
@@ -209,7 +210,7 @@ rules // Declare globals
   	<+	
   		<open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> moduleName
     <+
-      rules(IsImportedFailed: moduleName)
+      rules(IsImportedFailed: moduleName) ; debug(!"import failed .... ") 
 
   declare-str-globals:
     ImportWildcard(x) -> ImportWildcard(x)

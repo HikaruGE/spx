@@ -7,6 +7,7 @@ imports
 imports
 	  analysis
 	  common
+	  utils/debug
 imports  
 		sdf/signatures-mapper
 
@@ -85,9 +86,7 @@ rules
 
 	declare-sdf-globals:
 		i@Import(Name(x)) -> i
-    where 
-    	<debug>$[importing  - [<CurrentDir>]/[x]]
-  	where
+    where
       <open-import(
         resolve-import
       , parse-spoofaxlang-file

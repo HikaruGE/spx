@@ -61,7 +61,7 @@ rules
 	
 	get-all-declared-concept = get-all-declared-entries ; filter(?(namespace, _)); mapconcat(bagof-DeclaredConcept)
 	
-	map-declarations( declaration-adapter): 
+	map-declarations(declaration-adapter): 
 		list* -> result
 		where 
 			result :=<map(project-declaration(declaration-adapter))>list*
