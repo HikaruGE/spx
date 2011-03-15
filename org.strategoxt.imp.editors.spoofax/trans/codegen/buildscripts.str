@@ -13,7 +13,7 @@ imports
 imports 
 	include/SpoofaxLang
 imports 
-	Common
+	common
 
 rules
 	
