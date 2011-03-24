@@ -1,0 +1,37 @@
+module Naming
+
+imports Common
+
+exports
+
+context-free syntax
+  
+  Namespace "@=" Symbol[[SDF]] -> Symbol[[SDF]] {cons("namespacedef")}
+  
+  IdCon[[SDF]] -> Namespace
+
+syntax
+  
+  %% controlled layout for "@"
+
+  "@" <Namespace-CF> -> <Symbol[[SDF]]-CF> {cons("namespaceref")}
+  
+  <Namespace-CF> "@" <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF> {cons("namespaceref2")}
+
+context-free syntax
+
+%%  "scopes" ScopeList* -> Section {cons("Scopes")}
+%%  
+%%  "@" Namespace ":" Scope -> ScopeList {cons("ScopeList")}
+%%  
+%%  ID+ -> Scope {cons("Scope")}
+
+  "scope" "(" {Namespace ","}+ ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"scope\"), [fun(quoted(<1>))])))")}
+
+%%  "scope" "(" "*" ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"scope\"), [fun(quoted(\"*\"))])))")}
+
+  
+
+lexical restrictions
+  
+  Sort[[SDF]] -/- [\@]
