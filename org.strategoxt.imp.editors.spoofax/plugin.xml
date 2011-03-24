@@ -3,7 +3,7 @@
 
 <plugin>
        <extension point="org.eclipse.imp.runtime.languageDescription">
-          <language extensions="spo" description="SpoofaxLang" language="SpoofaxLang" derivedFrom="DynamicRoot" validator="org.strategoxt.imp.editors.spoofax.SpoofaxLangValidator" validatorClass="org.strategoxt.imp.editors.spoofax.SpoofaxLangValidator"></language>
+          <language extensions="spx" description="SpoofaxLang" language="SpoofaxLang" derivedFrom="DynamicRoot" validator="org.strategoxt.imp.editors.spoofax.SpoofaxLangValidator" validatorClass="org.strategoxt.imp.editors.spoofax.SpoofaxLangValidator"></language>
        </extension>
        <extension id="org.strategoxt.imp.editors.spoofax.parser" name="SpoofaxLang Parser" point="org.eclipse.imp.runtime.parser">
           <parser class="org.strategoxt.imp.editors.spoofax.SpoofaxLangParseController" language="SpoofaxLang">
