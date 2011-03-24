@@ -5,6 +5,7 @@ module SpoofaxLang
 imports
   SPXCommon
   Concepts
+  Naming
   EditorServiceMix[ESV]
   Stratego-AttributesMix[STR] [
     "imports" ImportModName* -> Decl {cons("Imports")}
@@ -66,37 +67,51 @@ exports
     "package" QIDWithDots                -> Import {cons("PackageImport")}
     "(" Import ")"                       -> Import {bracket, deprecated} %% SDF-style import
     
-    "project"           -> ModuleName {reject}
-    "retain"            -> ModuleName {reject}
-    "with"              -> ModuleName {reject} %% future use?
-    "unimports"         -> ModuleName {reject}
+    "project"           -> Reserved
+    "retain"            -> Reserved
+    "with"              -> Reserved %% future use?
+    "unimports"         -> Reserved
+    
+    "imports"           -> Reserved
+    "overlays"          -> Reserved
+    "rules"             -> Reserved
+    "signature"         -> Reserved
+    "strategies"        -> Reserved
+    "attributes"        -> Reserved
+    
+    "aliases"           -> Reserved
+    "lexical"           -> Reserved
+    "priorities"        -> Reserved
+    "context-free"      -> Reserved
+    "definition"        -> Reserved
+    "syntax"            -> Reserved
+    "variables"         -> Reserved
+    "module"            -> Reserved
+    "imports"           -> Reserved
+    "exports"           -> Reserved
+    "hiddens"           -> Reserved
+    "left"              -> Reserved
+    "right"             -> Reserved
+    "assoc"             -> Reserved
+    "non-assoc"         -> Reserved
+    "bracket"           -> Reserved
+    "sorts"             -> Reserved
+    "bracket"           -> Reserved
+    "sorts"             -> Reserved
+    "restrictions"      -> Reserved
+    "scopes"            -> Reserved
+    
+    Reserved            -> ReservedName[[ESV]]
     
     ReservedName[[ESV]] -> ModuleName {reject}
     
-    "imports"           -> ModuleName {reject}
-    "overlays"          -> ModuleName {reject}
-    "rules"             -> ModuleName {reject}
-    "signature"         -> ModuleName {reject}
-    "strategies"        -> ModuleName {reject}
-    "attributes"        -> ModuleName {reject}
+
+  context-free syntax %% simplified constructors, highlight annos
     
-    "aliases"           -> ModuleName {reject}
-    "lexical"           -> ModuleName {reject}
-    "priorities"        -> ModuleName {reject}
-    "context-free"      -> ModuleName {reject}
-    "definition"        -> ModuleName {reject}
-    "syntax"            -> ModuleName {reject}
-    "variables"         -> ModuleName {reject}
-    "module"            -> ModuleName {reject}
-    "imports"           -> ModuleName {reject}
-    "exports"           -> ModuleName {reject}
-    "hiddens"           -> ModuleName {reject}
-    "left"              -> ModuleName {reject}
-    "right"             -> ModuleName {reject}
-    "assoc"             -> ModuleName {reject}
-    "non-assoc"         -> ModuleName {reject}
-    "bracket"           -> ModuleName {reject}
-    "sorts"             -> ModuleName {reject}
-    "bracket"           -> ModuleName {reject}
-    "sorts"             -> ModuleName {reject}
-    "restrictions"      -> ModuleName {reject}
+    Constructor                 -> Attribute[[SDF]] {prefer, cons("Constructor")}
+    "recover"                   -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"recover\"))))")}
+    "incremental"               -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"incremental\"))))")}
+    "deprecated"                -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"deprecated\"))))")}
+    "deprecated" "(" STRING ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"deprecated\"), [fun(quoted(<1>))])))")}
+    "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
+    StrCon[[SDF]]               -> Constructor

@@ -48,8 +48,10 @@ rules
     prod @ prod(lhs, sort, _) -> <id>
     where
       x:= <get-rhs-sort-name>sort
-   where
+    with
   		<store-operation-declaration>prod
+    with
+      <topdown(try(store-namespace-def))> lhs
     with
       <Declaration> x
     <+
@@ -64,6 +66,11 @@ rules
       )
     with
       <alltd(declare-sdf-use)> lhs
+  
+  store-namespace-def:
+    namespacedef(name, sort) -> <id>
+    where
+      rules(NamespaceSort: name -> sort)
       
 	declare-sdf-globals:
 		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax

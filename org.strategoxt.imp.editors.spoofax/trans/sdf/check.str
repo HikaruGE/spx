@@ -19,7 +19,7 @@ rules
 rules // Local checks
   
   context-free-syntax-warning:
-    prod(p*, s, a*) -> (target, $[Missing {cons("Label")} attribute to label the abstract syntax])
+    prod(p*, s, a*) -> (target, $[Missing {"Label"} attribute to label the abstract syntax])
     where
       (
         not(<occurrences(?sort(_))> p* => 1; <occurrences(?lit(_))> p* => 0)
@@ -28,6 +28,7 @@ rules // Local checks
       );
       if !a* => attrs(a'*) then
         not(<one(term(default(appl(unquoted("cons" + "ast"), [fun(quoted(not("\"\"")))]))))> a'*);
+        not(<one(?Constructor(_))> a'*);
         not(<one(bracket() + reject())> a'*);
         not(!s; (sort("Keyword") + sort("\"Keyword\""))); 
         target := a*
