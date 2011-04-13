@@ -6,10 +6,9 @@ imports
 imports 
 	config
 	common
-	analysis
 imports 
 	context/sdf/declare-signature
-	sdf/analysis
+	context/sdf/declare
 	codegen/sdf/to-sdf
 	include/spoofaxlang
 imports
