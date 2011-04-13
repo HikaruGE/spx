@@ -30,10 +30,12 @@ exports
   lexical syntax
     {ID "/"}+       -> QID 
     {ID ("/"|".")}+ -> QIDWithDots
-
+		
   context-free syntax
   
-    "module" ModuleName Section* -> Start {cons("Module")}
+		ImportSection* PackageDefinition* 							-> Start{cons("CompilationUnit") }
+    "package" QName "{" Module*  "}"								-> PackageDefinition {cons("Package")}
+    MainID? "module" SPXModuleName "{" Section* "}" -> Module {cons("Module")}
     
     Grammar[[SDF]] -> Section {cons("SDFSection")}
     Decl[[STR]]    -> Section {cons("STRSection")}
@@ -47,71 +49,66 @@ exports
 
     
     %% TODO: Support SDF .def "definitions"?
-    
     %% TODO: Mark deprecated, ast, and maybe other attrs as keyword using a {prefer, ast} production
-  
-  context-free syntax %% Imports
-    
+ 
+  context-free syntax
+    QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
+    QID		  									 -> LegacyImportName {cons("Name")}	
+    {ID "." }+								 -> QName	 {cons("QName")}
+	  ID 												 -> QName	 {cons("Name"),prefer}
+    ID  											 -> SPXModuleName	 {cons("SPXModuleName")}
+   	  
+	context-free syntax %% Imports   	
     %% TODO: SDF: "retains" clause eliminates need for "hiddens" section. except we need something to hide the start symbols
     %% Maybe a "with start symbols" clause, combined with a warning if the syntax has start symbols but the clause is not specified?
-    
-    "imports" Import*          -> ImportSection {cons("Imports")}
+    "imports" Import*          -> ImportSection {cons("Imports"),prefer}
     "unimports" Import*        -> ImportSection {cons("Unimports")}
-    
-    QID "[" Symbols[[SDF]] "]" -> ModuleName  {cons("ParamName")}
-    QID                        -> ModuleName  {cons("Name")}
-    
+ 
+    ImportedModule 		                   -> Import 
     ModuleName                           -> Import {cons("Import")}
     ModuleName "retain" Renamings[[SDF]] -> Import {cons("ImportRetain")}
     ModuleName          Renamings[[SDF]] -> Import {cons("ImportRename")}
-    "package" QIDWithDots                -> Import {cons("PackageImport")}
-    "(" Import ")"                       -> Import {bracket, deprecated} %% SDF-style import
-    
-    "project"           -> Reserved
-    "retain"            -> Reserved
-    "with"              -> Reserved %% future use?
-    "unimports"         -> Reserved
-    
-    "imports"           -> Reserved
-    "overlays"          -> Reserved
-    "rules"             -> Reserved
-    "signature"         -> Reserved
-    "strategies"        -> Reserved
-    "attributes"        -> Reserved
-    
-    "aliases"           -> Reserved
-    "lexical"           -> Reserved
-    "priorities"        -> Reserved
-    "context-free"      -> Reserved
-    "definition"        -> Reserved
-    "syntax"            -> Reserved
-    "variables"         -> Reserved
-    "module"            -> Reserved
-    "imports"           -> Reserved
-    "exports"           -> Reserved
-    "hiddens"           -> Reserved
-    "left"              -> Reserved
-    "right"             -> Reserved
-    "assoc"             -> Reserved
-    "non-assoc"         -> Reserved
-    "bracket"           -> Reserved
-    "sorts"             -> Reserved
-    "bracket"           -> Reserved
-    "sorts"             -> Reserved
-    "restrictions"      -> Reserved
-    "scopes"            -> Reserved
-    
-    Reserved            -> ReservedName[[ESV]]
-    
-    ReservedName[[ESV]] -> ModuleName {reject}
-    
+    "namespace" QIDWithDots              -> Import {cons("NamespaceImport")}
+    "(" Import ")"                       -> Import {bracket, deprecated}
 
-  context-free syntax %% simplified constructors, highlight annos
-    
+	context-free syntax    
+    LegacyImportName				 				   -> ImportedModule{cons("ImportLegacyArtifact"), prefer}
+    QName "::" SPXModuleName 				   -> ImportedModule{cons("ImportSpxModule"), prefer} 
+    QName		   					   					 	 -> ImportedModule{cons("ImportPackage")}
+    QName "as" ID					   					 -> ImportedModule{cons("ImportPackageWithAlias"),prefer}	
+
+	context-free syntax
+		"[" {AttributeDef "," }+ "]"  	-> Attribute{cons("AttributeSection")}
+		
+		ID  -> AttributeDef 
+		ID Attribute-arguments-> AttributeDef{prefer}
+	  
+	  Target ":" Attribute -> AttributeDef{non-assoc} 
+	    
+	  EnclosingSymbol  -> Target{cons("Target")} 
+	    
+		ID-> Argument-name{cons("Argument-Name")}
+		ID -> Attribute-argument-expression	
+		
+		Argument-name? Attribute-argument-expression -> Positional-argument{cons("Positional-argument")}
+		STRING -> Positional-argument{cons("Positional-argument")}
+		
+		ID "=" STRING -> Named-argument{cons("Named-argument")}
+	    
+		"(" {Named-argument ","}+ ")" -> Attribute-arguments
+	  "(" {Positional-argument ","}+ ")" -> Attribute-arguments
+	  "(" {Positional-argument ","}+  "," {Named-argument ","}*")" -> Attribute-arguments{prefer}
+	      
+
+  context-free syntax 
+    Reserved            -> ReservedName[[ESV]]
+    ReservedName[[ESV]] -> ModuleName {reject}
+
+	context-free syntax %% simplified constructors, highlight annos
     Constructor                 -> Attribute[[SDF]] {prefer, cons("Constructor")}
     "recover"                   -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"recover\"))))")}
     "incremental"               -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"incremental\"))))")}
     "deprecated"                -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"deprecated\"))))")}
     "deprecated" "(" STRING ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"deprecated\"), [fun(quoted(<1>))])))")}
     "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
-    StrCon[[SDF]]               -> Constructor
+    StrCon[[SDF]]               -> Constructor	    

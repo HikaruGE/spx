@@ -1,7 +1,7 @@
 module Concepts
 
 imports
-  Common
+  SPXCommon
 
 exports
   
