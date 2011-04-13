@@ -1,0 +1,67 @@
+module context/declare
+
+imports 
+	context/sdf/declare
+	context/str/declare
+	context/scope-tree
+	context/signature
+	normalize/signatures 
+imports 
+	include/SpoofaxLang
+	lib/editor-common.generated
+imports
+	utils/annotations
+	utils/debug	
+	common
+
+rules		
+	declare-all = declare-sdf-all;declare-esv-all ; declare-str-all; update-modified-module-declaration   
+
+rules	
+	declare-sdf-all = declare-spxmodules-all(declare-sdf-section) 
+	declare-str-all = declare-spxmodules-all(declare-str-section)
+	declare-esv-all = declare-spxmodules-all(declare-esv-section)
+
+rules
+	declare-spxmodules-all(s): 
+		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*) 
+		where
+			<alltd(s)>section* => m-sections*
+			
+	update-modified-module-declaration:
+		m@Module(attrb* , modname , section*) -> m
+		with
+				Package( package-qname) := <get-annotation(get-package-annotation)>modname
+		with 
+			<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  m) 
+	
+rules 
+	declare-sdf-section: 
+		SDFSection(definition*) ->SDFSection(declared-definition*) 
+		where 
+			declared-definition* := <alltd(declare-sdf-definition-main)>definition*
+	
+	declare-sdf-section: STRSection(def*) -> <id>
+ 
+	declare-sdf-section: ESVSection(def*) -> <id>  
+
+rules	
+	declare-str-section: SDFSection(def*) -> <id>
+	
+	declare-str-section: s@STRSection(def*) -> STRSection(m-definition*)
+	where 
+		m-definition* := <alltd(declare-str-definition-main)>def*
+	
+		
+	declare-str-section: ESVSection(def*) -> <id>   
+
+rules	
+	declare-esv-section: SDFSection(def*) -> <id>
+	
+	declare-esv-section: STRSection(def*) -> <id>
+ 
+	declare-esv-section: ESVSection(def*) -> <id>
+	
+	
+	
+	   

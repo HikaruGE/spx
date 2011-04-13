@@ -1,0 +1,434 @@
+module context/scope-tree
+imports
+	include/SpoofaxLang 
+	lib/editor-common.generated
+imports 
+	context/signature
+	normalize/signatures
+	codegen/compile
+imports 	
+	common
+	utils/annotations
+	utils/path
+	utils/debug 
+
+	
+//TODO OPTIMIZE : eliminate redundant dynamic rules. Declared with package definition most likely is a redundant DR
+
+rules 
+
+	// Scope Tree implementation using Dynamic Rules
+	store-package-abspath: 
+		(package-untyped-qname , abspath) -> <id>
+		with 
+			rules( 
+				DeclaredPackage   :+ package-untyped-qname -> abspath
+				PackagesDeclaredIn:+ abspath -> package-untyped-qname 
+			)
+		where 
+			<debug-symboltable>$[ScopeTree|storing abs path | DeclaredPackage: [<pp-aterm>package-untyped-qname]-> [<pp-aterm>abspath]]
+	
+	store-module-abspath: 
+		(module-untyped-qname, abspath) -> <id>
+		with 
+			rules(
+				DeclaredModule:+ module-untyped-qname -> abspath
+			)
+		where 
+			<debug-symboltable>$[ScopeTree|storing abs path| DeclaredModule: [<pp-aterm>module-untyped-qname]-> [<pp-aterm>abspath]]
+	
+	store-declaration(|ScopedSymbol): ( untyped-qname , definition) -> <id>
+		with 
+			rules( Declared : (ScopedSymbol, untyped-qname ) -> definition) 
+		where	
+			<debug-symboltable>$[ScopeTree|storing declaration| Declared: [<pp-aterm>untyped-qname]-> [<pp-aterm>definition]] 
+	
+	store-original-declaration(|ScopedSymbol): ( untyped-qname , definition) -> <id>
+		with 
+			rules( DeclaredOriginal : (ScopedSymbol, untyped-qname ) -> definition) 
+		where	
+			<debug-symboltable>$[ScopeTree|storing declaration| Declared: [<pp-aterm>untyped-qname]-> [<pp-aterm>definition]] 
+	
+	
+	store-scope-reference: (typed-qname, typed-qname-ofparent) -> <id>
+		with 
+			rules( 
+				GetEnclosingScope :+ 	typed-qname 				 -> typed-qname-ofparent
+				GetEnclosedScope  :+  typed-qname-ofparent -> typed-qname 
+			)				
+		where	
+			<debug-symboltable>$[ScopeTree|storing enclosing namespace reference| GetEnclosingNamespace: [<pp-aterm>typed-qname]-> [<pp-aterm>typed-qname-ofparent]]
+	
+	
+	store-declaration(|Type): 
+		x -> x
+		where
+			scoped-x := <to-scoped-symbol>x;
+			rules( Declaration : (Type, scoped-x) -> x)
+		where
+			<debug-symboltable>$[ScopeTree|Storing Declaration [<pp-aterm>(Type, scoped-x)] -> [<pp-aterm>x]]	
+		
+rules 
+	get-module-abs-filepath : Module(qname) -> result
+	where 
+			result := <DeclaredModule>qname 
+			<+
+			debug(!"SymbolTable| Failed to retrieve module's abs file path.");fail
+			 
+	get-package-abs-filepath : Module(qname) -> result
+	where 
+			result := <DeclaredPackage>qname 
+			<+
+			debug(!"SymbolTable| Failed to retrieve package's abs file path.");fail
+	
+rules	
+	// Add scopes for the symbol 
+	to-global-symbol =
+		!(Globals(), <id>)
+	<+
+		<debug> $[Type| FAIL | Failed to convert it to Global symbol. <symbol> [<pp-aterm-forced>]]
+		;fail	
+		
+	to-scoped-symbol =  
+		!(<GetEnclosingPackageName> , <GetEnclosingModuleName> , <id>)
+	<+
+		to-global-symbol //if enclosing scope is not declared, then considering the namespace of the Symbol to be global 
+	<+
+		<debug> $[Type| FAIL | Failed to convert it to scoped symbol. 
+										<enclosing package> [<pp-aterm><GetEnclosingPackageName>] <enclosing module>[<pp-aterm-forced><GetEnclosingModuleName>] <symbol> [<pp-aterm-forced>]]
+		;fail	
+		 
+	// Strip Scope and retuns the symbol 
+	remove-scope-from-symbol = ?(_,_, <id>) + ?(Globals(), <id>)
+
+rules
+	
+	//After ensuring result is unique i.e. list contains only one element, it returns the unique result
+	ensure-is-unique = ?[<id>] <+ debug(!"SymbolTable| Failed to resolve unique declaration.");fail
+	
+	//resolving symbol in global scope and returing list of result	
+	resolve-symbol-global-declarations(key-resolver, value-resolver)= 
+		?symbol; // NOTE : symbol does not contain any scope information
+		where(not(?(_,_) <+ ?(_,_,_)));
+		// Looking for the symbol in the Globals() Scope
+		where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Global Scope.]);
+		<resolve-symbol-declarations-internal(key-resolver, value-resolver,?(Globals() , symbol))>symbol;
+		where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Global Scope. Result: [<pp-aterm>]]);
+		is-not-empty-list
+	<+
+		<debug-symboltable>$[SymbolTable| FAIL| Failed to resolve following symbol [<pp-aterm>] in Global Scope];
+		fail
+	
+	//resolving symbol in global scope only and ensuring result is unique
+	resolve-symbol-unique-declaration(key-resolver, value-resolver)=
+		where(?( Globals(), symbol ))
+		;<resolve-symbol-global-declarations(key-resolver, value-resolver)> symbol	
+		;ensure-is-unique // verify as resolved unique declaration 
+	<+	
+		<debug-symboltable>$[SymbolTable| FAIL| Failed to retrieve uniqe declaration in global scope."];fail
+	
+	// Resolving unique declaration of symbol in the scope (current-package, current-module)
+	// Symbol is resolved using the specified strategy parameter, i.e. using key-resolved and value-resolved  
+	resolve-symbol-unique-declaration(key-resolver, value-resolver)=
+		?( current-package , current-module, symbol )
+		;<resolve-symbol-unique-declaration(key-resolver, value-resolver|current-package , current-module)>symbol	
+	
+	
+	// resolving unique declaration - generic implementation   
+	resolve-symbol-unique-declaration(key-resolver, value-resolver|current-package , current-module)=
+		resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)
+		;ensure-is-unique // verify as resolved unique declaration 
+	<+	
+		<debug-symboltable>$[SymbolTable| Failed to retrieve unique declaration.];fail
+	
+	// resolving declaration in global scope 
+	resolve-symbol-declarations(key-resolver, value-resolver) = 
+		?( Globals(), symbol )
+		;<resolve-symbol-global-declarations(key-resolver, value-resolver)> symbol
+	
+	// resolving declartion in the scope mentioned
+	resolve-symbol-declarations(key-resolver, value-resolver) = 
+		?( current-package , current-module,symbol )
+		;<resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)> symbol
+	
+	// resolving declarations incrementally	
+	resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)= 
+		?symbol; // NOTE : symbol does not contain any scope information
+		(	
+				// Looking for the symbol in the current Module Scope
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Current Scope [<pp-aterm>(current-package , current-module)].]);
+				<value-resolver>(current-package , current-module, symbol); 
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Current Scope. Result: [<pp-aterm>]]);
+				is-not-empty-list
+			<+
+				// Looking for the symbol in the parent enclosing scope => Package Scope
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Enclosing Package Scope ([<pp-aterm>current-package],_)  or in Global Scope]);
+				<resolve-symbol-declarations-internal(
+					key-resolver, 
+					value-resolver, 
+					?(current-package , _ , symbol) + ?(Globals() , symbol) // NOTE : Currently we combined Globals() + Enclosing package search in ONE loopup.
+				)>symbol;
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Enclosing Package + Global Scope. Result: [<pp-aterm>]]);				 	 
+		 	 	is-not-empty-list
+			<+
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Imported Scopes.]);
+				where( 
+					!current-package => Package(untyped-package-qname);
+					!current-module  => Module(untyped-module-qname)
+					;<get-all-usings>( untyped-package-qname , untyped-module-qname) => imported-typedqname*
+					;<debug-symboltable>$[SymbolResolver| Getting List of dependening-on packages/modules : [<pp-aterm>]]
+					
+				);
+				<resolve-imported-symbol-declarations(key-resolver  , value-resolver)>(symbol, imported-typedqname*);
+				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Imported Scopes. Result: [<pp-aterm>]]);
+				is-not-empty-list
+			<+
+				<debug-symboltable>$[SymbolTable| FAIL| Failed to resolve following symbol [<pp-aterm>] in namespace [<pp-aterm>(current-package , current-module)]];
+				fail
+		)
+
+	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
+		key-resolver;
+		filter(namespace-filter);
+	  mapconcat(value-resolver)
+	<+     			 
+		<debug-symboltable>$[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<pp-aterm>]]
+		;fail
+
+	resolve-imported-symbol-declarations(key-resolver,value-resolver):
+		(symbol, scopes*) -> resolved*
+		where 
+			if !scopes* => [] then 
+				<debug-symboltable> $[SymbolTable| FAIL| Failed to resolve following symbol: [<pp-aterm>symbol] as there is no scope specified. ];
+				fail
+			else
+				!scopes* => [currentscope|rest*]	
+			end
+		where 
+			if !currentscope => Package(_) then 
+				resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(currentscope, _ , symbol))>symbol
+			else
+				if !currentscope => Module(_) then 
+					resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(_ , currentscope , symbol))>symbol
+				end
+			end;
+			where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<pp-aterm>resolved*]. Found in :[<pp-aterm>currentscope] ])
+		<+
+			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> ( symbol, rest*)
+	
+	
+	// Verifies tha tthe current term is not a empty list 
+	is-not-empty-list = ?[_|_] 
+		
+rules
+	
+	store-import-references: m@Module(attrb*,modname,section*) -> Module(attrb*,modname,resulting-section*)
+		with 
+			!modname => SPXModuleName(<id>);
+			 <debug-symboltable>$[ImportReferenceResolver| store-import-references|Resolving import references for module : [<pp-aterm>]] 
+		where
+			Package(package-qname) :=<get-annotation(get-package-annotation)>modname// get package-name from the modname
+		where 
+			{| GetEnclosingPackageName, current-source-directory, GetEnclosingModuleName:
+					rules(
+						GetEnclosingPackageName      := package-qname //TODO refactor: most likely it is no longer needed 
+						GetEnclosingModuleName			 := modname 				
+						current-source-directory     := <get-module-untyped-qname;
+																					   DeclaredModule;
+																					   dirname
+																				    >(package-qname, modname)
+					)
+					;<alltd(store-import-declaration(|<GetEnclosingPackageName>))> section* => resulting-section*
+					;!Module(attrb*,modname,resulting-section*) => modifiedModuleDescription
+					;<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  modifiedModuleDescription) //updating with import reference annotation	 
+			|}
+			
+	store-import-declaration(|enclosing-namespace-qname): 
+		i@ImportPackage(qname@QName(package-qname-parts*)) -> annotated-import-decl
+		where
+			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing package reference :[<pp-aterm>]]
+		where 
+			if <DeclaredPackage>qname then
+				<store-spx-import-declaration(|enclosing-namespace-qname)> Package(qname)
+				;annotated-import-decl:= i
+			else
+				annotated-import-decl:= <add-annotation(|Unresolved())>i
+				;<debug-symboltable>$[ImportReferenceResolver| store-import-declaratio|Failed to resolve following import : [<pp-aterm>]]	
+	 		end
+	 		
+	store-import-declaration(|enclosing-namespace-qname) :
+		i@ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> annotated-import-decl 
+		where 
+			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing module reference : [<pp-aterm>]]
+		with
+			module-qname := <get-module-untyped-qname> (package-qname-parts , modname)//TODO: construct modules qualified name
+		where 
+			if <DeclaredModule>module-qname then
+					<store-spx-import-declaration(|enclosing-namespace-qname)> Module(module-qname)
+					;annotated-import-decl:= i
+			else
+					annotated-import-decl:= <add-annotation(|Unresolved())>i
+					;<debug-symboltable> $[Store-import-declaration| Warning |Failed to resolve following import : [<pp-aterm>]]	
+		 	end		
+		 
+		// Store import references in the 2nd pass of the traversals
+	store-import-declaration(|enclosing-namespace-qname):
+		i@ImportPackage(Name(package-name)) -> annotated-import-decl 
+		where 
+			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing reference : [<pp-aterm>]]
+		where 
+			if <DeclaredPackage>QName([package-name]) then
+				<store-spx-import-declaration(|enclosing-namespace-qname)> Package(QName([package-name]))
+				;annotated-import-decl:= i 			
+			else
+				// Seems like package-name is not declared as a SPX package 
+				// Hence, looking for it in the file system as any external/legacy
+				// artifact.   
+				result:= <store-import-declaration(|enclosing-namespace-qname)>ImportLegacyArtifact(Name(package-name))
+			 ;if not(<get-annotation(get-unresolved-symbol-annotation)>result) then
+					//import is resolved as legacy artifact and found in local file system 
+					annotated-import-decl:= result
+				else
+					//Not found in the file system. Hence, just ignoring it and annotating it.
+					//and marking it as Unresolved()		
+					annotated-import-decl:= <add-annotation(|Unresolved())>i
+				end	  
+			end 
+
+	store-import-declaration(|enclosing-namespace):
+		i@ImportLegacyArtifact(Name(modulename))  -> annotated-import-decl 
+		where 
+			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing leagacy/external artifact reference : [<pp-aterm>]]
+		where 
+			resolved-path := <resolve-legacy-import-path(|<current-source-directory>)>modulename
+			;if (!resolved-path => Unresolved()) then 
+				<debug>$[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<pp-aterm>i]]
+				;annotated-import-decl :=  <add-annotation(|Unresolved())>i
+			else
+				annotated-import-decl :=  i
+			end	
+		with
+			rules(
+					UsedLegacyArtifacts:   (Globals(), modulename) -> resolved-path
+					UsingLegacyArtifacts:+ enclosing-namespace	   -> (Globals(), Module(Name(modulename)), resolved-path)    
+				)
+			;<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <UsingLegacyArtifacts>: [<pp-aterm>enclosing-namespace]-> [<pp-aterm>(Globals(), Module(Name(modulename)), resolved-path)]]
+			
+	store-spx-import-declaration(|importedby-package): 
+		imported -> imported
+		where 
+			!importedby-package => QName(_)
+		where 
+			module-untyped-qname := <get-module-untyped-qname>(importedby-package , <GetEnclosingModuleName>);
+			rules (
+				UsedBy:+ imported   -> importedby-package  
+				Using :+ (importedby-package, module-untyped-qname) -> imported 
+			)
+		where
+			<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <Using>: ([<pp-aterm>importedby-package] , [<pp-aterm>module-untyped-qname])-> [<pp-aterm>imported]]
+			
+rules 
+	// TODO refactor : reduce the duplicate codes.
+	get-package-declaration = ?package-qname; get-declaration(|Packages())
+	
+	// Given a Module's Qualified Typed name , it returns the module declaration 
+	get-module-declarations = where(?Module(QName(_)));get-untyped-qname ; !(Modules() , <id>); bagof-Declared
+	
+	get-module-declaration = where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); Declared		
+	
+	get-original-module-declaration = 	where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); DeclaredOriginal
+	
+	get-module-and-verfity-unique = where(?Module(QName(_)));	get-untyped-qname ;	!(Modules() , <id>); bagof-Declared; ?[<id>]		  	
+		
+	// Given a List of Modules' Qualified Type name, it returns the list of module declaration 
+	get-module-declarations =  mapconcat(	get-module-declarations	)	<+	debug(!"Failed to get module declarations: ") ;fail
+
+	get-declaration(|ScopedSymbol)= !(ScopedSymbol, <id>); Declared
+	
+	get-enclosed-declarations(s) =?package-qname ; !Package(package-qname);	bagof-GetEnclosedScope;filter(s)
+	
+	// Get a list of Package declared in the current Project
+	// Retunrs: List of Packages' Typed-QName , i.e. , Package(QName(_))						  
+	get-package-list = all-keys-DeclaredPackage; get-typed-qnames(|PackageType())
+	
+	get-packages-of-file: file-abs-path -> result
+	with 
+		<has-extension(|"spx")>file-abs-path 
+		;<file-exists>  file-abs-path
+	where
+		<bagof-PackagesDeclaredIn>file-abs-path; get-typed-qnames(|PackageType()) => result
+	
+	// Given Typed-QName of Package, it returns list of enclosed Modules in the Package
+	// Returns:  List of Modules' Typed-QName, i.e. Module(QName(_))
+	get-enclosed-modules =  where (?Package(uqname));	bagof-GetEnclosedScope;	filter(?Module(_)) <+ debug(!"Failed to get enclosed modules: ") ;fail
+
+	// Returns a list of package/modules that <id> is depeding on. 
+	// Requires the <ID> to be untyped QName to look it up in the symbol tree.
+	// Otherwise, it throws <illegal argument exception>
+	get-all-usings =  where(?QName(_));	?package-untyped-qname; all-keys-Using;	filter(?(package-untyped-qname, _)); mapconcat(bagof-Using)	
+	
+	get-all-usings : (package-untyped-qname , module-untyped-qname) -> lstUsings*
+	where 
+		<bagof-Using>(package-untyped-qname , module-untyped-qname) => lstUsings* 			
+
+rules
+	//TODO : better handling of Typed and Untyped QName
+	
+	//Strongly typing/untyping qname
+	get-untyped-qname : typed-qname -> u-qname
+		where
+			!typed-qname => Package(u-qname)
+			<+ 
+			 !typed-qname => Module(u-qname)
+
+	get-typed-qnames(|Type) : list-qname -> result
+		where 
+			<is-list>list-qname
+		where
+			 <map(get-typed-qname(|Type))>list-qname => result
+		
+	get-typed-qname(|Type) = 
+		?QName(q-name-parts*); where(<is-list>q-name-parts*);<get-typed-qname>(Type , <id>)
+		<+
+		<debug>$[Type| FAIL | Failed to cast  [<pp-aterm-forced>] to [<pp-aterm-forced>Type]]; fail 	
+	
+	get-typed-qname: (ModuleType() , qname) -> Module(qname)
+	
+	get-typed-qname: (PackageType() , qname) -> Package(qname)
+
+	get-module-typed-qname: (Package(QName(package-qname-parts*)), spxmodulename) -> <get-typed-qname(|ModuleType())> <get-module-untyped-qname>(QName(package-qname-parts*), spxmodulename)
+	
+	get-module-typed-qname: (QName(package-qname-parts*), spxmodulename) -> <get-typed-qname(|ModuleType())>(<get-module-untyped-qname><id>)
+		  
+	get-module-untyped-qname: 
+		p@(package-qname-parts*, spxmodulename) ->QName(<conc>( package-qname-parts* , [modname]))
+		 where 
+		 	<is-list>package-qname-parts* 	
+		 where 
+				if <is-string>spxmodulename then 
+		 			modname := spxmodulename
+		 		else
+		 			!spxmodulename => SPXModuleName(modname-string);
+		 			 modname := modname-string 
+		 			<+ 
+		 			debug(!"Type| Illegal <spxmodulename> argument in get-module-untyped-qname ");fail
+				end		 				
+			<+
+				<debug>$[Type| FAIL |get-module-untyped-qname failed to cast  [<pp-aterm-forced>p] to [<pp-aterm-forced>ModuleType()]]; fail 	
+
+	get-module-untyped-qname: (QName(package-qname-parts*), spxmodulename) -> <get-module-untyped-qname>(package-qname-parts*, spxmodulename)
+	 					
+strategies
+	
+	// Returns matching strategy for looking up package annotations
+	get-package-annotation = ?Package(qname)
+	
+	// Returns matching strategy for looking up package annotations
+	get-module-annotation = ?Module(qname)
+	
+	
+	// Returns matching strategy for looking up Unresolved symbol annotations
+	get-unresolved-symbol-annotation = ?Unresolved()
+	
+	
+	 		 		

@@ -1,0 +1,29 @@
+module codegen/generate-all
+
+imports 
+	codegen/compile
+	codegen/sdf/to-sdf
+	codegen/sdf/to-signature 
+	codegen/str/to-stratego
+	codegen/esv/to-esv
+imports
+	codegen/buildscripts
+imports 
+	config 
+	utils/cache
+	lib/editor-common.generated
+	context/scope-tree
+	context/signature
+	normalize/signatures  
+	include/spoofaxlang
+	utils/path
+	utils/annotations
+
+rules 
+	generate-all =  emit-sdf;emit-signatures;emit-str <+ debug(!" Failed in Generate-all. "); fail
+
+	generate-main = 
+			?module-qname* ;generate-sdf-main;generate-str-main ; debug(!"inside generate esv main : ");generate-esv-main 
+		<+ 
+			debug(!" Failed in Main Generation. "); fail  
+	 

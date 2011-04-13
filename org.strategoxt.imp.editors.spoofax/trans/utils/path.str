@@ -1,0 +1,167 @@
+module utils/path 
+imports 
+	lib/editor-common.generated 
+	context/signature
+imports
+	common
+	utils/debug
+	include/spoofaxlang
+
+rules 
+	
+	qname-to-path = 
+		convert-qname(|"/")
+	
+	convert-qname(|seperator) =
+		?QName(qname-parts*)
+		;<separate-by(|seperator);concat-strings>qname-parts*
+		
+rules
+	get-output-path(|prefix, extension)= 
+		?(dir-path, QName(qname-parts*))
+		;if not(!qname-parts* => []) then 
+				relative-path := <qname-to-path> QName(qname-parts*)
+				;<concat-strings> [dir-path, "/" , relative-path ,"-", prefix, "." , extension]
+		else
+			!dir-path// there is no point of concat relative-path if its empty
+		end
+		
+	get-output-path(|extension)= 
+		?(dir-path, QName(qname-parts*))
+		;if not(!qname-parts* => []) then 
+				relative-path := <qname-to-path> QName(qname-parts*)
+				;<concat-strings> [dir-path, "/" , relative-path , "." , extension]
+		else
+			!dir-path// there is no point of concat relative-path if its empty
+		end 
+	
+	get-main-file-name =
+		?QName(qname-parts*);
+		<convert-qname(|"-")>QName(qname-parts*) => qname-as-string;
+		<concat-strings>[qname-as-string,"-main"]
+	
+	get-signature-file-name = 
+		?sdf-module-name;
+		<concat-strings>[sdf-module-name,"-signature"]
+			
+	get-main-output-path(|extension)=
+			?(dir-path, QName(qname-parts*))
+		 ;artifact-main-file-name    := <get-main-file-name>QName(qname-parts*)
+		 ;relative-path := <qname-to-path> QName(qname-parts*)
+		 ;<concat-strings> [dir-path, "/" , relative-path, "/" ,artifact-main-file-name, "." , extension]
+	
+	
+	append-if-not-empty(|string-to-append, seperator) : operand ->result
+  where 
+  	if <eq>("", string-to-append) then 
+			result := operand
+		else
+			result := $[[string-to-append][seperator][operand]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
+		end 
+		
+rules
+	//ensures whether a particular directory exists. If it does not , then creates a new one with the same name. 	
+	ensure-directory-exists = ?dirpath ; ((file-exists ; filemode ; isdir) <+ mkdir); chdir	
+rules
+	ensure-exists = 
+	?( project-path , autogen-dir )
+	; where (<is-string>autogen-dir)
+	; fail  
+	
+	ensure-exists =  
+		?(autogen-root-path, QName(qname-parts*))
+		;debug(!"inside ensure-exists ")
+		;<ensure-directory-exists>autogen-root-path 
+		;if not(<eq>(<length>qname-parts*,0)) then 
+				<map(create-folder)>qname-parts*  //Creating sub-directories from the qname parts 
+		 end
+		;create-folder(|autogen-root-path)  // restoring current folder to the project-path 
+	
+	create-folder(|directory-to-create) = <file-exists<+mkdir(|"w")> directory-to-create;<chdir>directory-to-create  
+	
+  create-folder: folder-name -> None() 
+		with 
+    	<file-exists<+mkdir(|"w")> folder-name 
+      ;<chdir>folder-name 		    
+  
+  chdir-to-project-path =  
+  <chdir><project-path>   
+
+rules 
+	spx-precompiled-cache-path = 
+		spx-cache-path(|"precompiled.sig")
+	
+	spx-lib-cache-path = 
+		spx-cache-path(|"libs.sig")
+	
+	
+	spx-semantic-issues-cache-path = 
+		spx-cache-path(|"err")
+		
+	spx-cache-path(|extension-prefix):
+    full-path -> cache-path
+    with
+      project-path := <project-path>;
+      cache-dir    := <file-exists <+ mkdir> $[[project-path]/.spxcache];
+      full-path'   := <string-replace(|"/", "+"); string-replace(|"\\", "+"); string-replace(|":", "+")> full-path;
+      cache-path   := $[[cache-dir]/[full-path'].[extension-prefix]]
+	
+	spx-compilation-unit-path=
+		where(is-string);
+		abspath
+		
+rules 
+	resolve-legacy-import-path(|sourcedir) =
+		 where (is-string);
+		 {| SourceDir, ProjectDir:
+		 		rules( 
+		 			ProjectDir  := <project-path>
+		 			SourceDir		:= sourcedir 
+		 		);	
+			 		 try-resolve-as-sdf
+				<+ try-resolve-as-str
+				<+ try-resolve-as-esv
+		 |}
+		<+ 
+		 <debug-symboltable> $[PathResolving | resolve-legacy-import-path|Failed to resolve import path for : [<pp-aterm>]]
+		 ;!Unresolved() 
+	
+			
+	try-resolve-as-str = 
+		?importname; 
+		where (
+			full-path := <resolve-import-path> $[[importname].str]
+  	<+
+  		full-path := <resolve-import-path> $[[importname].rtree]
+		);
+		!full-path
+	
+	
+	try-resolve-as-sdf = 
+		?importname; 
+		where (
+			full-path := <resolve-import-path> $[[importname].sdf]
+  	<+
+  		full-path := <resolve-import-path> $[[importname].def]
+		);
+		!full-path
+		
+		
+	try-resolve-as-esv = 
+		fail
+	
+	
+	
+	//TODO refactor : fetch the folders from the config.str 
+	resolve-import-path:
+  x -> full-path
+  where
+  	full-path := <file-exists> $[[<SourceDir>]/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/trans/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/lib/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/src/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
+ <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
+   		

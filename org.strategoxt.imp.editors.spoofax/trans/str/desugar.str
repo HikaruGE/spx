@@ -4,22 +4,9 @@ module str/desugar
 imports
   libstratego-lib
   libstrc
-
-signature constructors
-
-  FromMetaExpr     : Term -> Term
-  ToMetaExpr       : Term -> Term
-  FromTerm         : Term -> Term
-  ToTerm           : Term -> Term
-  FromMetaListExpr : Term -> Term
-  ToMetaListExpr   : Term -> Term
-  FromBuild        : Term -> Term
-  ToBuild          : Term -> Term
-  FromStrategy     : Term -> Term
-  ToStrategy       : Term -> Term
-  meta-var         : String -> Term
-  meta-listvar     : String -> Term
-
+imports
+	normalize/signatures
+	
 rules
 
   basic-stratego-desugar-top =

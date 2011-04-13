@@ -1,0 +1,32 @@
+module context/signature
+
+// signature visibility 
+
+// Importing depth > 1 => visibility is internal
+// IDEA : how to implement this depth
+// build a tree and during resolving search in only one level up 
+ 
+signature constructors
+	Public	:	 Visibility
+	Private	:	 Visibility
+	Internal:  Visibility	
+
+
+//Signature scopes	
+signature constructors
+	Modules										: ScopedSymbol
+	Packages			 						: ScopedSymbol
+	Globals										: ScopedSymbol
+	
+	ScopeSymbol								: Symbol 
+	
+	//consider declaring the following 
+	STRSection								: Symbol
+	ESVSection								: Symbol
+	SDFSection								: Symbol
+	Unresolved								: Symbol
+	
+	
+	ModuleType								: Type
+	PackageType								: Type
+	SDFType										: Type

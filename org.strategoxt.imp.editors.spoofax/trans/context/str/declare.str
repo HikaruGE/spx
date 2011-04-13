@@ -1,4 +1,4 @@
-module str/analysis
+module context/str/declare
 
 imports
 	libstrc		
@@ -8,161 +8,103 @@ imports
 imports
 	lib/editor-common.generated
 imports  	
- 	utils/-
+ 	utils/sourcedir
+ 	utils/debug
  	normalize/stratego
 imports	
 	analysis
 	common
 	config 
-	
 imports 
 	include/SpoofaxLang
-	
+	context/str/signature-generator
+	context/scope-tree
+
+
 rules 
-	// Projections and lookup 
-	analyze-str-ast:
-		(ast, path, project-path) -> ast'
-		with
-			enable-stratego-debugging
-			;rules(
-        		CurrentFileFullPath := $[[project-path]/[path]]
-        )
-      ;<try(get-source-base-dir)>ast
-   		;if <file-exists> $[[project-path]/.disable-global-analysis] then
-    		rules(NoAnalysis: _)
-    	end
-   		;if <file-exists> $[[project-path]/.warn-global-analysis] then
-    		rules(WarnAnalysis: _)
-    	end
-    with
-    	declare-stratego-globals-top //TODO  : Refactor globals-top. Rewriting of the tree is done here.
-     	;ast' := <declare-bodies-top>;
-      rules(
-        DecoratedAst := ast'
-      )
-    where 
-    	disable-stratego-debugging
-    	;<debug-str> $[AST after analysis : [<pp-aterm>ast']]
-    	 
- rules   		
-  signature-of:
-    SDefT(x, s*, t*, s) -> (<remove-quote> x, <length> s*, <length> t*)
-
-  signature-of:
-    RDecT(x, s*, t*) -> (<remove-quote> x, <length> s*, <length> t*)
-
-  signature-of:
-    ExtSDef(x, s*, t*) -> (<remove-quote> x, <length> s*, <length> t*) 
-
-  signature-of:
-    CallT(SVar(x), s*, t*) -> (<remove-quote> x, <length> s*, <length> t*)
-
-  signature-of:
-    Var(x) -> (<remove-quote> x, 0)
-
-  signature-of:
-    VarDec(x, t) -> (<remove-quote> x, 0)
-
-  signature-of:
-    Op(x, t*) -> (<remove-quote> x, <length> t*)
-
-  signature-of:
-    OpDecl(x, t) -> (<remove-quote> x, <dec> <occurrences(?ConstType(_))> t)
-    
-  signature-of:
-    ExtOpDecl(x, t) -> (<remove-quote> x, <dec> <occurrences(?ConstType(_))> t)
-    
-  signature-of:
-    Overlay(x, t*, _) -> (<remove-quote> x, <length> t*)
-
-  signature-of:
-    Rec(x, s) -> (<remove-quote> x, 0, 0)
-
-  signature-of:
-    LabeledDynRuleScopeId(x, _) -> <remove-quote> x
-
-  signature-of:
-    DynRuleScopeId(x) -> <remove-quote> x
-  
-  remove-quote:
-    COMPLETION(s) -> COMPLETION(<remove-quote> s)
-  
-  remove-quote: 
-    s -> s'
-    with
-      if explode-string => ['\'' | s_tail] then
-        s' := <implode-string> s_tail
-      else
-        s' := s
-      end
-
-  is-constructor =
-    (?(_, _); DeclareCookie; Declaration <+ declaration-of);
+	
+	getStrDeclaration = 
+ 		?cookie; 
+ 		<resolve-symbol-unique-declaration(all-keys-STRDeclaration, bagof-STRDeclaration)><to-scoped-symbol>cookie 
+ 	<+
+ 		<debug-declaration> $[DeclareSTR | Failed to retrive STRDeclaration for cookie [<pp-aterm-forced><to-scoped-symbol>]];
+ 		fail
+	
+	getCookie =
+			?sig; 
+ 			<resolve-symbol-unique-declaration(all-keys-DeclareCookie, bagof-DeclareCookie)><to-scoped-symbol>sig
+ 		<+
+ 			<debug-declaration> $[DeclareSTR | Failed to retrive DeclareCookie for signature [<pp-aterm>]];
+ 			fail
+	 
+rules 
+	is-constructor =
+    (?(_, _); getCookie; getStrDeclaration <+ declaration-of);
     (?OpDecl(_, _) + ?ExtOpDecl(_, _))
 
   is-congruence-signature:
     (x, s, 0) -> (x, s, [])
     where
-      <DeclareCookie> (x, s)
-
+      <getCookie> (x, s)   
+ 
   declare-cookie-of =
-    signature-of; DeclareCookie
+    signature-of; getCookie
 
   declaration-of =
-    signature-of; (?_{<Declaration>} <+ ?(_{<Declaration>}, _) <+ ?(_{<Declaration>}, _, _))
+    signature-of; (?_{<getStrDeclaration>} <+ ?(_{<getStrDeclaration>}, _) <+ ?(_{<getStrDeclaration>}, _, _))
 
-rules // Helpers
+rules 
   
   declare-definition:
     def -> cookie
     with
       sig := <signature-of>
-      ;if not(<DeclareCookie> sig) then
-        cookie := <newterm>
+      ;if not(<getCookie> sig) then
+         cookie := <newterm>
+        ;scoped-cookie :=<to-scoped-symbol> cookie
+        ;scoped-sig    :=<to-scoped-symbol> sig
         ;rules(
-          DeclareCookie: sig -> cookie
-          Declaration: cookie -> def
+          DeclareCookie:  scoped-sig  -> cookie
+          STRDeclaration: scoped-cookie  -> def
         )
       else
-       	cookie := <DeclareCookie> sig 
+       	cookie := <getCookie> sig 
       end
 
   redeclare-definition:
     def -> cookie
     with
-    	sig := <signature-of>;
-      cookie := <newterm>;
-      rules(
-        DeclareCookie: sig -> cookie
-        Declaration: cookie -> def
+    	sig := <signature-of>
+      ;cookie := <newterm>
+      ;scoped-cookie :=<to-scoped-symbol> cookie
+      ;scoped-sig    :=<to-scoped-symbol> sig
+      ;rules(
+        DeclareCookie:  scoped-sig    -> cookie
+        STRDeclaration: scoped-cookie -> def
       )
   external SRTS-EXT-newint(|)
   
-rules // Declare globals
-
-  declare-stratego-globals-top:
-  	p@(package-name,concept-name,def) -> p
-  	with
-  		<declare-stratego-globals-top>def 			 
-  
-  declare-stratego-globals-top =
+rules 
+	
+	declare-str-definition-main =  
+		declare-stratego-globals-top;
+		declare-bodies-top
+	
+	declare-stratego-globals-top =
     if not(NoAnalysis) then
-    	//with(<declare-str-globals>Import("libstratego-lib"))
-      debug(!"inside stratego-globals-top : "); alltd(declare-str-globals)
+    	where(<debug-declaration>$[DeclareSTR | Inside stratego-globals-top : [<pp-aterm>]]);
+    	//TODO : FIX handle it during legacy-compilation
+    	//with(<declare-str-globals>Import("libstratego-lib")); 
+      alltd(declare-str-definition)
     end
 
-  declare-str-globals:
+  declare-str-definition:
     SDefT(x, s*, t*, s) -> SDefT(x', s*, t*, s')
     with
     	x' := x{<declare-definition>};
       s' := <topdown(try(declare-dynrule))> s
-   
-   declare-str-globals:
-    ExtSDef(x, s*, t*) -> <id>
-    with
-      redeclare-definition
-
-  declare-str-globals:
+	
+	declare-str-definition:
     OpDecl(x, t) -> OpDecl(x', t)
     with
       cookie := <redeclare-definition>;
@@ -171,119 +113,34 @@ rules // Declare globals
       // Declare congruence
       (x'', n) := <signature-of>;
       sig'     := (x'', n, 0);
+      scoped-sig'  :=<to-scoped-symbol> sig';
       rules(
-        DeclareCookie: sig' -> cookie
+        DeclareCookie: scoped-sig' -> cookie
       )
-
-  declare-str-globals:
+  
+   declare-str-definition:
+    ExtSDef(x, s*, t*) -> <id>
+    with
+      redeclare-definition
+	
+  declare-str-definition:
     ExtOpDecl(x, t) -> <id>
     with
      redeclare-definition
-  
-  declare-str-globals:
+	
+  declare-str-definition:
     Overlay(x, t, d) -> Overlay(x', t, d)
     with
       cookie := <redeclare-definition>;
       x'     := x{cookie}
     with
       // Declare congruence
-      (x'', n) := <signature-of>;
-      sig'     := (x'', n, 0);
+      (x'', n)     := <signature-of>;
+      sig'         := (x'', n, 0);
+      scoped-sig'  :=<to-scoped-symbol> sig';
       rules(
-        DeclareCookie: sig' -> cookie
+        DeclareCookie: scoped-sig'   -> cookie
       )
-
-  open-import(to-signatures):
-    full-path -> ast
-    with
-      ast := <id>
-  
-  declare-str-globals:
-    Import(x) -> Import(x)
-  	with
-	  	if (!x => Name(mName)) then
-  			moduleName := mName 
-  		else
-  			moduleName :=  x 
-  		end
-  	with 
-  		<get-all-declared-entries-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
-  	<+	
-  		<open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> moduleName
-    <+
-      rules(IsImportedFailed: moduleName) ; debug(!"import failed .... ") 
-
-  declare-str-globals:
-    ImportWildcard(x) -> ImportWildcard(x)
-   with
-	  	if (!x => Name(mName)) then
-  			moduleName := mName 
-  		else
-  			moduleName :=  x 
-  		end
-  	with 
-  		<get-declarations-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
-  	<+	
-  	  <open-wildcard-import(file-exists <+ resolve-import-path, read-stratego-signatures, declare-stratego-globals-top, has-extension(|"str") + has-extension(|"rtree"))> x
-    <+
-      rules(IsImportedFailed: x)
-
-   resolve-import-decl:
-     x -> full-path
-     where
-       fetch-library-ast; 
-       full-path := x 
-     <+
-       full-path := <resolve-import-path> $[[x].spx]
-     <+
-       full-path := <resolve-import-path> $[[x].str]
-     <+
-       full-path := <resolve-import-path> $[[x].rtree]
-
-   resolve-import-path:
-     x -> full-path
-     where
-        // FIXME: fetch true import paths from someplace
-        full-path := <file-exists> $[[<SourceDir>]/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/trans/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/lib/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/src/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
- 
- 	 
-  read-stratego-signatures:
-    str -> <to-signatures> file
-    where
-      file := <fetch-library-ast>
-    <+
-      rtree := <guarantee-extension(|"rtree")>;
-      if <is-newer> (rtree, str) + not(<file-exists> str) + <has-extension(|"rtree")> str then
-        file := <file-exists; ReadFromFile> rtree
-      else
-        file := <parse-stratego-file> str
-      end
-  
-  fetch-library-ast:
-    x -> <pack-stratego-parse-stratego> (IncludeFromPath(x), [])
-
-  to-signatures =
-    basic-stratego-desugar-top;
-    topdown(try(remove-stratego-bodies))
-
-  remove-stratego-bodies:
-    SDefT(x, s*, t*, s) -> SDefT(x, s*, t*, s')
-    with
-      s' := <collect-all(?RDecT(_, _, _))> s
-   
-  remove-stratego-bodies:
-    Import(_) -> ()
-   
-  remove-stratego-bodies:
-    ImportWildcard(_) -> ()
-
   declare-dynrule:
     dec @ RDecT(x, s*, t*) -> RDecT(x', s*, t*)
     where
@@ -296,10 +153,13 @@ rules // Declare globals
       s'* := <length> s*;
       t'* := <length> t*;
       sig := (x, s'*, t'*);
+      scoped-cookie :=<to-scoped-symbol> cookie;
+      scoped-sig    :=<to-scoped-symbol> sig;
+      scoped-x      :=<to-scoped-symbol> sig;
       rules(
-        DeclareCookie: sig -> cookie
-        DeclareCookie: x -> cookie
-        Declaration: cookie -> dec
+        DeclareCookie:  scoped-sig    -> cookie
+        DeclareCookie:  scoped-x      -> cookie
+        STRDeclaration: scoped-cookie -> dec
       );
       // See https://svn.strategoxt.org/repos/StrategoXT/strategoxt/trunk/strc-core/lib/stratego/strc/front/lift-dynamic-rules.str
       ![ "new", "undefine", "aux", "once", "bagof", "reverse-bagof", "bigbagof", "all-keys"
@@ -308,7 +168,8 @@ rules // Declare globals
       list-loop({prefix, sig, cookie':
         ?prefix;
         sig := ($[[prefix]-[x]], s'*, t'*);
-        rules(DeclareCookie: sig -> cookie)
+        scoped-sig' := <to-scoped-symbol> sig;
+        rules(DeclareCookie: scoped-sig'  -> cookie)
       })
 
   dr-scope-declare-cookies(defs, s):
@@ -320,9 +181,11 @@ rules // Declare globals
       <list-loop({
         ?(sig, cookie);
         if !cookie => () then
-          rules(DeclareCookie :- sig)
+        	scoped-sig    :=<to-scoped-symbol> sig;
+          rules(DeclareCookie :- scoped-sig)
         else
-          rules(DeclareCookie : sig -> cookie)
+        	scoped-sig    :=<to-scoped-symbol> sig;
+          rules(DeclareCookie : scoped-sig -> cookie)
         end
        })> old-cookies
 
@@ -387,7 +250,7 @@ rules // Declarations inside definition bodies
         with(
           tvars;
           list-loop({
-            sig := (<id>, 0); rules(DeclareCookie :- sig)
+            sig := (<id>, 0); scoped-sig := <to-scoped-symbol>sig; rules(DeclareCookie :- scoped-sig)
           })
         );
         s' := <declare-bodies-top> s
@@ -397,7 +260,7 @@ rules // Declarations inside definition bodies
     Scope(v*, s) -> Scope(v*, s')
     with
       {| DeclareCookie:
-        <list-loop({ sig := (<id>, 0); rules(DeclareCookie :- sig)})> v*;
+        <list-loop({ sig := (<id>, 0);scoped-sig:=<to-scoped-symbol> sig;  rules(DeclareCookie :- scoped-sig)})> v*;
         s' := <declare-bodies-top> s
       |}
 
@@ -436,7 +299,7 @@ rules // Declarations inside definition bodies
   declare-bodies:
     LabeledDynRuleScopeId(x, t) -> LabeledDynRuleScopeId(x', t')
     where
-      x' := x{<signature-of; DeclareCookie>}; 
+      x' := x{<signature-of; getCookie>}; 
       t' := <declare-bodies-top> t
 
   declare-bodies:
@@ -468,11 +331,14 @@ rules // Declarations inside definition bodies
     with
       cookie := <newterm>;
       x'     := x{cookie};
+      scoped-cookie :=<to-scoped-symbol> cookie;
+      //TODO FIX : possibly will result in a bug 
+      scoped-sig    := <to-scoped-symbol><signature-of>x; // getting scoped symbol of x  
       rules(
-        DeclareCookie: (x, _, _) -> cookie
-        Declaration: cookie -> dec
-      )
-
+	    	DeclareCookie:   scoped-sig -> cookie
+	      STRDeclaration: scoped-cookie  -> dec
+	    )
+	    
   declare-tvar:
     x -> x'
     where
@@ -522,8 +388,112 @@ rules // Uses inside definition bodies
     with
       t'* := <declare-bodies-top> t*
 
-rules // Content completion
 
+rules 
+
+	// TODO IMPLEMENT IMPORT handling => needs to be moved to the compile-legacy-artifacts
+	// and declare them in GLobal Scope for the furthur analysis
+  open-import(to-signatures):
+    full-path -> ast
+    with
+      ast := <id>
+  
+  declare-str-definition:
+    Import(x) -> Import(x)
+  	with
+	  	if (!x => Name(mName)) then
+  			moduleName := mName 
+  		else
+  			moduleName :=  x 
+  		end
+  	with 
+  		<get-all-declared-entries-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
+  	<+	
+  		<open-import(resolve-import-decl, read-stratego-signatures, declare-stratego-globals-top)> moduleName
+    <+
+      rules(IsImportedFailed: moduleName)
+       
+
+  declare-str-definition:
+    ImportWildcard(x) -> ImportWildcard(x)
+   	with
+	  	if (!x => Name(mName)) then
+  			moduleName := mName 
+  		else
+  			moduleName :=  x 
+  		end
+  	with 
+  		<get-declarations-by-namespace; map-declarations(declare-stratego-globals-top)>moduleName 
+  	<+	
+  	  <open-wildcard-import(file-exists <+ resolve-import-path, read-stratego-signatures, declare-stratego-globals-top, has-extension(|"str") + has-extension(|"rtree"))> x
+    <+
+      rules(IsImportedFailed: x)
+
+   resolve-import-decl:
+     x -> full-path
+     where
+       fetch-library-ast; 
+       full-path := x 
+     <+
+       full-path := <resolve-import-path> $[[x].spx]
+     <+
+       full-path := <resolve-import-path> $[[x].str]
+     <+
+       full-path := <resolve-import-path> $[[x].rtree]
+
+   resolve-import-path:
+     x -> full-path
+     where
+        // FIXME: fetch true import paths from someplace
+        full-path := <file-exists> $[[<SourceDir>]/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/trans/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/lib/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/src/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
+     <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
+ 
+  fetch-library-ast:
+    x -> <pack-stratego-parse-stratego> (IncludeFromPath(x), [])
+
+ 
+
+	
+  read-stratego-signatures:
+    str -> <to-signatures> file
+    where
+      file := <fetch-library-ast>str
+    <+
+      rtree := <guarantee-extension(|"rtree")>;
+      if <is-newer> (rtree, str) + not(<file-exists> str) + <has-extension(|"rtree")> str then
+        file := <file-exists; ReadFromFile> rtree
+      else
+        file := <parse-stratego-file> str
+      end
+  
+ 
+	 
+	 to-signatures =
+    basic-stratego-desugar-top;
+    topdown(try(remove-stratego-bodies))
+
+
+  remove-stratego-bodies:
+    SDefT(x, s*, t*, s) -> SDefT(x, s*, t*, s')
+    with
+      s' := <collect-all(?RDecT(_, _, _))> s
+   
+  remove-stratego-bodies:
+    Import(_) -> ()
+   
+  remove-stratego-bodies:
+    ImportWildcard(_) -> ()
+
+
+rules 
+
+	// Content completion
   propose-completion:
     completion -> proposals
     where
@@ -598,3 +568,30 @@ rules // Content completion
   signature-to-proposal:
     (x, [DR_DUMMY()], [DR_DUMMY()]) -> x // strategy param (wildcard arity)
 
+	
+rules 
+	// Projections and lookup
+	analyze-str-ast:
+		(ast, path, project-path) -> ast'
+		with
+			enable-stratego-debugging
+			;rules(
+        		CurrentFileFullPath := $[[project-path]/[path]]
+        )
+      ;<try(get-source-base-dir)>ast
+   		;if <file-exists> $[[project-path]/.disable-global-analysis] then
+    		rules(NoAnalysis: _)
+    	end
+   		;if <file-exists> $[[project-path]/.warn-global-analysis] then
+    		rules(WarnAnalysis: _)
+    	end
+    with
+    	declare-stratego-globals-top //TODO  : Refactor globals-top. Rewriting of the tree is done here.
+     	;ast' := <declare-bodies-top>;
+      rules(
+        DecoratedAst := ast'
+      )
+    where 
+    	disable-stratego-debugging
+    	;<debug-str> $[AST after analysis : [<pp-aterm>ast']]
+   

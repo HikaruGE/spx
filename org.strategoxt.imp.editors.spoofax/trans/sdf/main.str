@@ -11,12 +11,13 @@ imports
 	analysis
 	common
 imports 
-  sdf/to-sdf
+  codegen/sdf/to-sdf
   sdf/analysis 
-  sdf/check
-  sdf/to-signature
+  analyze/sdf/check
+  codegen/sdf/to-signature
 
 rules
+	
 	editor-analyze-sdf: (ast, path, project-path) -> (error'*, warning'*, [])
     with
       // We only collect-om since we don't want inner warning dupes
@@ -27,14 +28,9 @@ rules
       else
         serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
       end;
-      if IsImportFailed then
-        error'*   := error*;
-        warning'* := <conc> (serror*, warning*)
-      else
-        error'*   := <conc> (serror*, error*);
-        warning'* := warning*
-      end 
-			;if not(![]; ?<flatten-list>error'*) then  
+      error'*   := <conc> (serror*, error*);
+      warning'* := warning*;
+      if not(![]; ?<flatten-list>error'*) then  
            rules ( get-sdf-errors := error'*)
        end
   
@@ -49,8 +45,7 @@ rules
     with
       filename := <guarantee-extension(|"sdf")> path;
       result   := <pp-sdf-string'> <to-sdf> (selected, path , project-path)
-    */  
-      
+	*/  
 	generate-sdf: 
     	(selected, position, ast, path, project-path) -> None()
     with 

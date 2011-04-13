@@ -1,0 +1,36 @@
+module editor/main
+
+imports
+	lib/editor-common.generated
+
+imports 
+	codegen/compile
+imports 
+	config
+	utils/cache	
+rules
+	//editor-resolve 
+	
+	
+rules
+	//editor-complete 
+	
+	
+	
+rules
+	//editor-analyze	
+ 	editor-analyze: (ast, path, project-path) -> (ast, errors, warnings, infos) // get the analyzed AST 
+    with 
+			editor-init;
+		  initialize-configuration
+		with 
+			abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]  
+		with 
+			<cache-currently-analyzing-ast>(abs-path  , ast)	 
+		with 
+			if Enable-Caching then
+				<get-cached-semantic-issues<+ compile-packages-of> abs-path  => semantic-issues*
+			else
+				<compile-packages-of> abs-path  => ( errors, warnings, infos)
+			end	
+			

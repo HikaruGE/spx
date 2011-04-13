@@ -1,5 +1,4 @@
 module sdf/analysis
-
 imports
   libstratego-sdf
   lib/editor-common.generated
@@ -9,7 +8,7 @@ imports
 	  common
 	  utils/debug
 imports  
-		sdf/signatures-mapper
+		context/sdf/declare-signature
 
 rules
 	
@@ -38,20 +37,18 @@ rules
 	declare-sdf-globals-top =
     	alltd(declare-sdf-globals)
 	
-	//TODO : Ignore ESVSection and STRSection 
-	declare-sdf-globals : 
-		s@STRSection(_) -> s
+	//Ignores traversing STR sections  
+	declare-sdf-globals: s@STRSection(_) -> s
 
-	//TODO : ESVSection 
-				
+	//Ignores traversing ESV sections 
+	declare-sdf-globals: e@ESVSection(_) -> e
+
 	declare-sdf-globals:
     prod @ prod(lhs, sort, _) -> <id>
     where
       x:= <get-rhs-sort-name>sort
-    with
+   where
   		<store-operation-declaration>prod
-    with
-      <topdown(try(store-namespace-def))> lhs
     with
       <Declaration> x
     <+
@@ -59,18 +56,13 @@ rules
       ;rules(
        	Declaration: x -> prod
         DeclarationFile: x -> file
-        
+  
         // Added following two dynamic rules for the ESV Def. analysis
         SortDeclaration:  x -> x
        	SortProductionLHS :+ x -> lhs
       )
     with
       <alltd(declare-sdf-use)> lhs
-  
-  store-namespace-def:
-    namespacedef(name, sort) -> <id>
-    where
-      rules(NamespaceSort: name -> sort)
       
 	declare-sdf-globals:
 		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
@@ -80,6 +72,8 @@ rules
 				 ;<declare-sdf-globals-top> lex-defintions
 				|}  
 				
+	//TODO FIX : Unparameterized imports
+	/*
 	declare-sdf-globals:
 		unparameterized(x) -> unparameterized(x)
     where
@@ -90,9 +84,11 @@ rules
       )> x
     <+
       rules(IsImportFailed: _)
-
+	*/
+	//TODO FIX : Import
+	/*
 	declare-sdf-globals:
-		i@Import(Name(x)) -> i
+		i@Import(Name(x)) -> i  
     where
       <open-import(
         resolve-import
@@ -101,13 +97,9 @@ rules
       )> x
     <+
       rules(IsImportFailed: _)
+	*/
 
 
-	declare-sdf-globals:
-		parameterized(x, y) -> parameterized(x, y)
-  	where
-			<declare-sdf-globals> unparameterized(x);
-  		<alltd(declare-sdf-simple-global)> y
   
 	resolve-import =
     	// TODO: better import handling
@@ -122,60 +114,65 @@ rules
     	\x -> $[[<CurrentDir>]/[x].spx]\; file-exists
   	<+
   		\x -> $[[<ProjectDir>]/test/[x].spx]\; file-exists // TODO : temporarily adding this. will remove it later
- 
+ 	
+ 	declare-sdf-globals:
+		parameterized(x, y) -> parameterized(x, y)
+  	where
+			<declare-sdf-globals> unparameterized(x);
+  		<alltd(declare-sdf-simple-global)> y
  
 	declare-sdf-globals:
-    	'sorts(_) -> <id>
-	with
+		'sorts(_) -> <id>
+		with
     	 alltd(declare-sdf-use)
   
 	declare-sdf-globals:
-	    	context-free-start-symbols(_) -> <id>
-	with
+		context-free-start-symbols(_) -> <id>
+		with
     	alltd(declare-sdf-use)
 	  
   declare-sdf-globals:
-	    lexical-start-symbols(_) -> <id>
-	    with
-	      alltd(declare-sdf-use)
+		lexical-start-symbols(_) -> <id>
+	  with
+	  	alltd(declare-sdf-use)
 	  
 	declare-sdf-globals:
-	    kernel-start-symbols(_) -> <id>
-	    with
-	      alltd(declare-sdf-use)
+    kernel-start-symbols(_) -> <id>
+    with
+      alltd(declare-sdf-use)
 	  
   /**
    *Creating Declaration Dynamic Rule for all the Sorts
    */
 	declare-sdf-simple-global:
-	    sort(x) -> <id>
+		sort(x) -> <id>
 		with
-	      rules(Declaration: x -> x)
+	  	rules(Declaration: x -> x)
 	    
-  /**
-   *Creating Usage Dynamic Rule for all the sorts 
-   */
-	 declare-sdf-use:
-	    sort(x) -> <id>
-	    with
-	      rules(Usage: x -> x)
+	/**
+	 *Creating Usage Dynamic Rule for all the sorts 
+	 */
+	declare-sdf-use:
+    sort(x) -> <id>
+    with
+      rules(Usage: x -> x)
 	  
 	declare-sdf-use:
-	    parameterized-sort(x, y) -> <id>
-	    where
-	      if !y => [sort(y')]; <is-string> x; <is-string> y' then
-	        text := ${{x}[[{y'}]]};
-	        rules(Usage: text -> text)
-	      end
+    parameterized-sort(x, y) -> <id>
+    where
+      if !y => [sort(y')]; <is-string> x; <is-string> y' then
+        text := ${{x}[[{y'}]]};
+        rules(Usage: text -> text)
+      end
 	  
 	propose-completion:
-	    sort(COMPLETION(x)) -> [decl*, use*]
-	    with
-	      decl* := <all-keys-Declaration> x;
-	      use*  := <all-keys-Usage> x
+    sort(COMPLETION(x)) -> [decl*, use*]
+    with
+      decl* := <all-keys-Declaration> x;
+      use*  := <all-keys-Usage> x
 	  
-	  propose-completion:
-	    NOCONTEXT(COMPLETION(x)) -> [decl*, use*]
-	    with
-	      decl* := <all-keys-Declaration> x;
-	      use*  := <all-keys-Usage> x
+	propose-completion:
+    NOCONTEXT(COMPLETION(x)) -> [decl*, use*]
+    with
+      decl* := <all-keys-Declaration> x;
+      use*  := <all-keys-Usage> x

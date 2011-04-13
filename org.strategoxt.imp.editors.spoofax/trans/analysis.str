@@ -1,10 +1,11 @@
 module analysis
 imports 
 	sdf/analysis
-	str/analysis
+	context/str/declare
 	esv/analysis
 imports 
 	common
+	config
 imports
 	lib/editor-common.generated
 			
@@ -28,22 +29,22 @@ rules
   with 
   	rules
   	(
-  		Analyzed-ast := ast'''	
+  		AnalyzedAst := ast'''	
   	)
 	where 
 		<debug> $[Spoofax-lang|Starting analysis of the following SPX file:$[$[<base-filename> path]$]$]
   
 rules 
-	/* 
+	/**  
 	* Performs pre-analysis steps on AST
 	*
-	**/ 
+	*/ 
 	pre-analyze-ast:
 		i@(ast, path, project-path) -> i
  	with 
-		initialize-configuration //sets up various configuration
+		initialize-configuration 													//sets up various configuration
 	with 
-		<store-definition(|$[[project-path]/[path]])>ast
+		<store-definition(|$[[project-path]/[path]])>ast	// desugaring whole AST 
 	where 
 		<debug> $[Spoofax-lang|Pre-analysis]
   

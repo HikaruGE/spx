@@ -1,0 +1,102 @@
+module utils/cache
+imports 
+	common 
+	lib/editor-common.generated 
+	utils/path
+	utils/debug
+	config
+	
+rules
+  open-spx-compilation-unit(resolve-spx-path, resolve-cache-path, parse-file, precompile):
+    path -> spx-compilation-unit
+    with
+    	full-path := <resolve-spx-path>path;
+    	cache-path := <resolve-cache-path> full-path;
+			if not(<CachedCompilationUnit> full-path) then
+      	if <CachedParseAst> full-path then
+					spx-compilation-unit:= <CachedParseAst>full-path
+				else
+        	if <is-newer> (cache-path, path) then
+          	spx-compilation-unit := <ReadFromFile> cache-path
+          else
+          	spx-compilation-unit := <parse-file> full-path;
+            if <file-exists> full-path then
+            	// Only cache if on filesystem (e.g., ignore libstratego-lib)
+              <WriteToBinaryFile> (cache-path, spx-compilation-unit)
+            end
+          end
+ 				end;
+ 				path' := <string-replace(|"\\", "/")>full-path;
+ 			  rules (
+ 			  	CachedCompilationUnit: path' -> (cache-path,spx-compilation-unit)
+ 			  );
+ 			  {| currently-precompiling-spx-abspath:
+ 			  			rules ( 
+ 			  				currently-precompiling-spx-abspath := path'  
+ 			  			); 
+ 			  			
+ 			  			<precompile <+ throw-precompile-exception>spx-compilation-unit	
+ 			  |}
+ 			end
+  	where 
+  		<debug-compiler>$[Caching |Storing CompilationUnit: [<pp-aterm>full-path]]
+
+rules 
+	cache-lib-ast : a@( name , ast) -> a
+	where
+		<spx-lib-cache-path> name => lib-cache-path
+	where
+		<WriteToBinaryFile> (lib-cache-path, ast)
+	
+	get-cached-lib-ast(read-lib) : name -> ast
+		with
+			<spx-lib-cache-path> name => cache-path
+		where
+			if not(invalidate-lib-cache) then
+			 	<debug-compiler>$[Caching | Cache is invalidated. read it.];
+	     	fail	 
+	     else
+				if <file-exists> cache-path then
+				 	<debug-compiler>$[Caching | lib Cache is still valid  :[<pp-aterm>]]
+				 	;<ReadFromFile> cache-path => ast
+				 	;<debug-compiler>$[Caching | Found ast:[<pp-aterm>ast]]
+				else
+					<read-lib>name => ast
+					;<cache-lib-ast>( name , ast) 		 
+				end
+			 end     
+rules
+	cache-semantic-issues: (abs-path ,issues) ->(abs-path ,issues)
+	where
+		<debug-compiler>$[Caching | Storing in Cache : [<pp-aterm>]]
+	where 	
+		<spx-semantic-issues-cache-path> abs-path => cache-path;
+		<debug-compiler>$[Caching | Cache Path  :[<pp-aterm>]]
+	where 	 
+	  <WriteToBinaryFile> (cache-path, issues)
+  
+	get-cached-semantic-issues : abs-path ->issues
+		where
+			<spx-semantic-issues-cache-path> abs-path => cache-path 
+			;if <is-newer> (cache-path, abs-path)then
+			 	<debug-compiler>$[Caching | Cache is still valid  :[<pp-aterm>]]
+			 	;<ReadFromFile> cache-path => issues
+			 	;<debug-compiler>$[Caching | Found Issues:[<pp-aterm>]]
+	     else
+				<debug-compiler>$[Caching | Cache is invalidated. Going in the hard way.];
+	     	fail		
+	     end     
+		
+	    
+rules
+	cache-currently-analyzing-ast = 
+		(?(path, compilation-unit-ast) <+ throw-invalid-argument-exception(|"utils.cache.cache-currently-analyzing-ast")); 
+		path' := <string-replace(|"\\", "/")>path;
+		rules(
+	      CachedParseAst: path' -> compilation-unit-ast
+	  ) 
+
+
+	
+	
+					

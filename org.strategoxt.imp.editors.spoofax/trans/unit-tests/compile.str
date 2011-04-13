@@ -1,0 +1,27 @@
+module compile
+
+imports
+  libstratego-lib
+imports
+  config 
+  include/SpoofaxLang
+  lib/editor-common.generated
+imports 
+	codegen/compile
+	utils/cache
+	context/scope-tree
+	
+rules 
+	//Intregation Test of the compile-all is working as expected 
+	test-build-namespace-reference-table:
+		(selected, position, ast, path, project-path) -> None()
+		with
+			debug(!"starting compilation . ")
+		with 
+			editor-init;
+		  initialize-configuration
+		with 
+			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+		with 
+			compile-all
+	

@@ -1,9 +1,11 @@
 module esv/main
-
+imports 
+	context/scope-tree
+	
 imports
-  esv/to-esv
+  codegen/esv/to-esv
   esv/analysis 
-  esv/check
+  analyze/esv/check
 imports
 	common
 	analysis
@@ -16,7 +18,9 @@ imports
   libstratego-sglr
   libstrc
 
-
+imports 
+	context/sdf/declare
+	
 rules 
 	//Generate ESV Definition from SPX
   generate-esv:
@@ -25,26 +29,23 @@ rules
     	<analyze-ast>(ast, path, project-path)
      with
       <to-esv-all> (selected, path, project-path)
-      
         
 rules // editor analysis
 	
 	editor-analyze-esv: (ast, path, project-path) -> (error-esv*, warning-esv*, note-esv*)
     with
-    	//Already SDF productions are recorded during previous analysis phase 
-      //<chdir> project-path
-      //;<record-all-sdfs> "."
-      //; <debug>$[all keys : [<pp-aterm> <mapconcat(bagof-SortDeclaration)><all-keys-SortDeclaration>]] 
-      error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+       error-esv*   := <collect-all(constraint-esv-error, conc)> ast
       ;warning-esv* := []
       ;note-esv* := []  
  
  rules // rules related to editor complete 
 	
+	// TODO : FIX ME
+	
   editor-complete:
     (Sort(x), position, ast, path, project-path) -> proposals
     where
-      proposals := <all-keys-SortDeclaration>
+      proposals := <all-keys-SortDeclaration ; mapconcat(bagof-SortDeclaration)>
 
   editor-complete:
     (CompletionTemplate(COMPLETION(_), parts, _), position, ast, path, project-path) -> proposals
@@ -54,25 +55,27 @@ rules // editor analysis
       else
         suffix := " = "
       end;
-      proposals := <map(<conc-strings> (<id>, suffix))> <all-keys-SortDeclaration>
+      proposals := <map(<conc-strings> (<id>, suffix))> <all-keys-SortDeclaration;mapconcat(bagof-SortDeclaration)>
 
   editor-complete:
     (CompletionTemplateWithSort(Sort(sort), COMPLETION(_), _, _), position, ast, path, project-path) -> proposals
     where
-      lhs*      := <bagof-SortProductionLHS> sort;
+      lhs*      := <to-scoped-symbol;
+      							resolve-symbol-declarations(all-keys-SortDeclaration,bagof-SortDeclaration)
+      						 >sort; 
       lhs'*     := <topdown(repeat(remove-completion-irrelevant))> lhs*;
       proposals := <make-set> <filter(to-completion-parts-top)> lhs'*
 
   editor-complete:
     (Sort(COMPLETION(_)), position, ast, path, project-path) -> proposals
     where
-      proposals := <map(<conc-strings> (<id>, " = "))> <all-keys-SortDeclaration>
+      proposals := <map(<conc-strings> (<id>, " = "))> <all-keys-SortDeclaration;mapconcat(bagof-SortDeclaration)>
  
  
  rules
  	
- 	//TODO : I think following rules are not required as ESV DEF only subjected to the current SPX
-  record-all-sdfs =
+ 	//Obsolete 
+ 	record-all-sdfs =
     <readdir> ".";
     list-loop(
       if <isdir> <filemode> then
@@ -89,8 +92,7 @@ rules // editor analysis
     
     where
       <has-extension(|"sdf")> filename;
-      <debug> $[opening file : [filename]]
-      ;<open-import(abspath, parse-sdf-module-file, topdown(try(record-prod)))> filename
+      <open-import(abspath, parse-sdf-module-file, topdown(try(record-prod)))> filename
   
   record-sdf:
     filename -> filename

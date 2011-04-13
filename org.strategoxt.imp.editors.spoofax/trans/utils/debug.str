@@ -1,7 +1,15 @@
 module utils/debug
 
+imports 
+	common
+
 strategies 
+	enable-debug-all  = rules ( DebugAll: _ )
 	
+	disable-debug-all  = rules ( DebugAll:- _ )
+
+strategies 
+		
 	enable-stratego-debugging  = rules(DebugStr: x -> x)
 	
 	disable-stratego-debugging = rules(DebugStr:- _ )
@@ -10,10 +18,61 @@ strategies
   
 strategies 
 
-	// Dubug switches  
-	enable-sdf-debugging  = rules(DebugSDF: x -> x)
+	enable-sdf-debugging  = rules(DebugSDF: _)
 	
 	disable-sdf-debugging = rules(DebugSDF:- _ )
 	
-	debug-sdf = not(DebugSDF) <+ debug
+	// Dubug switches  
+	enable-declaration-debugging  = rules(DebugDeclaration: x -> x)
+	
+	disable-declaration-debugging = rules(DebugDeclaration:- _ )
+	
+	debug-declaration = not(DebugDeclaration <+ DebugAll)  <+ debug(!"--- Declaration | ") 
  
+ 
+ 
+	// Dubug switches  for symbol table
+	enable-symboltable-debugging  = rules(DebugSymbolTable: x -> x)
+	
+	disable-symboltable-debugging = rules(DebugSymbolTable:- _ )
+	
+	debug-symboltable = not(DebugSymbolTable <+ DebugAll)  <+ debug(!"--- SymbolTable | ") 
+ 
+ 
+  // Dubug switches for semantic analysis  
+	enable-semantic-analysis-debugging = rules(DebugSemanticAnalysis: x -> x)
+	
+	disable-semantic-analysis-debugging = rules(DebugSemanticAnalysis:- _ )
+	
+	debug-analysis = not(DebugSemanticAnalysis <+ DebugAll)  <+ debug(!"--- SemanticAnalysis | ") 
+ 
+ 
+ 	// Dubug switches for compile  
+	enable-compiler-debugging  = rules(DebugCompiler: x -> x)
+	
+	disable-compiler-debugging = rules(DebugCompiler:- _ )
+	
+	debug-compiler = not(DebugCompiler <+ DebugAll)  <+ debug(!"--- Compiler | ")
+ 
+ rules 
+ 	
+ 	debug-time(s|msg) =
+      where(starttime := <times>)
+    ; s
+    ; where(
+          total := <diff-times> (<times>,starttime)
+        ; t1 := <self-children-user-time; ticks-to-seconds; real-to-string(|3)> total
+        ; str := <concat-strings> [msg, ": ", t1, " s"]
+        ; debug
+      )
+
+rules 
+	throw-unable-read-exception(|message) = debug(!message);fail
+	throw-unable-read-file = debug(!"unable to read file : ")
+
+rules 
+	throw-precompile-exception = debug(!"Could not precompile: "); fail
+	throw-invalid-argument-exception(|strategy-name) = <debug>$[invalid argument at [strategy-name] : [<pp-aterm><id>]]; fail
+	
+	
+	      

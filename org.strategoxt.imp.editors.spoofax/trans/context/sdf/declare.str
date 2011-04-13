@@ -1,0 +1,150 @@
+module context/sdf/declare
+
+imports 
+	libstratego-sdf
+  lib/editor-common.generated
+	include/SpoofaxLang
+imports 
+	context/scope-tree
+	normalize/signatures	
+imports
+	common
+	utils/debug
+	utils/annotations
+imports  
+	context/sdf/declare-signature	
+
+imports 
+	libstratego-sdf
+  lib/editor-common.generated
+	include/SpoofaxLang
+	context/scope-tree
+
+rules 
+	resolve-sdf-declaration = 
+ 		?symbol; 
+ 		<resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol 
+ 	<+
+ 		<debug-analysis> $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<pp-aterm>]];
+ 		fail
+	
+	resolve-NamespaceSort-declaration = 
+ 		?symbol; 
+ 		<resolve-symbol-unique-declaration(all-keys-NamespaceSort , bagof-NamespaceSort)><to-scoped-symbol>symbol 
+ 	<+
+ 		<debug-analysis> $[ErrorChecking| FAIL| Failed to retrive NamespaceSort declaration for symbol [<pp-aterm>]];
+ 		fail
+	
+					  
+rules	 
+ // Traverse AST and declare sdf definition  
+ //	Instead of declaring in the Global Scope 
+ // now it is declared in a particular Scope. 
+ // Here scope is defined by (Package-QName, Module-QName)
+ declare-sdf-definition-main=
+    	alltd(declare-sdf-definition)
+  
+rules
+	 
+ declare-sdf-definition:
+    prod @ prod(lhs, sort, _) -> <id>
+    where
+      x:= <get-rhs-sort-name>sort;
+      qualified-sort-name := <to-scoped-symbol> x 
+   	with
+  		<store-operation-declaration>prod
+  	with
+      <topdown(try(store-namespace-def))> lhs
+    with
+      <Declaration> qualified-sort-name 
+    <+
+      file := <get-module-abs-filepath> <GetEnclosingModuleName>;
+      rules(
+       	Declaration		 :    qualified-sort-name  -> prod
+        DeclarationFile:    qualified-sort-name  -> file
+        // Added following two dynamic rules for the ESV Def. analysis
+        SortDeclaration  :  qualified-sort-name -> x
+       	SortProductionLHS:+ qualified-sort-name -> lhs
+      );
+      <debug-declaration> $[DeclareSDF | Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
+    with
+      <alltd(declare-sdf-usage)> lhs 
+  
+  store-namespace-def:
+    namespacedef(name, sort) -> <id>
+    with 
+    	scoped-name  := <to-scoped-symbol> name
+    where
+      rules(NamespaceSort: scoped-name  -> sort)
+
+  declare-sdf-definition:
+		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
+		with{| IsInsideLexicalSyntaxBlock:
+						rules (IsInsideLexicalSyntaxBlock :_);
+					  <declare-sdf-definition-main> lex-defintions
+				|} 
+				
+	declare-sdf-definition:
+		parameterized(x, y) -> parameterized(x, y)
+  	where
+			<declare-sdf-definition> unparameterized(x);
+  		<alltd(declare-sdf-simple-definition)> y
+
+	declare-sdf-definition:
+		'sorts(_) -> <id>
+		with
+    	 alltd(declare-sdf-usage)
+  
+	declare-sdf-definition:
+		context-free-start-symbols(_) -> <id>
+		with
+    	alltd(declare-sdf-usage)
+	  
+  declare-sdf-definition:
+		lexical-start-symbols(_) -> <id>
+	  with
+	  	alltd(declare-sdf-usage)
+	  
+	declare-sdf-definition:
+    kernel-start-symbols(_) -> <id>
+    with
+      alltd(declare-sdf-usage)
+
+	declare-sdf-simple-definition:
+		sort(x) -> <id>
+		with
+	  	scoped-x:= <to-scoped-symbol>x;
+	  	rules(Declaration: scoped-x -> x)
+		where
+			<debug-declaration>$[DeclareSDF | Storing Declaration [<pp-aterm>scoped-x] -> [<pp-aterm>x]]	
+		
+rules
+	
+	declare-sdf-usage:
+    sort(x) -> <id>
+    with
+    	x-with-scope := <to-scoped-symbol>x 
+      ;rules(Usage: (scope, x)-> x)
+	  
+	declare-sdf-usage:
+    parameterized-sort(x, y) -> <id>
+    where
+      if !y => [sort(y')]; <is-string> x; <is-string> y' then
+        text := ${{x}[[{y'}]]};
+        text-with-scope := <to-scoped-symbol>text;
+        rules(Usage: text-with-scope -> text)
+      end
+	
+rules
+	
+	propose-completion:
+    sort(COMPLETION(x)) -> [decl*, use*]
+    with
+      decl* := <all-keys-Declaration> <to-scoped-symbol> x;
+      use*  := <all-keys-Usage> <to-scoped-symbol>x
+	  
+	propose-completion:
+    NOCONTEXT(COMPLETION(x)) -> [decl*, use*]
+    with
+      decl* := <all-keys-Declaration> <to-scoped-symbol>x;
+      use*  := <all-keys-Usage> <to-scoped-symbol> x

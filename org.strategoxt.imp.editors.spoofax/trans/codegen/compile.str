@@ -1,0 +1,496 @@
+module codegen/compile
+
+imports 
+	normalize/main
+imports 
+	utils/cache 
+	utils/debug
+	utils/path
+imports 
+	analyze/main
+	context/scope-tree
+	context/signature
+	context/declare
+imports
+	common 
+	config
+imports 
+	lib/editor-common.generated 
+	normalize/signatures
+	include/SpoofaxLang
+	codegen/generate-all
+	codegen/buildscripts
+	context/str/declare
+
+rules			// Starting a new compilation session   
+	
+	new-compile-session(s) =
+			{| 	CompiledPackage,currently-compiling-package,CompiledModule, 
+			 		UsedBy,Using,
+			 		UsedLegacyArtifacts,UsingLegacyArtifacts,
+			 		GetSemanticProblems,
+			 		AnalyzedModulesDeclaredIn,
+					PackagesDeclaredIn,
+					DeclaredModule,
+					DeclaredPackage,
+					GetEnclosingScope,
+					GetEnclosedScope:
+						where(
+							<debug>$[============Starting new compiler session ==============]
+						);
+						compiler-init; // initializing compiler session 
+						where(<debug>$[============Initialization is done  ==============]);
+						s	
+			|}
+
+
+rules 	// Compiler initialization 
+			
+	compiler-init = 
+		where( 
+			bagof-SPX-Source-Dir => spx-sources
+		);
+		<list-loop(parse-spx-sources)> spx-sources   	
+
+	parse-spx-sources : 
+		(sourcedir , searchOption) -> <id>
+		where
+			{| current-working-root-dir :  
+				rules(
+					current-working-root-dir  := <getcwd>
+				);
+				<chdir>sourcedir;
+				<parse-spx-compilationUnits(|searchOption)> <getcwd>;
+				<chdir> <current-working-root-dir>
+			|}
+		
+	parse-spx-compilationUnits(|search-option) = 
+		readdir;
+		list-loop(
+    	if <isdir> <filemode> then  //FIXME : filemode / isdir contains bug. Common folder is not considered as directory which is a bug
+    		if not(Ignored-Spx-Souce-Dir); !search-option => AllDirectories()  then
+       		 chdir;
+        	 <parse-spx-compilationUnits(|search-option)<+ throw-unable-read-exception(|"Failed to read this directory : ")><getcwd>;
+           <chdir> ".."
+        end
+      else
+        where(parse-spx-compilationUnit) <+ throw-unable-read-file 
+      end
+    )
+    
+ 	parse-spx-compilationUnit: filename -> <id>
+ 		where
+ 			if has-extension(|"spx") then 
+	 			where (<debug-compiler>$[Pre-Compiling| Parsing following file : [<pp-aterm>]]);
+	 			open-spx-compilation-unit(
+					spx-compilation-unit-path, 
+					spx-precompiled-cache-path, 
+					parse-spoofaxlang-file ,
+					pre-complile-compilation-unit
+				)
+			end 
+
+strategies				// Pre-compilation before starting up actual compilation    
+	
+	// Before starting primary compilation, 
+	// pre-compile normalize the parsed tree
+	// and creates scope-tree and namespace-reference table for 
+	// performing further compilation. 
+	pre-complile-compilation-unit = 
+		origin-track-forced(nomalize-all) // nomalize and builds scope-tree and  partial symbol table with the local information availble
+		//nomalize-all
+
+strategies 
+	build-all = 
+		?current-term
+		;enable-compiler-debugging
+		;new-compile-session(
+			list-of-package-qname* := <get-package-list> 
+			;<compile-internal>list-of-package-qname*
+			;<debug>$[=========Getting list of errors============]
+			;<get-all-analyzed-problems>() => problems  
+			//;if <fail-if-has-errors>problems then
+			 	;debug(!"generating artifacts ")
+				;<list-loop(generate-spx-package)>list-of-package-qname*
+				;<debug>$[=========Generating Build Scipt============]
+				;<emit-build-script> list-of-package-qname*
+				;<debug>$[=========Code Generation is done============] 		
+			//else
+			//	debug(!"Please fix the errors before building the artifacts: " ) // Get all errors 
+			//end		 
+		)
+		;disable-compiler-debugging
+		;!current-term //restoring current term to avoid side effects  
+	
+	
+	fail-if-has-errors : problems@(errors, warning, infos*) -> problems
+		where 
+			if not(!errors => []) then 
+		 		fail	
+		 	end		 	 	
+
+strategies 				// Main compilation events  
+	
+	compile-all = 
+		?current-term ; 
+		enable-compiler-debugging;
+		new-compile-session(
+			list-of-package-qname := <get-package-list> 
+			;<compile-internal>list-of-package-qname
+			;<debug>$[=========Getting list of errors============] 
+			;<get-all-analyzed-problems>()  
+			;debug(!"Errors : " ) // Get all errors 
+		)
+		;disable-compiler-debugging
+		;!current-term //restoring current term to avoid side effects
+	
+	
+	compile-packages-of: file-abs-path -> issues*
+	where
+		<debug>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
+	where
+		//enable-compiler-debugging;
+		new-compile-session(
+		 	list-of-package-qname:= <get-packages-of-file> file-abs-path
+			;<compile-internal>list-of-package-qname 
+			;<debug>$[=========Getting list of errors============] 
+			;<get-semantic-problmes-by-file>file-abs-path => issues* 
+			;debug(!"Errors : ") 	  // get errors for this file only   
+		) //find out the semantic errors  
+		//;disable-compiler-debugging
+	
+	
+	compile-internal : list-of-package-qname* -> list-of-package-qname* 
+	where 
+		<debug>$[=========Compiling packages===============
+		 				 [<pp-aterm-forced>list-of-package-qname* ]
+		 				 ]
+	where
+		<compile-main>list-of-package-qname*
+		;<debug>$[=========Compilation is done===============]
+	where 	    
+		if Enable-Caching then 
+			<debug>$[=========Caching Semantic Problems============] 
+			;<cache-semantic-problems>()
+		end
+
+
+rules				// Compiler main : Compiles provided list of packages and stores semantic problems   
+	
+	
+	compile-main= 
+		?list-of-package-qnames;
+		where(
+			<debug-compiler>$[Compile-main | compiling packages : [<pp-aterm>] with modules:	
+																		[<pp-aterm><all-keys-Declared;filter(?(Modules(),_) )>]
+			]
+		)
+		//Phase 1:  Resolve-all-import-reference for the listed packaged 
+		//				  in this way => dependecy list will be created automatically for 
+		//				  efficient analysis
+		;where(<debug-compiler>$[compile-main | resolving-package-reference:])
+		;where( resolve-package-references )  
+		//Phase 2:  Compile all the legacy artifacts referred by Spx Packages 
+		//				  and make them accessible in the Global Scope 
+		;where(<debug-compiler>$[compile-main | compile-legacy-artifacts:])
+		//;where(compile-legacy-artifacts)
+		
+		//Phase 3:  Compile Packagesand make them accessible in the different package 
+		//					namespace.
+		//					Use the dependency graph to first compile the depending on packages.
+		//					TODO : Optimize. Phase 2 and Phase 3 can be compiled together. 
+		;list-loop(compile-spx-package)
+		;list-loop(analyze-spx-package)
+				
+	
+	// Compile sdf, str, esv modules which are imported in the global nameepsace
+	compile-legacy-artifacts: package-tqnames* -> package-tqnames*
+	where
+		<make-set>package-tqnames* => upackages;
+		<debug-compiler>$[compile-main | compile-legacy-artifacts | List:[<pp-aterm>upackages]]
+	where
+		{| Resolved-ExternalArtifact:
+					<compile-legacy-artifact>(Unresolved() , Module(Name("libstratego-lib")) ,Unresolved()); 
+					<list-loop(compile-legacy-artifact-package)>upackages	
+		|}
+	
+	
+	compile-legacy-artifact-package : p@Package(qname) ->p
+	where	
+		<debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
+		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
+		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
+	where
+		<map(compile-legacy-artifact)>legacy-artifact-details*	
+		
+	compile-legacy-artifact: 
+		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
+		where
+			<debug-compiler>$[compile-main | compile-legacy-artifact > planning to compile following legacy artifact: [<pp-aterm>]] 
+		where
+			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then 	
+				if (!resolving-path => Unresolved()) then
+	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
+					<+
+						<read-stratego-signatures;declare-stratego-globals-top> modulename	
+					<+ 
+						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
+				end 	 
+			end	
+		where
+			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
+			
+	//During analyze-package , just call this strategy 
+	compile-spx-package: 
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where 
+			<debug-compiler>$[compile-spx-package| Planning to compile : [<pp-aterm>]] 
+		where
+			if should-compile-this-package  then //FOR handling circular referneces   
+				// Making this package as currently being compiled
+				where(
+					rules(
+						currently-compiling-package : package-typed-qname -> package-typed-qname
+					)
+				); 
+				// Getting List of Packages/Modules that this package is depending on.
+				<get-all-usings>untyped-qname => depeneding-typedqname* 
+			  ;<debug-compiler>$[	compile-spx-package | List of dependending-on packages/modules : [<pp-aterm>depeneding-typedqname*]]		
+				// Start Compiling the dependent Spx Artifacts
+				;<list-loop(compile-depending-spx)>depeneding-typedqname*
+			
+				;{|GetEnclosingPackageName:
+						rules ( GetEnclosingPackageName      := package-typed-qname);
+						// Now, since all the depending-on artifacts are compiled
+						// start compiling the enclosing modules of this package.
+						// Note: currently we are not considering any nested packages.
+						<list-loop(compile-spx-module)><get-enclosed-modules>package-typed-qname
+				|};
+			
+				// Making this package as compiled.
+				// TODO : consider keeping only 1 DR as a marker if compiled package. 
+				where(
+					rules(
+						CompiledPackage : package-typed-qname -> package-typed-qname 
+					)
+				)
+			else
+				<debug-compiler>$[compile-spx-package| Ignored as already in the queue : [<pp-aterm>]]
+			end
+
+	compile-depending-spx: 
+		typed-qname -> typed-qname
+		where 
+			<debug-compiler> $[compile-depending-spx > Compiling depending-on spx package/module :[<pp-aterm>]]
+		where 
+			if !typed-qname => Package(QName(_)) then
+				<compile-spx-package>typed-qname 					
+			else
+				if !typed-qname => Module(QName(_)) then
+						// Even when only a module is imported using ImportSpxModule(_,_),
+						// The whole package is compiled to check consistency , and find 
+						// semantic errors.
+						// In later step , when look up is performed, any symbol other than 
+						// symbols that consist in this particular module are marked/realized
+						// as private symbols. 
+						enclosing-package-typed-qname := <GetEnclosingScope>typed-qname;
+						<compile-spx-package>enclosing-package-typed-qname 				 
+				else
+					<debug-compiler> $[compile-depending-spx | Illegenal depending spx artifact: [<pp-aterm> typed-qname]];
+					fail
+				end
+					
+			end		 
+	
+	compile-spx-module: 
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where 
+			<debug-compiler>$[compile-spx-module| Planning to Compile module: [<pp-aterm>]] 
+		where 
+			if not(<CompiledModule>module-typed-qname) then
+				<debug-compiler>$[compile-spx-module| Currently Compiling : [<pp-aterm>]]; //this package is not compiled before
+				module-decl* := <get-module-declarations>module-typed-qname;
+				{|GetEnclosingModuleName:
+						rules( GetEnclosingModuleName := module-typed-qname);
+						<list-loop(
+								origin-track-forced(declare-all)
+								//declare-all
+						 	)
+						 >module-decl*
+				|};
+				where(rules(CompiledModule: module-typed-qname -> module-typed-qname))
+			else
+				<debug-compiler>$[compile-spx-module| Ignored as already in the queue : [<pp-aterm>]] //this package is not compiled before
+			end	
+	
+		
+	should-compile-this-package = 
+		?package-qname;
+		where(not(<currently-compiling-package>package-qname))
+		//TODO : add checking of PDL caching. If souce is newer than pdl version of the
+		//package, do not compile it. use the pdl instantly.
+
+rules			// Analyze Semantic Errors 
+			
+	should-analyze-this-package = 
+		?package-qname;
+		where(not(<AnalyzedPackage>package-qname))
+		
+
+	analyze-spx-package: 
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where 
+			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
+		where
+			if should-analyze-this-package  then //FOR handling circular referneces   
+				{|GetEnclosingPackageName:
+						rules ( GetEnclosingPackageName      := package-typed-qname);
+						<list-loop(
+								analyze-spx-module
+							)
+						><get-enclosed-modules>package-typed-qname
+				|};		
+				where(
+					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
+				)
+				<+
+				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
+				;fail
+			end
+
+	analyze-spx-module: 
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where 
+			<debug-analysis> $[Analyze|  analyze-spx-module> Planning to analyze module for semantic problems: [<pp-aterm>]] 
+		where 
+			if not(<AnalyzedModule>module-typed-qname) then
+				<debug-analysis> $[Analyze| analyze-spx-module> Currently Analyzing : [<pp-aterm>]]; 
+				module-decl* := <get-module-declarations>module-typed-qname;
+				{|GetEnclosingModuleName:
+						rules( GetEnclosingModuleName := module-typed-qname);
+						<list-loop(
+								analyze
+						 )>module-decl*
+				|};
+				module-abs-path := <DeclaredModule>untyped-qname;
+				where(rules(
+					AnalyzedModule:     module-typed-qname -> module-typed-qname
+					AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
+					)
+				)
+				<+
+				<debug-analysis> $[Analyze| analyze-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
+				;fail
+			else
+				<debug-analysis> $[Analyze| analyze-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
+			end	
+	
+rules 			// Reference Resolving 
+	
+	 
+	resolve-package-references = 
+		?list-of-package-tqnames;
+		<list-loop(
+			// Get the list of enclosed modules
+			// and then get module declarations
+			// Afterwards, from the declarations, import references are resolved.
+			where(<debug-compiler>$[ resolve-package-references |  Currently working on package : [<pp-aterm>]]);
+			get-enclosed-modules; 
+			get-module-declarations;
+			origin-track-forced(map(store-import-references))
+			//map(store-import-references) 
+		<+
+			where(<debug-compiler>$[resolve-package-references | Failed to resolve package refernece:[<pp-aterm>]]);fail
+		)>list-of-package-tqnames
+		<+ 
+		<debug-compiler>$[resolve-package-references | Failed to resolve package referneces:[<pp-aterm>]];fail
+		
+	
+rules			// Caching Resulting Semantic Errors 	
+
+	cache-semantic-problems: () -> ()
+	where
+		all-keys-AnalyzedModulesDeclaredIn => list-file*;
+	 	<map(store-semantic-problmes)> list-file*
+	
+	store-semantic-problmes : filepath -> filepath
+	where
+		<debug-compiler>$[Caching | caching semantic issues : [<pp-aterm>]]
+	where 
+		<get-semantic-problmes-by-file> filepath=> problmes-to-save*
+	where
+		<debug-compiler>$[Caching | Saving problems: [<pp-aterm>problmes-to-save*]];
+		<cache-semantic-issues>( filepath , problmes-to-save*)
+	
+	get-semantic-problmes-by-file : file-abs-path -> problems*
+		where 
+			<bagof-AnalyzedModulesDeclaredIn>file-abs-path=> list-of-modules*;
+			<map(get-semantic-problmes-by-module)>list-of-modules*  => problmes-zipped* ;  
+			<unzip-semantic-issuses>problmes-zipped* => problems*
+		
+	get-semantic-problmes-by-module : module-typed-qname -> problems
+	where
+			<debug-compiler>$[Caching | Caching semantic issues for module [<pp-aterm>]]
+	where
+		<GetEnclosingScope> module-typed-qname => package-typed-qname;
+		<get-analyzed-problems-of> (package-typed-qname,module-typed-qname)=>problems
+	<+
+		problems := ([] , [] , [])
+	where
+		<debug-compiler>$[Caching | Found Problems for this module : [<pp-aterm>problems]]	
+	
+rules
+	
+	// Analyze Semantic Errors 
+	should-generate-code-this-package = 
+		?package-qname;
+		where(not(<PackageCodeGenerated>package-qname))
+		
+	generate-spx-package: 
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where 
+			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
+		where
+			if should-generate-code-this-package  then 
+				{|GetEnclosingPackageName:
+						rules ( GetEnclosingPackageName := package-typed-qname);
+						enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname;
+						<list-loop(
+								generate-spx-module
+							)
+						>enclosed-module-typed-qnames;
+						<generate-main> enclosed-module-typed-qnames // generate all the main artifacts now  
+				|};		
+				where(
+					rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)
+				)
+				<+
+				<debug-compiler> $[Generate| generate-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
+				;fail
+			end
+
+	generate-spx-module: 
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where 
+			<debug-compiler> $[Generate|  generate-spx-module> Planning to generate module for semantic problems: [<pp-aterm>]] 
+		where 
+			if not(<ModuleCodeGenerated>module-typed-qname) then
+				<debug-compiler> $[Generate| generate-spx-module| Currently Generating : [<pp-aterm>]]; 
+				module-decl* := <get-original-module-declaration>module-typed-qname;
+				{|GetEnclosingModuleName:
+						rules( GetEnclosingModuleName := module-typed-qname);
+						<generate-all> module-decl* // generating all the artifacts for the specified module
+				|};
+				module-abs-path := <DeclaredModule>untyped-qname;
+				where(
+					rules(
+						ModuleCodeGenerated:     module-typed-qname -> module-typed-qname
+					)
+				)
+				<+
+				<debug-compiler> $[Generate| generate-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
+				;fail
+			else
+				<debug-compiler> $[Generate| generate-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
+			end		
+			

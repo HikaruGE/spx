@@ -4,9 +4,9 @@ imports
 imports 
   lib/editor-common.generated
 imports   
-  str/analysis
-  str/check
-  str/to-stratego
+  context/str/declare
+  analyze/str/check
+  codegen/str/to-stratego
 
 rules
   editor-analyze-str:

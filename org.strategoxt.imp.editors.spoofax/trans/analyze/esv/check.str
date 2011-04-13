@@ -1,0 +1,41 @@
+module analyze/esv/check
+
+imports
+	common
+	esv/main
+	esv/analysis
+imports 
+	utils/debug
+	context/scope-tree
+imports
+  include/SpoofaxLang
+
+// TODO: warn about multi-char highlighted brackets
+// TODO: check if provider/imported/etc. files exist
+// TODO: check if there is _any_ provider for observer etc.
+ 
+
+//TODO : check whether language description is there . Otherwise raise warning as build will fail anyway if the information is not provided.
+
+rules 
+	resolve-sdf-sort-declaration = 
+ 		?symbol; 
+ 		<resolve-symbol-unique-declaration(all-keys-SortDeclaration , bagof-SortDeclaration)><to-scoped-symbol>symbol 
+ 	<+
+ 		<debug-analysis> $[ErrorChecking|Failed to retrive SDF Sort for symbol [<pp-aterm>]];
+ 		fail
+
+
+
+rules
+	constraint-esv-error:
+    Sort(x) -> (x, $[Unknown sort [x]])
+    where
+      not(<resolve-sdf-sort-declaration> x)
+  
+  constraint-esv-error:
+    SemanticProvider(x) -> (x, $[Must be a generated .ctree or .jar file])
+    where
+      not(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
+   		
+   		 

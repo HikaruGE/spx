@@ -1,0 +1,206 @@
+module analyze/main
+
+imports 
+	context/sdf/declare
+	context/scope-tree
+	normalize/signatures
+imports 
+	include/SpoofaxLang
+imports
+	common
+	utils/annotations
+	utils/debug	
+imports 
+	analyze/sdf/check 
+	analyze/esv/check
+	analyze/str/check 
+	lib/editor-common.generated
+	
+rules
+	get-all-analyzed-problems =  all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
+	
+	get-analyzed-problems-of: scope@(package-typed-qname, module-typed-qname) -> problems
+		with 
+			<?Package(QName(_))>package-typed-qname;
+			<?Module(QName(_))> module-typed-qname
+			<+
+			debug(!"ErrorChecking | Failed to get analyzed errors . Invalid QName Arguments :");fail
+		where
+			<GetSemanticProblems>scope => problems 
+		where
+			<debug> $[ErrorChecking |  Problmes for [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
+
+rules	
+	module-constraint-error : 
+		Module(attrb* , s@SPXModuleName(modname) , section*) -> (modname, $[Multiple declaration of module '[modname]' ])
+			with
+				package-typed-qname := <get-annotation(get-package-annotation)> s
+				;Module(module-qname)  := <get-module-typed-qname>(package-typed-qname, s)
+			where 
+				require(<bagof-DeclaredModule>module-qname => [_])
+				
+	analyze: 
+		m@Module(attrb* , modname , section*) -> m
+		where 
+				 package-typed-qname := <GetEnclosingPackageName> 
+				;module-typed-qname  := <GetEnclosingModuleName>
+				<+ 
+				debug(!"ErrorChecking | Failed to create current scope.")
+				;fail
+		where
+				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 
+		where
+				issues* := <map(analyze-section)>section*
+				;unziped-issues* := <unzip-semantic-issuses>issues*
+				;current-scope := (package-typed-qname ,module-typed-qname)
+				;if (<GetSemanticProblems>current-scope => existing-problems) then
+					<debug(!"ErrorChecking | Modules with duplicate name found for following: ")>current-scope;
+					!unziped-issues*  =>(e, w, i); 
+					!existing-problems => ( e',w',i');
+					unziped-issues'* :=   <unzip-semantic-issuses>[(e, w, i)|[( e',w',i')]]
+					 
+				else
+					unziped-issues'* :=   unziped-issues*
+				end
+				;<collect-all(module-constraint-error, conc)>m  => merrors'
+				;!unziped-issues'*  =>(err, warning, info)	 
+				;<unzip-semantic-issuses>[(err, warning, info)|[(merrors',[],[])]] =>unziped-issues''*
+				;rules(
+						GetSemanticProblems :  current-scope  ->unziped-issues''*  
+					)	
+					
+		where
+			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
+			Problems :[<pp-aterm-forced> unziped-issues*]]
+							
+		 
+	analyze-section = 
+		where(not(?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
+		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
+		;!([], [], [])		
+
+	analyze-section: 
+			SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
+	
+	analyze-section: 
+			SDFSection(ast) -> <analyze-sdf-errors>ast 
+			where
+				<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+    	with
+	      // We only collect-om since we don't want inner warning dupes
+	      error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+	      warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+	      if <file-exists> $[[<project-path>]/.disable-global-analysis] then
+	        serror* := []
+	      else
+	        serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+	      end;
+	      error'*   := <conc;flatten-list> (serror*, error*);
+	      warning'* := <flatten-list> warning*
+	
+	analyze-sdf-errors : ast -> (error'*, warning'*, [])
+	where
+		<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+	with
+    // We only collect-om since we don't want inner warning dupes
+    error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+    warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+    if <file-exists> $[[<project-path>]/.disable-global-analysis] then
+      serror* := []
+    else
+      serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+    end;
+    error'*   := <conc;flatten-list> (serror*, error*);
+    warning'* := <flatten-list> warning*
+
+	       
+  analyze-section: 
+		ESVSection(ast) -> (error-esv*, [], [])
+  	where
+  		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
+		where
+  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+      	
+  analyze-section: 
+		STRSection(ast) -> ( errors, warnings, [])
+		where
+  		<debug-analysis>$[ErrorChecking | STR Section : [<pp-aterm>]]
+		with
+    	errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
+      warnings := <collect-all(constraint-warning, conc)> ast
+      
+			
+ 	rules
+	/* Converts a list as following 
+	[([a1] , [b1] , [c1])
+	([a2] , [b2] , [c2])
+	([a3] , [b3] , [c3])
+	] 
+	To:
+	([a1,a2,a3] , [b1,b2,b3] , [c1,c2,c3])
+	*/
+	unzip-semantic-issuses:
+		list-of-semantic-issues -> unziped-list
+		where
+			<unzip-semantic-issuse(|[] , [], [])>list-of-semantic-issues => unziped-list
+			<+
+			debug(!"unzip semantic issues failed : ");fail
+	
+	//unziping list of semantic issues
+	unzip-semantic-issuse(|errors, warnings, infos) =
+		?[hd-issue|rest-issues];
+		(
+				(!hd-issue => (errs', warns' , infos') <+ <debug> $["Illegal Argument in unzip-semantic-issues : [<pp-aterm>hd-issue]"];fail)
+				;err1 := <concat>[errs', errors]
+				;war1 := <concat>[warns', warnings]
+				;inf1 := <concat>[infos', infos]
+				;<unzip-semantic-issuse(|err1, war1, inf1)>rest-issues
+			 <+
+			  !hd-issue => [];
+			  <unzip-semantic-issuse(|errors, warnings, infos)>rest-issues
+		)
+			
+		
+		
+	unzip-semantic-issuse(|errors, warning, infos) : [] -> (errors, warning, infos)		
+ 		
+ 		
+ 	
+/*
+	Idea is following . Build a scope tree as follows .
+	
+	Globals   = all the symbols from the legacy import will stored in this namespace
+	  |
+	Packages  = package consist of modules 
+		|
+	Modules		= modules consist of Sections i.e. STR Sections , SDF Sections and ESV Sections
+	
+*/	
+
+
+
+/*
+Todo: 
+	without import => make the package analysis and code generation works
+*/
+
+
+/*
+TODO : 
+-----------------------------------------------------------------------
+Visibility to package level : 
+Follow the nested scoping as mentioned in Language Implementation Patterns 
+
+	* Add visibility modifier such as   > Public : Visibility , Private : Visibility  , Internal : 
+	
+		Internal > internal to assembly
+		Private  > private to a concept  todo >>> will be useful to handle hiddens. Take care of hiddens in the symbol table that we are about to build. 
+		Public   > public  , everything is by default public. 
+		
+	* While creating a nested scope , anotate the tree with the extra attributes . 
+	* Import-chain > 1 => Internal Visibility 
+	
+Accessing Internal members will results in "Are you missing any reference to ..."
+
+*/	 		
+ 		     
