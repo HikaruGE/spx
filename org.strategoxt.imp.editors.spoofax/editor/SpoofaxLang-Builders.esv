@@ -14,21 +14,32 @@ builders
   provider                  : include/spoofaxlang.ctree                                                                        
   provider                  : include/spoofaxlang-java.jar                                                                     
                                                                                                                                
-  observer                  : editor-analyze                                                                                   
+	observer                  : editor-analyze                                                                                   
                                                                                                                                
   builder : "Show abstract syntax (for selection)" =
     generate-aterm (openeditor) (realtime) (meta) (source)  
     
-  builder : "Show SDF (for selection)" =
-    generate-sdf (openeditor) (realtime)           
+  //builder : "Show SDF (for selection)" =
+  //  generate-sdf (openeditor) (realtime)           
     
-  builder : "Show Stratego (for selection)" =
-    generate-str (openeditor) (realtime)      
+  //builder : "Show Stratego (for selection)" =
+  //  generate-str (openeditor) (realtime)      
     
-  builder : "Show Editor Descriptor (for selection)" =
-    generate-esv (openeditor) (realtime)              
+ // builder : "Show Editor Descriptor (for selection)" =
+  //  generate-esv (openeditor) (realtime)              
   
-  builder: "generate signatures" = 
-		generate-signatures-from-SDF (realtime) (openeditor) (meta)
-		                                                                                                                             
-  //on save: generate-java                                                                                                    
+  //builder: "generate signatures" = 
+	//	generate-signatures-from-SDF (realtime) (openeditor) (meta)
+	
+	builder : "build-all" =
+    build-all (openeditor) (realtime) (meta)
+   
+  //builder : "test desugar" =
+   // generate-desugar (openeditor) (realtime) (meta)
+  
+  builder : "compile-all" =  
+    compile-all(openeditor) (realtime) (meta)
+    	                                                                                                                             
+  builder : "test-resolve" =  
+    test-resolving-symbol (openeditor) (realtime) (meta)
+                                                                                                     
