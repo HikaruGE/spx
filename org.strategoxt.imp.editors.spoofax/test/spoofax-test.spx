@@ -1,28 +1,38 @@
-module spoofax-test
-imports
-	common/A
+imports 
+	test.A 
+package test
+{
+	module spoofax-test
+	{
 
-context-free start-symbols
-  Start 
-
-context-free syntax
-	A -> Start{cons("Program")} 
-	 	 
-
-builders
-
-builders
-  provider                  : include/spoofaxlang.ctree                                                                        
-  provider                  : include/spoofaxlang-java.jar                                                                     
-  observer                  : editor-analyze
-                                                                                     
-completions
-  completion template : Start = "module " <m> (blank)       
-  completion template : A = "entity " <e> " {}" (blank) 
-
-rules
-	  test-rule1: Program(_) ->  IntVar(1,2) 
-	  test-rule1: Program(_) ->  IntVar-prime(1)        
-	      
- 
-   
+		imports
+			common/A
+			test.A::dummy3
+		
+		context-free start-symbols 
+		  Start 
+		
+		
+		context-free syntax
+			A -> Start{cons("Program")} 
+			 	   
+		
+		builders
+		
+		builders
+		//  provider                  : include/spoofaxlang.ctree                                                                        
+		  provider                  : include/spoofaxlang-java.jar                                                                     
+		  observer                  : editor-analyze
+		                                                                                     
+		completions
+		  completion template : Start = "module " <m> (blank)       
+		  completion template : A = "entity " <e> " {}" (blank) 
+		
+		rules
+			  test-rule1: Program(_) ->  IntVar(1,2)    
+			  test-rule1: Program(_) ->  IntVar-prime(1)         		
+	  }
+}
+			      
+		 
+		    
