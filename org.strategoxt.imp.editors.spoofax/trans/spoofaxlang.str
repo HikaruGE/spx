@@ -8,33 +8,30 @@ imports
   libstratego-sdf
   libstrc
 imports
-  common
-  analysis
-  config 
   include/SpoofaxLang
   lib/editor-common.generated
 imports
-  str/main
   codegen/str/to-stratego
 imports  
-  sdf/main
-  codegen/sdf/to-sdf
-  codegen/sdf/to-signature
-  sdf/analysis 
   analyze/sdf/check
+  context/sdf/declare
+  context/str/declare
 imports
-  codegen/esv/to-esv
-  esv/main
+  codegen/buildscripts
+	codegen/compile
+	codegen/esv/to-esv
+	codegen/sdf/to-sdf
+  codegen/sdf/to-signature
 imports 
 	normalize/main
 	normalize/signatures   
 imports 
-	codegen/buildscripts
-	codegen/compile
-	utils/cache
 	context/scope-tree
 	context/signature
 imports	 
+	utils/cache
+	common
+  config
 	unit-tests/-
 imports
 	 editor/main
@@ -51,10 +48,13 @@ rules
     where
       target := <Declaration> x
  
+ /*  TODO : Fix Editor Resolve 
   editor-resolve:
     (unparameterized(x), position, ast, path, project-path) -> target
     where
       target := <parse-spoofaxlang-file> <resolve-import> x
+ */
+ 
 rules
 	
   generate-aterm:
@@ -69,32 +69,4 @@ rules
       filename := <guarantee-extension(|"aterm.sugar")> path;
       result   := <nomalize-all>ast // we just return the input term
 
-rules	 
-
-	// Generate Signature for SDF Definition
-	generate-signatures-from-SDF:
-		(selected, position, ast, path, project-path) -> None()
-		where //verify that there is no errors exists. If exist, stop further signature generation process 
-			 <debug>$[Compiling SDF Definition.]
-			 ;<editor-analyze> (ast, path, project-path)
-			 ;if not(get-sdf-errors) <+ ([] := <flatten-list><get-sdf-errors>) then 
-					source-sdf		:= <remove-extension><base-filename> path
-					//;genpath		:= <remove-extension> path
-					//;<file-exists ; filemode ; isdir <+ mkdir> genpath
-					;genpath := <concat-strings>[ project-path , "/" , <dirname>path]
-					;<chdir>genpath
-					;<debug>$[Generating Signatures.]	   
-					;generated-signature-module-name := <concat-strings>[source-sdf, "-signature"] 
-					;generated-signatures :=  <get-signature-contents(|generated-signature-module-name)><get-all-signatures-as-string> 
-					;gen-file-name := $[[generated-signature-module-name].str]  
-					;<save-to-file>( gen-file-name, generated-signatures)
-					;<chdir>project-path  
-				else
-					errors := <get-sdf-errors>
-	        ;<debug(!"Compiling failed for following SDF definition: ")> <base-filename> path
-    			;<debug(!"Following errors has been encountered:")> <pp-aterm>errors
-				end	 
-				
-								 
-						
 	 

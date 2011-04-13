@@ -2,8 +2,7 @@ module analyze/esv/check
 
 imports
 	common
-	esv/main
-	esv/analysis
+	context/sdf/declare
 imports 
 	utils/debug
 	context/scope-tree

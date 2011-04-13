@@ -1,7 +1,7 @@
 module utils/sourcedir
 
 imports
-  analysis
+  lib/editor-common.generated
   libstrc
 
 rules
@@ -10,14 +10,14 @@ rules
     where <explode-string> x
         ; filter(?'/')
         ; length => ndirs
-        ; CurrentDir
+        ; getcwd
           // remove the last ndirs of directories
         ; explode-string(|'/')
         ; take(|<subt> (<length>, ndirs))
         ; implode-string(|'/') => basedir
         ; rules(SourceDir := basedir)
         
-  get-soure-base-dir = ProjectDir
+  get-soure-base-dir = project-path
           
 rules  // string utils
   
