@@ -1,15 +1,7 @@
 module codegen/buildscripts
 
 imports 
-  libstratego-lib
-  libstratego-sdf
-  libstratego-sglr
-  libstratego-gpp
-  libstratego-aterm
-  libstrc
   lib/editor-common.generated
-  lib/sdf-desugar
-  lib/sdf-parenthesize
 imports 
 	include/SpoofaxLang
 imports 
@@ -20,7 +12,7 @@ imports
 	codegen/main
 
 rules
-	emit-build-script: package-qnames* -> package-qnames* 
+	emit-build-script: package-qnames* -> package-qnames*  
 		with 
  			 project-path             := <ProjectPath>
  		with 
@@ -51,7 +43,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
     <property name="syntax" location="syntax"/>
     <property name="include" location="include"/>
     <property name="lib" location="lib"/>
-    <property name="build" location="bin"/>
+    <property name="build" location="bin"/> 
     <property name="dist" location="bin/dist"/>
     
 		<!-- Environment configuration for command-line builds -->

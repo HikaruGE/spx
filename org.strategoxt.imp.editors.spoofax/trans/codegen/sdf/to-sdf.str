@@ -35,7 +35,7 @@ rules
  			package-typed-qname := <GetEnclosingPackageName> 
 			;module-typed-qname  := <GetEnclosingModuleName> 
 			<+ 
-			<debug-compiler>$[ CodeGeneration | SDF | Failed to create current scope.]
+			<debug-compiler>$[ CodeGeneration | SDF | Failed to create current scope.] 
 			;fail
 		where
 			 !module-typed-qname  => Module(module-untyped-qname)

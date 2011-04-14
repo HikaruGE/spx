@@ -6,19 +6,21 @@ imports
 	lib/editor-common.generated
 imports
   include/SpoofaxLang
-
 imports 
 	common
 	config
-	utils/debug
+	utils/debug	
+	utils/path
+	utils/annotations	
+imports 	
 	codegen/sdf/to-signature
 	codegen/compile
-	utils/path
 	codegen/main
 	context/signature
-	normalize/signatures
-	utils/annotations
 	context/scope-tree
+imports	
+	normalize/signatures
+
 	
 	
 rules

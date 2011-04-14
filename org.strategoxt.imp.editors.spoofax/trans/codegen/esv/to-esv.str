@@ -1,15 +1,13 @@
 module codegen/esv/to-esv
 imports 
 	libstratego-lib
-imports 
 	libstrc
 imports
   common
   config
-  spoofaxlang
   utils/debug
+  utils/path
 imports 
-	utils/path
 	normalize/signatures 
 	include/SpoofaxLang
 imports 
@@ -18,8 +16,9 @@ imports
 	context/signature
 imports
 	lib/editor-common.generated
+
 	
-signature constructors
+signature constructors 
   Module : ID * Imports * List(Section) -> Module
 	
 rules 

@@ -7,19 +7,18 @@ imports
 	libstratego-aterm
 imports
 	lib/editor-common.generated
+	include/SpoofaxLang
 imports  	
- 	utils/sourcedir
- 	utils/debug
  	normalize/stratego
 imports	
-	analysis
-	common
+	utils/sourcedir
+ 	utils/debug
+ 	common
 	config 
 imports 
-	include/SpoofaxLang
 	context/str/signature-generator
-	context/scope-tree
-
+	context/scope-tree   
+ 
 
 rules 
 	
@@ -445,19 +444,16 @@ rules
      x -> full-path
      where
         // FIXME: fetch true import paths from someplace
-        full-path := <file-exists> $[[<SourceDir>]/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/trans/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/lib/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/src/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
-     <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
+   			full-path := <file-exists> $[[<project-path>]/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/trans/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/lib/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/src/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/syntax/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/syn/[x]]
+     <+ full-path := <file-exists> $[[<project-path>]/src/syntax/[x]]
  
   fetch-library-ast:
     x -> <pack-stratego-parse-stratego> (IncludeFromPath(x), [])
-
- 
 
 	
   read-stratego-signatures:
@@ -471,10 +467,8 @@ rules
       else
         file := <parse-stratego-file> str
       end
-  
- 
-	 
-	 to-signatures =
+	
+	to-signatures =
     basic-stratego-desugar-top;
     topdown(try(remove-stratego-bodies))
 

@@ -1,13 +1,13 @@
 module context/sdf/declare-signature
 
 imports 
-		common 
-		include/SpoofaxLang
-		utils/debug		
-		
+	include/SpoofaxLang
+imports		
+	common 
+	utils/debug		
 imports 
-		context/scope-tree
-		context/sdf/declare
+	context/scope-tree
+	context/sdf/declare
 		
 
 // TODO : refactor common functionily in seperate rules/strategy

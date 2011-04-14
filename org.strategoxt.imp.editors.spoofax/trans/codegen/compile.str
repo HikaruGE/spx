@@ -16,7 +16,7 @@ imports
 	config
 imports 
 	lib/editor-common.generated 
-	normalize/signatures
+	normalize/signatures 
 	include/SpoofaxLang
 	codegen/generate-all
 	codegen/buildscripts
