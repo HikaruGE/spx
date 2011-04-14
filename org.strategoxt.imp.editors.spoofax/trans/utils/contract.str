@@ -1,0 +1,32 @@
+module 
+	utils/contract 
+imports 
+	common
+	utils/debug	
+
+
+//Draft of code contracts for stratego 
+rules 
+
+	contract-requires ( s , on-fail | arg , expected) =
+			contract-requires ( s | arg , expected)
+		<+
+			on-fail
+		
+		
+	contract-requires ( s | arg , expected) =
+			where(<s>arg)
+		<+
+			<debug> $[Contract | Requires Failed - actual :[<pp-aterm>arg] expected : [expected]]
+			;fail 	 
+	
+	
+	contract-requires ( s | arg ) =
+			where(<s>arg)
+		<+
+			<debug> $[Contract | Requires Failed - argument :[<pp-aterm>arg] ]
+			;fail 	 
+	
+	
+	
+	contracts ( s ) =  where(s) <+ fail    

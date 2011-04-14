@@ -15,18 +15,19 @@ imports
 	analyze/esv/check
 	analyze/str/check 
 	lib/editor-common.generated
-	
+imports 
+	utils/contract 	
 rules
 	
 	//lookups for the analyzed problems
 	get-all-analyzed-problems =  all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
 	
 	get-analyzed-problems-of: scope@(package-typed-qname, module-typed-qname) -> problems
-		with 
-			<?Package(QName(_))>package-typed-qname;
-			<?Module(QName(_))> module-typed-qname
-			<+
-			debug(!"ErrorChecking | Failed to get analyzed errors . Invalid QName Arguments :");fail
+		where 
+			contracts (
+					contract-requires(?Package(QName(_)) |package-typed-qname);
+					contract-requires(?Module(QName(_))  |module-typed-qname)
+			)	
 		where
 			<GetSemanticProblems>scope => problems 
 		where
