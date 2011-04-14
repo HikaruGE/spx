@@ -35,11 +35,11 @@ builders
     build-all (openeditor) (realtime) (meta)
    
   //builder : "test desugar" =
-   // generate-desugar (openeditor) (realtime) (meta)
-  
+  // generate-desugar (openeditor) (realtime) (meta)
+  /*
   builder : "compile-all" =  
     compile-all(openeditor) (realtime) (meta)
-  
+  */
   /*  	                                                                                                                             
   builder : "test-resolve" =  
     test-resolving-symbol (openeditor) (realtime) (meta)
