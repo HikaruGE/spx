@@ -19,7 +19,7 @@ rules
 	
 rules
 	//editor-analyze	
- 	editor-analyze: (ast, path, project-path) -> (ast, errors, warnings, infos) // get the analyzed AST 
+ 	editor-analyze: (ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST 
     with 
 			editor-init;
 		  initialize-configuration
@@ -28,9 +28,5 @@ rules
 		with 
 			<cache-currently-analyzing-ast>(abs-path  , ast)	 
 		with 
-			if Enable-Caching then
-				<get-cached-semantic-issues<+ compile-packages-of> abs-path  => semantic-issues*
-			else
-				<compile-packages-of> abs-path  => ( errors, warnings, infos)
-			end	
-			
+			<compile-packages-of> abs-path  => ( errors, warnings, infos)
+			 

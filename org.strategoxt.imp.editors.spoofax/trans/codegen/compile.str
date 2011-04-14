@@ -111,15 +111,15 @@ strategies
 			;<compile-internal>list-of-package-qname*
 			;<debug>$[=========Getting list of errors============]
 			;<get-all-analyzed-problems>() => problems  
-			//;if <fail-if-has-errors>problems then
-			 	;debug(!"generating artifacts ")
+			;if <fail-if-has-errors>problems then
+			 	 <debug>$[=========generating artifacts============]
 				;<list-loop(generate-spx-package)>list-of-package-qname*
 				;<debug>$[=========Generating Build Scipt============]
 				;<emit-build-script> list-of-package-qname*
 				;<debug>$[=========Code Generation is done============] 		
-			//else
-			//	debug(!"Please fix the errors before building the artifacts: " ) // Get all errors 
-			//end		 
+			else
+				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
+			end		 
 		)
 		;disable-compiler-debugging
 		;!current-term //restoring current term to avoid side effects  
@@ -151,16 +151,21 @@ strategies 				// Main compilation events
 	where
 		<debug>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
 	where
-		//enable-compiler-debugging;
-		new-compile-session(
-		 	list-of-package-qname:= <get-packages-of-file> file-abs-path
-			;<compile-internal>list-of-package-qname 
-			;<debug>$[=========Getting list of errors============] 
-			;<get-semantic-problmes-by-file>file-abs-path => issues* 
-			;debug(!"Errors : ") 	  // get errors for this file only   
-		) //find out the semantic errors  
-		//;disable-compiler-debugging
-	
+			Enable-Caching;
+			<debug>$[=========Try Getting  Semantic Problems From cache============]; 
+			<get-cached-semantic-issues> file-abs-path => issues*;
+			debug(!"Errors : ") 
+		<+
+			//enable-compiler-debugging;
+			new-compile-session(
+			 	list-of-package-qname:= <get-packages-of-file> file-abs-path
+				;<compile-internal>list-of-package-qname 
+				;<debug>$[=========Getting list of errors============] 
+				;<get-semantic-problmes-by-file>file-abs-path => issues* 
+				;debug(!"Errors : ") 	  // get errors for this file only   
+			) //find out the semantic errors  
+			//;disable-compiler-debugging
+		
 	
 	compile-internal : list-of-package-qname* -> list-of-package-qname* 
 	where 

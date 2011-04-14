@@ -17,6 +17,8 @@ imports
 	lib/editor-common.generated
 	
 rules
+	
+	//lookups for the analyzed problems
 	get-all-analyzed-problems =  all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
 	
 	get-analyzed-problems-of: scope@(package-typed-qname, module-typed-qname) -> problems
@@ -31,6 +33,7 @@ rules
 			<debug> $[ErrorChecking |  Problmes for [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
 
 rules	
+	//module specific semantic error checking 	
 	module-constraint-error : 
 		Module(attrb* , s@SPXModuleName(modname) , section*) -> (modname, $[Multiple declaration of module '[modname]' ])
 			with
@@ -38,42 +41,48 @@ rules
 				;Module(module-qname)  := <get-module-typed-qname>(package-typed-qname, s)
 			where 
 				require(<bagof-DeclaredModule>module-qname => [_])
-				
+rules 
+	//analyzes module errors returns it as a touple of errors , warnings and infos 
+	analyze-module-semantics : m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
+	where 
+		<collect-all(module-constraint-error, conc)>m  => merrors'
+
+		
+	// analyzes module errors and appened it with the existing problems  
+	append-semantic-problems(s|unziped-issues*):  m@Module(attrb* , modname , section*)  -> semantic-problems*
+	with 
+		(merrors,mwarnings,minfos) 	:=  <s> m;
+		!unziped-issues*  =>(err, warning, info);
+		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
+	where		
+		<unzip-semantic-issuses>combined-problmes*=> semantic-problems* 
+		
+rules
+	
 	analyze: 
 		m@Module(attrb* , modname , section*) -> m
-		where 
+		with
 				 package-typed-qname := <GetEnclosingPackageName> 
 				;module-typed-qname  := <GetEnclosingModuleName>
 				<+ 
 				debug(!"ErrorChecking | Failed to create current scope.")
 				;fail
-		where
+		with
 				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 
-		where
-				issues* := <map(analyze-section)>section*
+				;issues* := <map(analyze-section)>section*
 				;unziped-issues* := <unzip-semantic-issuses>issues*
+		where		 
+				<append-semantic-problems(analyze-module-semantics|unziped-issues*)> m  => unziped-issues'*
 				;current-scope := (package-typed-qname ,module-typed-qname)
-				;if (<GetSemanticProblems>current-scope => existing-problems) then
-					<debug(!"ErrorChecking | Modules with duplicate name found for following: ")>current-scope;
-					!unziped-issues*  =>(e, w, i); 
-					!existing-problems => ( e',w',i');
-					unziped-issues'* :=   <unzip-semantic-issuses>[(e, w, i)|[( e',w',i')]]
-					 
-				else
-					unziped-issues'* :=   unziped-issues*
-				end
-				;<collect-all(module-constraint-error, conc)>m  => merrors'
-				;!unziped-issues'*  =>(err, warning, info)	 
-				;<unzip-semantic-issuses>[(err, warning, info)|[(merrors',[],[])]] =>unziped-issues''*
 				;rules(
-						GetSemanticProblems :  current-scope  ->unziped-issues''*  
-					)	
-					
+						GetSemanticProblems :  current-scope  ->unziped-issues'*  
+				)	
 		where
 			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
 			Problems :[<pp-aterm-forced> unziped-issues*]]
 							
-		 
+rules 
+			 
 	analyze-section = 
 		where(not(?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
 		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
@@ -112,7 +121,6 @@ rules
     end;
     error'*   := <conc;flatten-list> (serror*, error*);
     warning'* := <flatten-list> warning*
-
 	       
   analyze-section: 
 		ESVSection(ast) -> (error-esv*, [], [])
@@ -129,8 +137,9 @@ rules
     	errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
       warnings := <collect-all(constraint-warning, conc)> ast
       
-			
- 	rules
+rules
+
+
 	/* Converts a list as following 
 	[([a1] , [b1] , [c1])
 	([a2] , [b2] , [c2])
@@ -159,8 +168,6 @@ rules
 			  !hd-issue => [];
 			  <unzip-semantic-issuse(|errors, warnings, infos)>rest-issues
 		)
-			
-		
 		
 	unzip-semantic-issuse(|errors, warning, infos) : [] -> (errors, warning, infos)		
  		
