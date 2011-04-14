@@ -2,6 +2,7 @@ module codegen/compile
 
 imports 
 	normalize/main
+	normalize/signatures 
 imports 
 	utils/cache 
 	utils/debug
@@ -16,11 +17,12 @@ imports
 	config
 imports 
 	lib/editor-common.generated 
-	normalize/signatures 
 	include/SpoofaxLang
+imports	
 	codegen/generate-all
 	codegen/buildscripts
-	context/str/declare
+imports 	
+	context/str/declare  //TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs 
 
 rules			// Starting a new compilation session   
 	
