@@ -11,18 +11,18 @@ imports
   lib/sdf-desugar
   lib/sdf-parenthesize  
 imports 
-	context/sdf/declare  
-imports 
-	common
-	spoofaxlang
-	config
-	utils/annotations
 	context/scope-tree
 	context/signature
+	context/sdf/declare
+imports
 	normalize/signatures
+imports 
+	common
+	config
+	utils/annotations
 	utils/path
 	utils/debug
-	codegen/generate-all 
+imports 	 
 	codegen/main
 	
       
