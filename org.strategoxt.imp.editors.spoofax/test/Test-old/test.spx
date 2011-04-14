@@ -1,6 +1,6 @@
 package test.A 
 {	 
-	module dummy2{
+	module dummy2{  
 		imports test.b::m1
 		
 		context-free start-symbols
@@ -9,8 +9,8 @@ package test.A
 		context-free syntax 
 			Test4 A -> Start{cons("Program")}  
 			 
-		folding  
-			Test5.Program 
+		folding   
+			Test5.Program    
 				 
 		completions
 		  completion template : Start = "module " <m> (blank)        
@@ -25,7 +25,7 @@ package test.A
 		imports test.b::m2 
 		
 		context-free syntax 
-			"int" Test5 ->  Test6{cons("Test6")} 
+			"int" Test5 ->  Test6{cons("Test6")}  
 		 
 		lexical syntax 
 			"void" -> A

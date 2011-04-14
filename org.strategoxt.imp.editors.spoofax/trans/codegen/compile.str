@@ -38,10 +38,10 @@ rules			// Starting a new compilation session
 					GetEnclosingScope,
 					GetEnclosedScope:
 						where(
-							<debug>$[============Starting new compiler session ==============]
+							<debug-compiler>$[============Starting new compiler session ==============]
 						);
 						compiler-init; // initializing compiler session 
-						where(<debug>$[============Initialization is done  ==============]);
+						where(<debug-compiler>$[============Initialization is done  ==============]);
 						s	
 			|}
 
@@ -149,35 +149,36 @@ strategies 				// Main compilation events
 	
 	compile-packages-of: file-abs-path -> issues*
 	where
-		<debug>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
+		<debug-compiler>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
 	where
 			Enable-Caching;
-			<debug>$[=========Try Getting  Semantic Problems From cache============]; 
-			<get-cached-semantic-issues> file-abs-path => issues*;
-			debug(!"Errors : ") 
+			<debug-compiler>$[=========Try Getting  Semantic Problems From cache============]; 
+			<get-cached-semantic-issues> file-abs-path => issues*
 		<+
 			//enable-compiler-debugging;
 			new-compile-session(
 			 	list-of-package-qname:= <get-packages-of-file> file-abs-path
 				;<compile-internal>list-of-package-qname 
-				;<debug>$[=========Getting list of errors============] 
+				;<debug-compiler>$[=========Getting list of errors============] 
 				;<get-semantic-problmes-by-file>file-abs-path => issues* 
-				;debug(!"Errors : ") 	  // get errors for this file only   
 			) //find out the semantic errors  
 			//;disable-compiler-debugging
-		
+		where
+			if not(<fail-if-has-errors>issues*) then  
+				  <debug(!"Errors : ")>issues* 	  // get errors for this file only
+			end
 	
 	compile-internal : list-of-package-qname* -> list-of-package-qname* 
 	where 
-		<debug>$[=========Compiling packages===============
+		<debug-compiler>$[=========Compiling packages===============
 		 				 [<pp-aterm-forced>list-of-package-qname* ]
 		 				 ]
 	where
 		<compile-main>list-of-package-qname*
-		;<debug>$[=========Compilation is done===============]
+		;<debug-compiler>$[=========Compilation is done===============]
 	where 	    
 		if Enable-Caching then 
-			<debug>$[=========Caching Semantic Problems============] 
+			<debug-compiler>$[=========Caching Semantic Problems============] 
 			;<cache-semantic-problems>()
 		end
 

@@ -11,7 +11,7 @@ package test
  
 		context-free syntax
 		  MethodDecl -> Start{cons("Test"), left-assoc}
-		 	"public" Type ID Params -> MethodDecl{cons("Method")}
+		 	"public" Type ID Params -> MethodDecl{cons("Method")} 
 		 	{Param? "," }+ -> Params{cons("Args")}
 		 	{Param+*  "," }+ -> Params{cons("Args1")}
 		 	Type ID -> Param{cons ("Parameter")}

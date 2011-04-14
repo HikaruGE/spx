@@ -31,7 +31,7 @@ rules
 		where
 			<GetSemanticProblems>scope => problems 
 		where
-			<debug> $[ErrorChecking |  Problmes for [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
+			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
 
 rules	
 	//module specific semantic error checking 	
