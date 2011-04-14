@@ -13,7 +13,7 @@ imports
 imports	
 	utils/sourcedir
  	utils/debug
- 	common
+ 	common 
 	config 
 imports 
 	context/str/signature-generator
@@ -37,10 +37,12 @@ rules
  			fail
 	 
 rules 
+	
 	is-constructor =
     (?(_, _); getCookie; getStrDeclaration <+ declaration-of);
     (?OpDecl(_, _) + ?ExtOpDecl(_, _))
 
+  
   is-congruence-signature:
     (x, s, 0) -> (x, s, [])
     where
@@ -69,6 +71,7 @@ rules
       else
        	cookie := <getCookie> sig 
       end
+
 
   redeclare-definition:
     def -> cookie

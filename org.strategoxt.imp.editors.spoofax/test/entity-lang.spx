@@ -11,18 +11,28 @@ package entity
 	    ID ":" Type                   -> Property {cons("Property")}
 	    ID                            -> Type {cons("Type")}
 
+		language General properties
+    	name          : entity-lang
+  		id            : entity-lang
+  		extends       : Root
+                  
+  		description   : "Spoofax/IMP-generated editor for the TestSpoofax language"
+  		url           : http://strategoxt.org
+                  
+  		extensions    : ent
+  		start symbols : Start
 	}
 	
-	module builders
+	module entity-builders 
 	{
 		builders
                                                                                                                                
 			provider                  : include/testspoofax-java.jar                                                                     
 	    observer                  : editor-analyze                                                                                   
 	                                                                                                                           
-	  	builder                   : "Generate Java code (for selection)"   = generate-java (openeditor) (realtime)                   
-	 		builder                   : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)  
-  }
+	  	builder                   : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
+	  	
+	}
 }
 
 package entity  

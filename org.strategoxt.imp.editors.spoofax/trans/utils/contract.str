@@ -11,7 +11,7 @@ rules
 	contract-requires ( s , on-fail | arg , expected) =
 			contract-requires ( s | arg , expected)
 		<+
-			on-fail
+			on-fail 
 		
 		
 	contract-requires ( s | arg , expected) =

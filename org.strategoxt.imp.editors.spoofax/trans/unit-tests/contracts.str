@@ -30,7 +30,7 @@ rules
 	
 	test-dummy-strategy : list* -> list* 
 	where contracts(
-		contract-requires( is-list | list*, "list")
+		contract-requires( is-list | list*, "list") 
 	)
 					
 		
