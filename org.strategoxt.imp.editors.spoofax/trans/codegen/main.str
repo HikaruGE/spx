@@ -33,7 +33,7 @@ rules
 		
 rules
 	//Intregation Test of the compile-all is working as expected 
-	compile-all:
+	compile-spx:
 		(selected, position, ast, path, project-path) -> None()
 		where
 			debug(!"=============starting compile-all ===================")
@@ -43,4 +43,5 @@ rules
 		where
 			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
 		with 
-			compile-all
+			debug(!"=============starting compile-all =1==================");
+			<compile-all>()

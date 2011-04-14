@@ -31,15 +31,15 @@ builders
   //builder: "generate signatures" = 
 	//	generate-signatures-from-SDF (realtime) (openeditor) (meta)
 	
-	builder : "build-all" =
+	builder : "Build-All" =
     build-all (openeditor) (realtime) (meta)
    
   //builder : "test desugar" =
   // generate-desugar (openeditor) (realtime) (meta)
-  /*
-  builder : "compile-all" =  
-    compile-all(openeditor) (realtime) (meta)
-  */
+  
+  builder : "Compile" =  
+    compile-spx(openeditor) (realtime) (meta)
+  
   /*  	                                                                                                                             
   builder : "test-resolve" =  
     test-resolving-symbol (openeditor) (realtime) (meta)
