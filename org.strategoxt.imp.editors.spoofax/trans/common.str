@@ -142,7 +142,7 @@ rules
       where
           not(<eq>("", fileContent))
       with  
-      		<debug> $[Writing to the following file : [fileName] the following content: 
+      		<debug-compiler> $[Writing to the following file : [fileName] the following content: 
       							[fileContent] 
       						 ]
           ;handle := <fopen> (fileName, "w+")

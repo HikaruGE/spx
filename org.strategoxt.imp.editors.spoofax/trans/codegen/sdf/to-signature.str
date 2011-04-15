@@ -46,8 +46,7 @@ rules
 			;!package-typed-qname => Package(package-untyped-qname)
 			;!modname => SPXModuleName(modulename-string)
 		where 
-			debug(!"2 :")
-			;sig-file-name := <get-signature-file-name>modulename-string
+			sig-file-name := <get-signature-file-name>modulename-string
 		where 
 			<debug> $[Spoofax-lang|Generating signature for the following package : [<pp-aterm>module-typed-qname]]			
 			;generated-signatures-string :=  <get-signature-contents(|sig-file-name)><get-all-signatures-as-string>

@@ -255,7 +255,10 @@ rules
 				annotated-import-decl:= <add-annotation(|Unresolved())>i
 				;<debug-symboltable>$[ImportReferenceResolver| store-import-declaratio|Failed to resolve following import : [<pp-aterm>]]	
 	 		end
-	 		
+	
+	store-import-declaration(|enclosing-namespace-qname) :
+		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <store-import-declaration(|enclosing-namespace-qname)>ImportSpxModule(QName([package-name]), SPXModuleName(modname)) 
+		 
 	store-import-declaration(|enclosing-namespace-qname) :
 		i@ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> annotated-import-decl 
 		where 

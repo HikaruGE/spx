@@ -70,7 +70,6 @@ rules
 	
 	ensure-exists =  
 		?(autogen-root-path, QName(qname-parts*))
-		;debug(!"inside ensure-exists ")
 		;<ensure-directory-exists>autogen-root-path 
 		;if not(<eq>(<length>qname-parts*,0)) then 
 				<map(create-folder)>qname-parts*  //Creating sub-directories from the qname parts 

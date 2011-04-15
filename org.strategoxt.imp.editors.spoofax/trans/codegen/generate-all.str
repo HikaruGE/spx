@@ -16,14 +16,34 @@ imports
 	context/signature
 	normalize/signatures  
 	include/spoofaxlang
-	utils/path
+	utils/path 
 	utils/annotations
+	utils/contract
 
+
+
+//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
+//TODO: OPTIMIZE : DR can be used to construct this imports  
 rules 
+	
 	generate-all =  emit-sdf;emit-signatures;emit-str <+ debug(!" Failed in Generate-all. "); fail
 
 	generate-main = 
-			?module-qname* ;generate-sdf-main;generate-str-main ; debug(!"inside generate esv main : ");generate-esv-main 
+			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
 		<+ 
-			debug(!" Failed in Main Generation. "); fail  
+			debug(!" Failed in Main Generation. "); fail    
 	 
+
+
+rules
+	
+	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 
+	with contracts( 
+		contract-requires(is-list |list-stmt*)
+	)
+	where 
+		<adapter>list-stmt*  => adapted-result*; // results are  adapted using the specified adapter
+		<post-coversion-adapter>adapted-result*  => resultant-block*
+
+
+	ensure-list-is-not-empty =  is-not-empty-list 
