@@ -310,7 +310,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
 	  <target name="sdf2imp" depends="sdf2imp.eclipse"/>
 	        
 		<target name="sdf2imp.eclipse" if="eclipse.running" >
-			<copy file="${package.path}/${package.main.esv.module}.packed.esv" tofile="${include}/${package.main.esv.module}.packed.esv" preservelastmodified="true"/>
+			<copy file="${package.path}/${package.main.esv.module}.packed.esv" tofile="${include}/${package.name}.packed.esv" preservelastmodified="true"/>
 		</target>
 	
 </project>

@@ -53,7 +53,7 @@ rules
 	
 rules
 	
-	to-generate-artifacts-import-declarations(s) =
+	to-generated-artifacts-import-declarations(s) =
 		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set; 	where(<debug-compiler>$[Codegen | Imports | Resultant imports :  [<pp-aterm>]]) 
 		
 		
@@ -108,6 +108,7 @@ rules
 			<debug-compiler>$[Codegen | Imports Conversion |  import legacy artifact Result : [<pp-aterm>result].]
 	
 	
+
 	
 	
 				 

@@ -81,6 +81,7 @@ rules
 			;<save-to-file>(output-path , sdf-string )
 	 		;<refresh-workspace-file>output-path
 			;chdir-to-project-path
+			;<debug-compiler>$[ Codegen | SDF | Finishing generation of Main SDF Module of package : [<pp-aterm> package-qname].]
 	
 				
 rules
@@ -105,11 +106,11 @@ rules
 	where 
 		spx-import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> sections*;
 		if <ensure-list-is-not-empty>spx-import-stmt*  then
-			sdf-import-block := <to-generated-artifact-block(to-generate-artifacts-import-declarations(\name -> 'module(unparameterized(name))\), \s -> ['imports(s)]\)>spx-import-stmt*
+			sdf-import-block := <to-generated-artifact-block(to-generated-artifacts-import-declarations(\name -> 'module(unparameterized(name))\), \s -> ['imports(s)]\)>spx-import-stmt*
 		else
 			sdf-import-block := []
 		end		
-
+ 
 rules
 
 	override pp-sdf-string = fail // ensure compiler doesn't blow up
@@ -150,9 +151,6 @@ rules
     [] -> []
 	
 rules 
-	
-	// coverts name to SDF  module name
-	to-sdf-import: name -> 'module(unparameterized(name))
 	
 	//pretty printing as sdf imports
 	pp-sdf-import: Module(q@QName(qnameparts*))-> result 
