@@ -55,6 +55,7 @@ rules
 			; <save-to-file>(output-path , sdf-string )
 			;<refresh-workspace-file>output-path
 			;chdir-to-project-path
+			;<debug-compiler>$[ Codegen | SDF | Finishing generation of SDF for [<pp-aterm> module-untyped-qname].] 
 		
 	
 	generate-sdf-main:  module-qname* -> <id>
@@ -104,14 +105,11 @@ rules
 	where 
 		spx-import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> sections*;
 		if <ensure-list-is-not-empty>spx-import-stmt*  then
-			sdf-import-block := <to-generated-artifact-block(sdf-import-declarations, \s -> ['imports(s)]\)>spx-import-stmt*
+			sdf-import-block := <to-generated-artifact-block(to-generate-artifacts-import-declarations(\name -> 'module(unparameterized(name))\), \s -> ['imports(s)]\)>spx-import-stmt*
 		else
 			sdf-import-block := []
 		end		
-			
 
-				
- 
 rules
 
 	override pp-sdf-string = fail // ensure compiler doesn't blow up
@@ -161,64 +159,4 @@ rules
 		where 
 				result := $[[<qname-to-path >q]
 									 ]
-rules
-	
-	sdf-import-declarations =
-		?imports*;
-		map(sdf-import-declaration);
-		flatten-list;
-		make-set;
-		where(<debug-compiler>$[Codegen | SDF | Resultant imports :  [<pp-aterm>]]) 
-		
-		
-	sdf-import-declaration: 
-		i@ImportPackage(package-qname@QName(_)) -> results
-		where 
-			if not(<DeclaredPackage>package-qname) then
-				results := [] // unresolved imports. ignore. 
-			else
-				<get-enclosed-modules>Package(package-qname) => modules*;
-				<map(?Module(<id>) ; qname-to-path ; to-sdf-import)> modules* => results
-			end
-		where
-			<debug-compiler>$[ Codegen | SDF |  Result import package Result : [<pp-aterm>results] ]
-	
-	sdf-import-declaration:		
-		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <sdf-import-declaration>ImportSpxModule(QName([package-name]), SPXModuleName(modname))
-	
-	sdf-import-declaration: 
-		i@ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> result
-		where
-			 module-qname 			 := <get-module-untyped-qname> (package-qname-parts , modname)
-			;if(not(<DeclaredModule>module-qname))  then
-				result := [] // unresolved imports. ignore. 
-			else
-				module-name-path    := <qname-to-path>module-qname
-				;<to-sdf-import>module-name-path => result'
-				;result := [result']  
-			end
-		where 
-			<debug-compiler>$[ Codegen | SDF | import module :  [<pp-aterm>result]] 
-		 
-	
-	sdf-import-declaration: i@ImportPackage(Name(package-name)) -> result
-	where
-		if <DeclaredPackage>QName([package-name]) then
-			<get-enclosed-modules>Package(QName([package-name])) => modules*
-			;<map(?Module(<id>) ; qname-to-path ; to-sdf-import)> modules* => result
-		else
-			 <to-sdf-import>package-name => result'
-			;result := [result']	
-		end
-	where 
-			<debug-compiler>$[ Codegen | SDF | import pcakage :  [<pp-aterm>result]] 
-	
-			
-	sdf-import-declaration: 
-		i@ImportLegacyArtifact(Name(modulename)) -> result
-		where 
-				<to-sdf-import>modulename => result'
-				;result := [result']	
-		where 
-			<debug-compiler>$[Codegen | SDF |  import legacy artifact [<pp-aterm>result].]
 			

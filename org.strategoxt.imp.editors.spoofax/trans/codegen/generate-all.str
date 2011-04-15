@@ -6,19 +6,24 @@ imports
 	codegen/sdf/to-signature 
 	codegen/str/to-stratego
 	codegen/esv/to-esv
-imports
 	codegen/buildscripts
 imports 
 	config 
-	utils/cache
+	common
+imports	
 	lib/editor-common.generated
+	include/spoofaxlang
+
+imports	
 	context/scope-tree
 	context/signature
-	normalize/signatures  
-	include/spoofaxlang
+	normalize/signatures
+imports 	
 	utils/path 
 	utils/annotations
 	utils/contract
+	utils/debug
+	utils/cache
 
 
 
@@ -32,9 +37,6 @@ rules
 			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
 		<+ 
 			debug(!" Failed in Main Generation. "); fail    
-	 
-
-
 rules
 	
 	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 
@@ -46,4 +48,66 @@ rules
 		<post-coversion-adapter>adapted-result*  => resultant-block*
 
 
-	ensure-list-is-not-empty =  is-not-empty-list 
+	ensure-list-is-not-empty =  is-not-empty-list
+	
+	
+rules
+	
+	to-generate-artifacts-import-declarations(s) =
+		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set; 	where(<debug-compiler>$[Codegen | Imports | Resultant imports :  [<pp-aterm>]]) 
+		
+		
+	to-import-declaration(s): 
+		i@ImportPackage(package-qname@QName(_)) -> results
+		where 
+			if not(<DeclaredPackage>package-qname) then
+				results := [] // unresolved imports. ignore. 
+			else
+				<get-enclosed-modules>Package(package-qname) => modules*;
+				<map(?Module(<id>) ; qname-to-path ; s)> modules* => results
+			end
+		where
+			<debug-compiler>$[ Codegen | Imports Conversion |  import package Result : [<pp-aterm>results] ]
+	
+	to-import-declaration(s):		
+		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <to-import-declaration(s)>ImportSpxModule(QName([package-name]), SPXModuleName(modname))
+	
+	to-import-declaration(s):
+		ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> result
+		where
+			 module-qname 			 := <get-module-untyped-qname> (package-qname-parts , modname)
+			;if(not(<DeclaredModule>module-qname))  then
+				result := [] // unresolved imports. ignore. 
+			else
+				module-name-path    := <qname-to-path>module-qname
+				;<s>module-name-path => result'
+				;result := [result']  
+			end
+		where 
+			<debug-compiler>$[ Codegen | Imports Conversion  | import module Result:  [<pp-aterm>result]] 
+		 
+	to-import-declaration(s): 
+		ImportPackage(Name(package-name)) -> result
+		where
+			if <DeclaredPackage>QName([package-name]) then
+				<get-enclosed-modules>Package(QName([package-name])) => modules*
+				;<map(?Module(<id>) ; qname-to-path ; s)> modules*   => result
+			else
+				 <s>package-name => result'
+				;result          := [result']	
+			end
+		where 
+			<debug-compiler>$[ Codegen | Imports Conversion  | import pcakage/legacy artifact Result :  [<pp-aterm>result]] 
+	
+	to-import-declaration(s): 
+		ImportLegacyArtifact(Name(modulename)) -> result
+		where 
+				<s>modulename => result'
+				;result			 := [result']	
+		where 
+			<debug-compiler>$[Codegen | Imports Conversion |  import legacy artifact Result : [<pp-aterm>result].]
+	
+	
+	
+	
+				 

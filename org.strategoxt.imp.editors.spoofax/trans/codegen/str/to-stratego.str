@@ -57,26 +57,6 @@ rules
 			;<WriteToBinaryFile>( output-path-rtree, str-aterm)
 			;<refresh-workspace-file>output-path-str
 			;<refresh-workspace-file>output-path-rtree
-			
-rules
-	
-	to-str-string: sections* -> str-section-block  
-	where 
-		str-section-block := <parenthesize-Stratego; pp-stratego-string>sections*
-
-	to-str-imports-block : sections*  -> str-import-block
-	with contracts( 
-		contract-requires ( is-list |sections*)
-	)
-	where 
-		spx-import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> sections*;
-		if <ensure-list-is-not-empty>spx-import-stmt*  then
-			str-import-block := <to-generated-artifact-block(str-import-declarations, \s -> [Imports(s)]\)>spx-import-stmt*
-		else
-			str-import-block := []
-		end		
-			
-
 		  
 	
 	/** 
@@ -110,6 +90,26 @@ rules
 	 		;<refresh-workspace-file>output-path-str
 			;<refresh-workspace-file>output-path-rtree
 			
+
+
+rules
+	
+	to-str-string: sections* -> str-section-block  
+	where 
+		str-section-block := <parenthesize-Stratego; pp-stratego-string>sections*
+
+	to-str-imports-block : sections*  -> str-import-block
+	with contracts( 
+		contract-requires ( is-list |sections*)
+	)
+	where 
+		spx-import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> sections*;
+		if <ensure-list-is-not-empty>spx-import-stmt*  then
+			str-import-block := <to-generated-artifact-block(to-generate-artifacts-import-declarations(to-str-import), \s -> [Imports(s)]\)>spx-import-stmt*
+		else
+			str-import-block := []
+		end		
+			
 	to-str-import: 
 		package-name-> [Import(package-name) , Import(<get-signature-file-name>package-name)]
 	
@@ -118,70 +118,3 @@ rules
 		where 
 			str-import:= <qname-to-path>q;
 			sig-import:= <get-signature-file-name>str-import
-		
-rules			
-	//TODO : remove code duplications 
-	str-import-declarations=
-		?imports*;
-		map(debug;str-import-declaration;debug);
-		flatten-list;
-		make-set;
-		where( <debug-compiler> $[CodeGen | STR | Adding following imports : [<pp-aterm>] ]) 
-		
-	str-import-declaration: 
-		i@ImportPackage(package-qname@QName(_)) -> results
-		where 
-			if not(<DeclaredPackage>package-qname) then
-				results := [] // unresolved imports. ignore. 
-			else
-				<get-enclosed-modules>Package(package-qname) => modules*
-				;<map(?Module(<id>) ; qname-to-path ; to-str-import)> modules* => results
-			end
-		where
-			<debug-compiler> $[CodeGen | STR | adding import to package. Added following module references: [<pp-aterm>results]]
-				
-	str-import-declaration:		
-		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <str-import-declaration>ImportSpxModule(QName([package-name]), SPXModuleName(modname))
-	
-	
-	str-import-declaration: 
-		i@ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> result
-		where
-			 module-qname 			 := <get-module-untyped-qname> (package-qname-parts , modname)
-			;if(not(<DeclaredModule>module-qname))  then
-					result := [] // unresolved imports. ignore. 
-			else
-				module-name-path    := <qname-to-path>module-qname
-				;<to-str-import>module-name-path => result'
-				;result := [result']  
-			end 
-		where
-			<debug-compiler> $[CodeGen | STR | adding import to modules [<pp-aterm>result]]
-		
-	str-import-declaration: i@ImportPackage(Name(package-name)) -> result
-	where
-			if <DeclaredPackage>QName([package-name]) then
-				<get-enclosed-modules>Package(QName([package-name])) => modules*
-				;debug(!"converting to module paths : ")
-				;<map(?Module(<id>) ; qname-to-path ; to-str-import)> modules* => result
-				;debug(!"results : ")
-			else
-				<to-str-import>package-name => result'
-				;result := [result']	
-			end
-	where
-			<debug-compiler> $[CodeGen | STR | adding import to following module [<pp-aterm>result]]
-				
-
-	str-import-declaration: 
-		i@ImportLegacyArtifact(Name(modulename)) -> result
-		where 
-			if not(<get-annotation(get-unresolved-symbol-annotation)>i) then 
-				![] => result
-			else
-				<to-str-import>modulename => result'
-				;result := [result']	
-			end
-		where
-			<debug-compiler> $[CodeGen | STR | adding import to (legacy )modules [<pp-aterm>result]]
-				
