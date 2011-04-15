@@ -90,7 +90,7 @@ rules
 			 |}
 	*/
 			 
-  find-sorts 
+  find-sorts  
   	= alltd(get-sort-decl)
 
 rules  
