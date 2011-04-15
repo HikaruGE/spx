@@ -13,11 +13,11 @@ imports
 	utils/cache
 	lib/editor-common.generated
 	context/scope-tree
-	context/signature
-	normalize/signatures 
-	include/spoofaxlang
+	context/signature 
+	normalize/signatures  
+	include/spoofaxlang 
 	utils/path
-	
+	 
 rules 
 	build-all:
 		(selected, position, ast, path, project-path) -> None()

@@ -2,6 +2,7 @@ module context/declare
 
 imports 
 	context/sdf/declare
+	context/sdf/declare-signature
 	context/str/declare
 	context/scope-tree
 	context/signature
@@ -17,6 +18,7 @@ imports
 rules		
 	declare-all = declare-sdf-all;declare-esv-all ; declare-str-all; update-modified-module-declaration   
 
+	init-declaration = init-record-signatures 
 rules	
 	declare-sdf-all = declare-spxmodules-all(declare-sdf-section) 
 	declare-str-all = declare-spxmodules-all(declare-str-section)

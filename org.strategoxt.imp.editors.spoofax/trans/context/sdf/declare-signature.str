@@ -8,7 +8,7 @@ imports
 imports 
 	context/scope-tree
 	context/sdf/declare
-		
+	context/signature	
 
 // TODO : refactor common functionily in seperate rules/strategy
 // DON'T like several things about this implementation. Need to refactor/re-implement.
@@ -206,7 +206,8 @@ strategies
 	*	
 	*/		  
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
-		 available-opdecl*     := <getOperationSignatures>operation-name
+		where (<debug-declaration> $[DeclareSDF | Storing Signature for following production: [<pp-aterm> production]])
+		;available-opdecl*     := <getOperationSignatures>operation-name
 		;scoped-operation-name := <to-scoped-symbol>operation-name   
 		;if(
 		 		(!available-opdecl* => []) 
@@ -214,33 +215,37 @@ strategies
 				not (<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*)
 			)
 			then 
-				enable-declaration-debugging; 
-				store-operation-declaration(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort) // storing this operation declaration 
-					   
-				; <debug-declaration> $[DeclareSDF | Stored operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm> ( operation-name , opernand-sorts* , resultant-sort) ].]
-				; <debug-declaration> $[DeclareSDF | Stored operation signature: [<pp-aterm> scoped-operation-name] -> [<pp-aterm> (operation-name , <length>opernand-sorts*)].]  
- 		 		; disable-declaration-debugging
+				record-operation-declaration(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort) // storing this operation declaration 
  		 	else 
- 		 			<debug-declaration> $[DeclareSDF | Waring | There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)] 
+ 		 		<debug-declaration> $[DeclareSDF | Waring | There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)] 
  		 								DeclareSDF | Debug-info: scoped-op-name [<pp-aterm>scoped-operation-name]. ]
 			end
 	
-			
 	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort  
 		where 
 			  alt-srt-lst := [alt-sort]
 			  ;create-opname2opdecl-mapping(|operation-name, alt-srt-lst, resultant-sort , production)
 
-
-	store-operation-declaration ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) = 
+	record-operation-declaration ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) = 
 		where (
+			arg-length := <length>operand-sort*;
 			rules(
-					Get-Operation-Singature  :+  scoped-op-name   -> (opname  , <length>operand-sort*)
+					Get-Operation-Singature  :+  scoped-op-name   -> (opname  , arg-length )
 				 	Get-Operation-Declaration:+  scoped-op-name   -> (opname  , operand-sort* , resultant-sort)
-				)    
-		) 
+				)
+			; <debug-declaration> $[DeclareSignature | Globals() | Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
+			; <debug-declaration> $[DeclareSignature | Globals() | Stored operation signature  : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
+	) 
+		
+	record-operation-declaration-at-global-scope ( | opname , operand-sort* ,  resultant-sort) = 
+		where ( <to-global-symbol> opname => scoped-op-name);	
+		record-operation-declaration( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) 
 
-	
-		 
-		
-		
+
+rules
+	init-record-signatures = 
+			record-operation-declaration-at-global-scope ( |"None", [] 		,"Option(a)"); 
+			record-operation-declaration-at-global-scope ( |"Some", ["a"] ,"Option(a)");
+			record-operation-declaration-at-global-scope ( |"Cons", ["a","List(a)"] ,"List(a)");
+			record-operation-declaration-at-global-scope ( |"Nil", [] ,"List(a)");
+			record-operation-declaration-at-global-scope ( |"Conc", ["List(a)" , "List(a)"] ,"List(a)")

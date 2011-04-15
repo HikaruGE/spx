@@ -37,7 +37,7 @@ imports
 	 editor/main
 	 codegen/main
 
-rules 
+rules  
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
     where

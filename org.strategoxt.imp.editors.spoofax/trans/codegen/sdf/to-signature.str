@@ -85,8 +85,10 @@ rules
 				;rules (signature-import-path:= <append-if-not-empty(|relative-autogen-path, "/")> sig-file-name)
 						  
 rules 
-	
-	//generate signature 
+
+	// Instead of using String interpolation,
+	// generate the default constructors using global contructor defined 
+	// during init-declartion   
 	get-signature-contents(|moduleName): signatures-string ->
 $[module [moduleName]
 signature

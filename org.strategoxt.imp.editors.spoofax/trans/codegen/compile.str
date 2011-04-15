@@ -21,8 +21,10 @@ imports
 imports	
 	codegen/generate-all
 	codegen/buildscripts
-imports 	
-	context/str/declare  //TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs 
+imports
+	context/declare 	
+	context/str/declare  //TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs
+	 
 
 rules			// Starting a new compilation session   
 	
@@ -49,10 +51,16 @@ rules			// Starting a new compilation session
 rules 	// Compiler initialization 
 			
 	compiler-init = 
+		// Getting Source directory to start parsing files if needed. 
+		// Otherwise, it reads from the cache
 		where( 
 			bagof-SPX-Source-Dir => spx-sources
 		);
-		<list-loop(parse-spx-sources)> spx-sources   	
+		//Iterating all the configured source directory 
+		<list-loop(parse-spx-sources)> spx-sources;
+		//Initializes global symbols / default primitives 
+		init-declaration    	
+
 
 	parse-spx-sources : 
 		(sourcedir , searchOption) -> <id>
