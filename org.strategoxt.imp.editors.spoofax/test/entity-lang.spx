@@ -20,18 +20,25 @@ package entity
   		url           : http://strategoxt.org
                   
   		extensions    : ent
-  		start symbols : Start
+  		start symbols : Start    
 	}
 	
-	module entity-builders 
+	
+	module entity-builders  
 	{
+			  
 		builders
                                                                                                                                
-			provider                  : include/testspoofax-java.jar                                                                     
+			provider                  : include/testspoofax-java.jar                                                                        
 	    observer                  : editor-analyze                                                                                   
 	                                                                                                                           
 	  	builder                   : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
-	  	
+	
+	 	rules 
+			generate-java:
+  		  (selected, position, ast, path, project-path) -> None()
+    
+	 	
 	}
 }
 
