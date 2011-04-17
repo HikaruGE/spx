@@ -12,6 +12,9 @@ rules
 	qname-to-path = 
 		convert-qname(|"/")
 	
+	qname-to-string = 
+		convert-qname(|"-")
+		
 	convert-qname(|seperator) =
 		?QName(qname-parts*)
 		;<separate-by(|seperator);concat-strings>qname-parts*
