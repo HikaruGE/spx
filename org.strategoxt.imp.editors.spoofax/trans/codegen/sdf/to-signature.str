@@ -74,8 +74,11 @@ rules
 	
 rules 
 
+	// TODO: use concrete syntax for signatures?
+	
 	// Instead of using String interpolation, Generate the default signatures
 	// using global contructor defined during init-declartion   
+
 	get-signature-contents(|moduleName): signatures-string ->
 $[module [moduleName]
 signature

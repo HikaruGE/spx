@@ -2,10 +2,9 @@ module codegen/main
 
 imports 
 	codegen/compile
-	codegen/sdf/to-sdf
-	codegen/sdf/to-signature 
-	codegen/str/to-stratego
-	codegen/esv/to-esv
+	codegen/sdf/-
+	codegen/str/-
+	codegen/esv/-
 imports
 	codegen/buildscripts
 imports 

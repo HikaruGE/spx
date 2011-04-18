@@ -34,8 +34,10 @@ exports
   context-free syntax
   
 		ImportSection* PackageDefinition* 							-> Start{cons("CompilationUnit") }
-    "package" QName "{" Module*  "}"								-> PackageDefinition {cons("Package")}
-    MainID? "module" SPXModuleName "{" Section* "}" -> Module {cons("Module")}
+    "package" QName "{" Module*  "}"								-> PackageDefinition {cons("Package"), deprecated("Specify packages without brackets")}
+    MainID? "module" SPXModuleName "{" Section* "}" -> Module {cons("Module"), deprecated("Specify modules without brackets")}
+    "package" QName Module*                         -> PackageDefinition {cons("Package")}
+    MainID? "module" SPXModuleName Section*         -> Module {cons("Module")}
     
     Grammar[[SDF]] -> Section {cons("SDFSection")}
     Decl[[STR]]    -> Section {cons("STRSection")}

@@ -17,7 +17,10 @@ builders
 	observer                  : editor-analyze                                                                                   
                                                                                                                                
   builder : "Show abstract syntax (for selection)" =
-    generate-aterm (openeditor) (realtime) (meta) (source)  
+    generate-aterm (openeditor) (realtime) (meta) (source)                                                                       
+                                                                                                                               
+  builder : "Show name analysis (for selection)" =
+    generate-name-analysis (openeditor) (realtime) (meta) (source) 
     
   //builder : "Show SDF (for selection)" =
   //  generate-sdf (openeditor) (realtime)           
