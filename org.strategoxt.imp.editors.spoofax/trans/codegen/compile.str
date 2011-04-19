@@ -111,6 +111,7 @@ strategies				// Pre-compilation before starting up actual compilation
 		//nomalize-all
 
 strategies 
+	
 	build-all = 
 		?current-term
 		;enable-compiler-debugging
@@ -121,6 +122,7 @@ strategies
 			;<get-all-analyzed-problems>() => problems  
 			;if <fail-if-has-errors>problems then
 			 	 <debug>$[=========generating artifacts============]
+			 	;init-code-generation  
 				;<list-loop(generate-spx-package)>list-of-package-qname*
 				;<debug>$[=========Generating Build Scipt============]
 				;<emit-build-script> list-of-package-qname*

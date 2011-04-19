@@ -30,8 +30,9 @@ imports
 //TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
 //TODO: OPTIMIZE : DR can be used to construct this imports  
 rules 
-	
-	generate-all =  emit-sdf;emit-signatures;emit-str <+ debug(!" Failed in Generate-all. "); fail
+	init-code-generation = where(<emit-default-signatures>()) 
+		
+	generate-all = emit-sdf;emit-signatures;emit-str <+ debug(!" Failed in Generate-all. "); fail
 
 	generate-main = 
 			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 

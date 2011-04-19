@@ -65,11 +65,16 @@ rules
 rules
 	//ensures whether a particular directory exists. If it does not , then creates a new one with the same name. 	
 	ensure-directory-exists = ?dirpath ; ((file-exists ; filemode ; isdir) <+ mkdir); chdir	
-rules
-	ensure-exists = 
-	?( project-path , autogen-dir )
-	; where (<is-string>autogen-dir)
-	; fail  
+
+	ensure-path-exists =  
+		?(project-path,relative-path)
+		;<is-string>relative-path
+		;dir* := <string-tokenize> (['/'], relative-path) //tokenize relative-path to create the subdirectories
+		;if not(<eq>(<length>dir*,0)) then 
+				<map(create-folder)> dir*  //Creating sub-directories if they does not exists
+		 end
+		;create-folder(|project-path)  // restoring current folder to the project-path 
+		 
 	
 	ensure-exists =  
 		?(autogen-root-path, QName(qname-parts*))

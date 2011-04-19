@@ -207,6 +207,7 @@ strategies
 	*/		  
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
 		where (<debug-declaration> $[DeclareSDF | Storing Signature for following production: [<pp-aterm> production]])
+		//;enable-declaration-debugging
 		;available-opdecl*     := <getOperationSignatures>operation-name
 		;scoped-operation-name := <to-scoped-symbol>operation-name   
 		;if(
@@ -216,10 +217,15 @@ strategies
 			)
 			then 
 				record-operation-declaration(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort) // storing this operation declaration 
- 		 	else 
- 		 		<debug-declaration> $[DeclareSDF | Waring | There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)] 
- 		 								DeclareSDF | Debug-info: scoped-op-name [<pp-aterm>scoped-operation-name]. ]
-			end
+ 		else 
+ 		 		<debug-declaration> 
+ 		 			$[
+ 		 				DeclareSignature | Waring | There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)] 
+ 		 				DeclareSignature | Debug-info: scoped-op-name [<pp-aterm>scoped-operation-name]. 
+ 		 			 ]
+		end
+		//;disable-declaration-debugging
+			
 	
 	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort  
 		where 
@@ -233,8 +239,8 @@ strategies
 					Get-Operation-Singature  :+  scoped-op-name   -> (opname  , arg-length )
 				 	Get-Operation-Declaration:+  scoped-op-name   -> (opname  , operand-sort* , resultant-sort)
 				)
-			; <debug-declaration> $[DeclareSignature | Globals() | Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
-			; <debug-declaration> $[DeclareSignature | Globals() | Stored operation signature  : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
+			; <debug-declaration> $[DeclareSignature | Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
+			; <debug-declaration> $[DeclareSignature | Stored operation signature  : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
 	) 
 		
 	record-operation-declaration-at-global-scope ( | opname , operand-sort* ,  resultant-sort) = 
