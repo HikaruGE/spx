@@ -175,19 +175,28 @@ rules
 	  	
 	resolve-external-sources =
 		where(explode-string; <eq>(<Hd> , 46)) ;
-	  	?current-project-path; 
-	  	where(current-dir := <getcwd>);
-	  	(<chdir> current-project-path <+ throw-directory-not-found-exception(fail));
-	  	verify-config-file-exists;
-	  	<parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
-	  	<chdir>current-dir; // restoring current directory
-	  	!result
-	  	
+		where(current-dir := <getcwd>);
+		(
+	  		?current-project-path;
+	  		verify-directory-exists;   
+	  		<chdir> current-project-path;
+	  		verify-config-file-exists;
+	  		<parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
+	  		<chdir>current-dir; // restoring current directory
+	  		!result
+	  	<+
+	  		<chdir>current-dir // restoring current directory
+		)
+	verify-directory-exists  = is-spx-config-exist  <+ throw-directory-not-found-exception(fail) 
 	
-	verify-directory-exists  = where( (file-exists ; filemode ; isdir)  <+ throw-directory-not-found-exception(fail) )
+	verify-config-file-exists = is-dir-exist  <+ throw-config-not-found-exception(fail)   
 	
-	verify-config-file-exists =where(<file-exists>$[[<id>]/spx.config] <+ throw-config-not-found-exception(fail) )  
 	
+	is-spx-config-exist = where(<file-exists>$[[<id>]/spx.config])  
+	
+	is-dir-exist =  where(file-exists ; filemode ; isdir)
+
+
 	throw-directory-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find the directory specified: ") ;post-processing-strategy
 	
 	throw-config-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find spx.config file in the directory specified: ") ;post-processing-strategy
