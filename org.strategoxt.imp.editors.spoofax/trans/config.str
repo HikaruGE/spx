@@ -121,17 +121,19 @@ rules
 	
 	//Returns output directory for the code generation
 	get-code-output-directory = collect-all(?OutputDirectory(<id>), union) ; ?[<id>]
-	
+
+	// Returns all the resolved directories 	
 	get-all-includes  = 
  	<conc>(<get-all-sources(|<project-path>)> ,   <get-sources-from-external-projects>)
  	;make-set
+ 
  
 	get-all-sources(|project-path) =
  		collect-all(?Sources(_, _));
  		get-local-sources;
  		map(\(s,o)-> ($[[project-path]/[s]],o)\)
  	<+ 
-  	debug(!"Failed to get list of source directory.") ; fail
+  		debug(!"Failed to get list of source directory.") ; fail
  
 	get-local-sources: [] -> []
  
@@ -141,6 +143,9 @@ rules
  		<map(\s -> (s,include-option)\)>sources* => result';
  		<conc>(<get-local-sources>rest, result') => result	 	
  
+ 
+ 
+ 	// Resolving project References 
 	get-sources-from-external-projects = 
   	get-all-project-refernces; 
   	get-external-sources
@@ -156,22 +161,34 @@ rules
 		not (?[])
 	  ;!spx-projects* => [current-project-path|rest*]
 	 where
-	 	result := <conc>( <external-sources>current-project-path , <get-external-sources>rest* )
-	
+	 	result := <conc>( <resolve-external-sources<+ ![]>current-project-path , <get-external-sources>rest* )
+	 	
 	get-external-sources: []  -> []
-	  
-	external-sources =
+	 
+	resolve-external-sources =
 		where(explode-string; <not(eq)>(<Hd> , 46)) ; // not started wtih  ..
-	  ?current-project-path;
-	  <parse-file>$[[current-project-path]/spx.config];
-	  get-all-sources(|current-project-path) 
+	  	?current-project-path;
+	  	verify-directory-exists;
+	  	verify-config-file-exists;   
+	  	<parse-file>$[[current-project-path]/spx.config];
+	  	get-all-sources(|current-project-path)
 	  	
-	external-sources =
+	resolve-external-sources =
 		where(explode-string; <eq>(<Hd> , 46)) ;
-	  ?current-project-path; 
-	  current-dir := <getcwd>;
-	  <chdir> current-project-path;
-	  <parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
-	  <chdir>current-dir; // restoring current directory
-	  !result 
+	  	?current-project-path; 
+	  	where(current-dir := <getcwd>);
+	  	(<chdir> current-project-path <+ throw-directory-not-found-exception(fail));
+	  	verify-config-file-exists;
+	  	<parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
+	  	<chdir>current-dir; // restoring current directory
+	  	!result
+	  	
+	
+	verify-directory-exists  = where( (file-exists ; filemode ; isdir)  <+ throw-directory-not-found-exception(fail) )
+	
+	verify-config-file-exists =where(<file-exists>$[[<id>]/spx.config] <+ throw-config-not-found-exception(fail) )  
+	
+	throw-directory-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find the directory specified: ") ;post-processing-strategy
+	
+	throw-config-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find spx.config file in the directory specified: ") ;post-processing-strategy
 	   	 		 		
