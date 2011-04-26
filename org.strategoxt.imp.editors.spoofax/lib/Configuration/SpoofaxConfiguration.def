@@ -1,0 +1,102 @@
+definition
+module Common
+
+exports
+
+  lexical syntax
+  
+    [a-zA-Z][a-zA-Z0-9]* -> ID
+    "-"? [0-9]+          -> INT
+    
+    "\"" StringChar* "\"" -> STRING
+    ~[\"\n]               -> StringChar
+    "\\\""                -> StringChar
+    BackSlashChar         -> StringChar
+    "\\"                  -> BackSlashChar
+    
+    [\ \t\n\r] -> LAYOUT
+    
+    [\*]                             -> CommentChar
+    "/*" (~[\*] | CommentChar)* "*/" -> LAYOUT
+    "%%" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT
+    
+    -> EOF
+  
+  lexical restrictions
+  
+    %% Ensure greedy matching for lexicals
+  
+    CommentChar   -/- [\/]
+    INT           -/- [0-9]
+    ID            -/- [a-zA-Z0-9\_]
+    
+    %% EOF may not be followed by any char
+    
+    EOF           -/- ~[]
+
+    %% Backslash chars in strings may not be followed by " 
+    
+    BackSlashChar -/- [\"]
+
+  context-free restrictions
+  
+    %% Ensure greedy matching for comments
+
+    LAYOUT? -/- [\ \t\n\r]
+    LAYOUT? -/- [\/].[\/]
+    LAYOUT? -/- [\%].[\%]
+    LAYOUT? -/- [\/].[\*]
+
+module SpoofaxConfiguration
+
+imports Common
+
+exports
+
+  	context-free start-symbols
+    	Start
+
+  	context-free syntax
+  
+	    "Configuration"  ConfigSection*         -> Start {cons("Configuration")}
+	    
+	    "Includes" IncludeDefinition*    				-> ConfigSection{cons("Includes")}
+	     IncludeOption RelativePath*						-> IncludeDefinition {cons("Sources")}
+	    "SpxProjects" AbsolutePath* 						-> IncludeDefinition {cons("SpxProjects")}
+	    	
+	    
+	    "CodeGeneration" CodeGenDefinition*     -> ConfigSection{cons("CodeGeneration")}
+	    "OutputDirectory"  RelativePath				    -> CodeGenDefinition {cons("OutputDirectory")}
+	    
+	    "AllDirectories"												->   IncludeOption{cons("AllDirectories")}
+	    "RootDirectory"												  ->   IncludeOption{cons("RootDirectory")}
+
+	lexical syntax 
+		[a-zA-Z\.][A-Za-z0-9\_\-\/\ \.\+]* 		-> RelativePath
+		"/" RelativePath											-> AbsolutePath
+		[a-zA-Z]":/" RelativePath							-> AbsolutePath
+		"../" RelativePath										-> AbsolutePath{prefer}
+		
+	lexical syntax     
+    
+    "SpxProjects"        			  -> Reserved
+    "Sources"          					-> Reserved
+    "SpxSources"        		    -> Reserved
+    "Configuration"     		   	-> Reserved
+    "Includes"        					-> Reserved		
+    "AllDirectories"   					-> Reserved		
+    "RootDirectory" 				  -> Reserved		
+   
+    Reserved -> RelativePath{reject}
+	    
+	    
+	lexical restrictions
+		RelativePath -/- [A-Za-z0-9\_\-\/\ \.\+]
+			
+		"SpxProjects" 
+		"Sources" 
+		"SpxSources"
+		"Configuration" 
+		"Includes"
+		"AllDirectories"
+		"RootDirectory" -/- [A-Za-z0-9\_]
