@@ -43,6 +43,10 @@ builders
   builder : "Compile" =  
     compile-spx(openeditor) (realtime) (meta)
   
+  
+  builder : "Show Configuration" =  
+    show-configuration(openeditor) (realtime) (meta)
+  
   /*  	                                                                                                                             
   builder : "test-resolve" =  
     test-resolving-symbol (openeditor) (realtime) (meta)
