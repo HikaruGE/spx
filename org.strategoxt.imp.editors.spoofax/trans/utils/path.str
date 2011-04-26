@@ -46,7 +46,16 @@ rules
 	get-signature-file-name = 
 		?sdf-module-name;
 		<concat-strings>[sdf-module-name,"-signature"]
-			
+	
+	//TODO : refactor the repetation of same logic
+	get-main-esv-output-path(|extension)=
+		?(dir-path, QName(qname-parts*))
+		 ;artifact-main-file-name    := <qname-to-string>QName(qname-parts*)
+		 ;relative-path := <qname-to-path> QName(qname-parts*)
+		 ;<concat-strings> [dir-path, "/" , relative-path, "/" ,artifact-main-file-name, ".main" , ".", extension]
+		
+		
+	 		
 	get-main-output-path(|extension)=
 			?(dir-path, QName(qname-parts*))
 		 ;artifact-main-file-name    := <get-main-file-name>QName(qname-parts*)
