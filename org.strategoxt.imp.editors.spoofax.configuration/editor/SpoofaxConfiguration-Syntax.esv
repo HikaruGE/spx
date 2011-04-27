@@ -1,0 +1,9 @@
+module SpoofaxConfiguration-Syntax
+
+imports SpoofaxConfiguration-Syntax.generated
+
+language
+                                                                   
+  // This file can be used for custom syntax rules.                
+  //                                                               
+  // See the imported file for a brief introduction and examples.  

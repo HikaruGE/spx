@@ -1,0 +1,15 @@
+module SpoofaxConfiguration-Completions
+
+imports SpoofaxConfiguration-Completions.generated
+
+completions
+                                                                   
+  // This file is used to define content completion.               
+  //                                                               
+  // See the imported file for a brief introduction and examples.  
+                                                                   
+
+completions
+  
+completions
+  
