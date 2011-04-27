@@ -144,19 +144,15 @@ rules
  		<conc>(<get-local-sources>rest, result') => result	 	
  
  
- 
+rules 
+ 	
  	// Resolving project References 
 	get-sources-from-external-projects = 
   	get-all-project-refernces; 
   	get-external-sources
- 
-	get-all-project-refernces = 
-  	collect-all(?SpxProjects(<id>), conc) ; 
-  	flatten-list
-  <+ 
-  	debug(!"Failed to retrieve list of projects.") ; fail 
-  
-	get-external-sources: spx-projects* -> result
+
+	// Returns all the external sournce collected from the project references 
+ 	get-external-sources: spx-projects* -> result
 	where 
 		not (?[])
 	  ;!spx-projects* => [current-project-path|rest*]
@@ -165,6 +161,9 @@ rules
 	 	
 	get-external-sources: []  -> []
 	 
+	 
+	// Resolves External Project Refernces and returns the directories configured in that configuration file
+	// Transitive imports/inclusion is not allowed. If a->b , b->c != a->c
 	resolve-external-sources =
 		where(explode-string; <not(eq)>(<Hd> , 46)) ; // not started wtih  ..
 	  	?current-project-path;
@@ -172,30 +171,47 @@ rules
 	  	verify-config-file-exists;   
 	  	<parse-file>$[[current-project-path]/spx.config];
 	  	get-all-sources(|current-project-path)
+	
 	  	
 	resolve-external-sources =
 		where(explode-string; <eq>(<Hd> , 46)) ;
 		where(current-dir := <getcwd>);
 		(
 	  		?current-project-path;
-	  		verify-directory-exists;   
+	  		<verify-directory-exists>current-project-path;
 	  		<chdir> current-project-path;
-	  		verify-config-file-exists;
+	  		<verify-config-file-exists><getcwd>; // verifies config file exisit in the current working directory
 	  		<parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
-	  		<chdir>current-dir; // restoring current directory
+	  		<chdir>current-dir; 
 	  		!result
 	  	<+
-	  		<chdir>current-dir // restoring current directory
+	  		<chdir>current-dir  
 		)
-	verify-directory-exists  = is-spx-config-exist  <+ throw-directory-not-found-exception(fail) 
+
+
+ 
+	get-all-project-refernces = 
+  	collect-all(?SpxProjects(<id>), conc) ; 
+  	flatten-list
+  <+ 
+  	debug(!"Failed to retrieve list of projects.") ; fail 
+ 
+  
+		
+rules 
+
+	// Utility strategies  
+
 	
-	verify-config-file-exists = is-dir-exist  <+ throw-config-not-found-exception(fail)   
+	// verifies whether current directory exists 
+	verify-directory-exists  = is-dir-exist   <+ throw-directory-not-found-exception(fail) 
 	
+	// verfies whether there is a config file in the provided directory 
+	verify-config-file-exists = is-spx-config-exist   <+ throw-config-not-found-exception(fail)   
 	
 	is-spx-config-exist = where(<file-exists>$[[<id>]/spx.config])  
 	
 	is-dir-exist =  where(file-exists ; filemode ; isdir)
-
 
 	throw-directory-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find the directory specified: ") ;post-processing-strategy
 	
