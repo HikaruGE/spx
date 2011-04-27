@@ -11,7 +11,7 @@ builders
 
 builders
                                                                                                                                
-  provider                  : include/spoofaxlang.ctree                                                                        
+  provider                  : include/spoofaxlang.jar                                                                        
   provider                  : include/spoofaxlang-java.jar                                                                     
                                                                                                                                
 	observer                  : editor-analyze                                                                                   
