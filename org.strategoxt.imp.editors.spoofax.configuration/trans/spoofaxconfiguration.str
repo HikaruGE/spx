@@ -7,6 +7,7 @@ imports
   include/SpoofaxConfiguration
   lib/editor-common.generated
   check
+  resolve
 
 rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders and -References.esv)
   
@@ -25,8 +26,8 @@ rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders 
     (selected, position, ast, path, project-path) -> (filename, result)
  		where 
  			filename := <guarantee-extension(|"config.fullpath")> path;
- 			result := <get-all-includes>selected;
- 			<debug(!"outputdir : ")><get-code-output-directory>selected
+ 			result := <get-all-includes>selected
+ 			
        
  // Prints the abstract syntax ATerm of a selection.
  generate-aterm:
