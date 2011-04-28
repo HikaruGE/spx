@@ -121,8 +121,3 @@ package entity-lang
     LAYOUT? -/- [\ \t\n\r]
     LAYOUT? -/- [\/].[\/]
     LAYOUT? -/- [\/].[\*]
-		
-package A
-	module Test1
-	
-	module Test2
