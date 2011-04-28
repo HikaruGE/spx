@@ -16,7 +16,7 @@ imports
 	codegen/sdf/to-signature
 	codegen/compile
 	codegen/main
-	codegen/generate-all
+	codegen/generate
 imports	
 	context/signature
 	context/scope-tree

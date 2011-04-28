@@ -42,5 +42,5 @@ rules
 		where
 			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
 		with 
-			debug(!"=============starting compile-all =1==================");
+			debug(!"=============starting compile-all ===================");
 			<compile-all>()

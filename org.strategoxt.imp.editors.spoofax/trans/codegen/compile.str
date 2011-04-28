@@ -20,11 +20,14 @@ imports
 	lib/configuration/SpoofaxConfiguration 
 	include/SpoofaxLang
 imports	
-	codegen/generate-all
+	codegen/generate
 	codegen/buildscripts
+	analyze/main
+	
 imports
 	context/declare 	
 	context/str/declare  
+	
 	
 		
 //TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs
@@ -114,37 +117,6 @@ strategies				// Pre-compilation before starting up actual compilation
 		origin-track-forced(nomalize-all) // nomalize and builds scope-tree and  partial symbol table with the local information availble
 		//nomalize-all
 
-strategies 
-	
-	build-all = 
-		?current-term
-		;enable-compiler-debugging
-		;new-compile-session(
-			list-of-package-qname* := <get-package-list> 
-			;<compile-internal>list-of-package-qname*
-			;<debug>$[=========Getting list of errors============]
-			;<get-all-analyzed-problems>() => problems  
-			;if <fail-if-has-errors>problems then
-			 	 <debug>$[=========generating artifacts============]
-			 	;init-code-generation  
-				;<list-loop(generate-spx-package)>list-of-package-qname*
-				;<debug>$[=========Generating Build Scipt============]
-				;<emit-build-script> list-of-package-qname*
-				;<debug>$[=========Code Generation is done============] 		
-			else
-				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
-			end		 
-		)
-		;disable-compiler-debugging
-		;!current-term //restoring current term to avoid side effects  
-	
-	
-	fail-if-has-errors : problems@(errors, warning, infos*) -> problems
-		where 
-			if not(!errors => []) then 
-		 		fail	
-		 	end		 	 	
-
 strategies 				// Main compilation events  
 	
 	compile-all = 
@@ -182,6 +154,7 @@ strategies 				// Main compilation events
 				  <debug(!"Errors : ")>issues* 	  // get errors for this file only
 			end
 	
+	
 	compile-internal : list-of-package-qname* -> list-of-package-qname* 
 	where 
 		<debug-compiler>$[=========Compiling packages===============
@@ -197,8 +170,8 @@ strategies 				// Main compilation events
 		end
 
 
+
 rules				// Compiler main : Compiles provided list of packages and stores semantic problems   
-	
 	
 	compile-main= 
 		?list-of-package-qnames;
@@ -236,31 +209,6 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 					<list-loop(compile-legacy-artifact-package)>upackages	
 		|}
 	
-	
-	compile-legacy-artifact-package : p@Package(qname) ->p
-	where	
-		<debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
-		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
-		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
-	where
-		<map(compile-legacy-artifact)>legacy-artifact-details*	
-		
-	compile-legacy-artifact: 
-		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
-		where
-			<debug-compiler>$[compile-main | compile-legacy-artifact > planning to compile following legacy artifact: [<pp-aterm>]] 
-		where
-			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then 	
-				if (!resolving-path => Unresolved()) then
-	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
-					<+
-						<read-stratego-signatures;declare-stratego-globals-top> modulename	
-					<+ 
-						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
-				end 	 
-			end	
-		where
-			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
 			
 	//During analyze-package , just call this strategy 
 	compile-spx-package: 
@@ -352,64 +300,36 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 		//TODO : add checking of PDL caching. If souce is newer than pdl version of the
 		//package, do not compile it. use the pdl instantly.
 
-rules			// Analyze Semantic Errors 
-			
-	should-analyze-this-package = 
-		?package-qname;
-		where(not(<AnalyzedPackage>package-qname))
+
+rules 
+	
+	//Compile legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others 		
+	compile-legacy-artifact-package : p@Package(qname) ->p
+	where	
+		<debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
+		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
+		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
+	where
+		<map(compile-legacy-artifact)>legacy-artifact-details*	
 		
-
-	analyze-spx-package: 
-		package-typed-qname@Package(untyped-qname) -> <id>
-		where 
-			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
+	compile-legacy-artifact: 
+		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
 		where
-			if should-analyze-this-package  then //FOR handling circular referneces   
-				{|GetEnclosingPackageName:
-						rules ( GetEnclosingPackageName      := package-typed-qname);
-						<list-loop(
-								analyze-spx-module
-							)
-						><get-enclosed-modules>package-typed-qname
-				|};		
-				where(
-					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
-				)
-				<+
-				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
-				;fail
-			end
-
-	analyze-spx-module: 
-		module-typed-qname@Module(untyped-qname) -> <id>
-		where 
-			<debug-analysis> $[Analyze|  analyze-spx-module> Planning to analyze module for semantic problems: [<pp-aterm>]] 
-		where 
-			if not(<AnalyzedModule>module-typed-qname) then
-				<debug-analysis> $[Analyze| analyze-spx-module> Currently Analyzing : [<pp-aterm>]]; 
-				module-decl* := <get-module-declarations>module-typed-qname;
-				{|GetEnclosingModuleName:
-						rules( GetEnclosingModuleName := module-typed-qname);
-						<list-loop(
-								analyze
-						 )>module-decl*
-				|};
-				module-abs-path := <DeclaredModule>untyped-qname;
-				where(rules(
-					AnalyzedModule:     module-typed-qname -> module-typed-qname
-					AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
-					)
-				)
-				<+
-				<debug-analysis> $[Analyze| analyze-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
-				;fail
-			else
-				<debug-analysis> $[Analyze| analyze-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
+			<debug-compiler>$[compile-main | compile-legacy-artifact > planning to compile following legacy artifact: [<pp-aterm>]] 
+		where
+			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then 	
+				if (!resolving-path => Unresolved()) then
+	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
+					<+
+						<read-stratego-signatures;declare-stratego-globals-top> modulename	
+					<+ 
+						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
+				end 	 
 			end	
+		where
+			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
 	
 rules 			// Reference Resolving 
-	
-	 
 	resolve-package-references = 
 		?list-of-package-tqnames;
 		<list-loop(
@@ -460,59 +380,3 @@ rules			// Caching Resulting Semantic Errors
 		problems := ([] , [] , [])
 	where
 		<debug-compiler>$[Caching | Found Problems for this module : [<pp-aterm>problems]]	
-	
-rules
-	
-	// Analyze Semantic Errors 
-	should-generate-code-this-package = 
-		?package-qname;
-		where(not(<PackageCodeGenerated>package-qname))
-		
-	generate-spx-package: 
-		package-typed-qname@Package(untyped-qname) -> <id>
-		where 
-			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
-		where
-			if should-generate-code-this-package  then 
-				{|GetEnclosingPackageName:
-						rules ( GetEnclosingPackageName := package-typed-qname);
-						enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname;
-						<list-loop(
-								generate-spx-module
-							)
-						>enclosed-module-typed-qnames;
-						<generate-main> enclosed-module-typed-qnames // generate all the main artifacts now  
-				|};		
-				where(
-					rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)
-				)
-				<+
-				<debug-compiler> $[Generate| generate-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
-				;fail
-			end
-
-	generate-spx-module: 
-		module-typed-qname@Module(untyped-qname) -> <id>
-		where 
-			<debug-compiler> $[Generate|  generate-spx-module> Planning to generate module for semantic problems: [<pp-aterm>]] 
-		where 
-			if not(<ModuleCodeGenerated>module-typed-qname) then
-				<debug-compiler> $[Generate| generate-spx-module| Currently Generating : [<pp-aterm>]]; 
-				module-decl* := <get-original-module-declaration>module-typed-qname;
-				{|GetEnclosingModuleName:
-						rules( GetEnclosingModuleName := module-typed-qname);
-						<generate-all> module-decl* // generating all the artifacts for the specified module
-				|};
-				module-abs-path := <DeclaredModule>untyped-qname;
-				where(
-					rules(
-						ModuleCodeGenerated:     module-typed-qname -> module-typed-qname
-					)
-				)
-				<+
-				<debug-compiler> $[Generate| generate-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
-				;fail
-			else
-				<debug-compiler> $[Generate| generate-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
-			end		
-			

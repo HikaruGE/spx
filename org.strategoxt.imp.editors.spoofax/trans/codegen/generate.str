@@ -1,4 +1,4 @@
-module codegen/generate-all
+module codegen/generate
 
 imports 
 	codegen/compile
@@ -7,13 +7,13 @@ imports
 	codegen/str/to-stratego
 	codegen/esv/to-esv
 	codegen/buildscripts
+
 imports 
 	config 
 	common
 imports	
 	lib/editor-common.generated
 	include/spoofaxlang
-
 imports	
 	context/scope-tree
 	context/signature
@@ -24,8 +24,89 @@ imports
 	utils/contract
 	utils/debug
 	utils/cache
+	analyze/main
 
+strategies 
+	
+	build-all = 
+		?current-term
+		;enable-compiler-debugging
+		;new-compile-session(
+			list-of-package-qname* := <get-package-list> 
+			;<compile-internal>list-of-package-qname*
+			;<debug>$[=========Getting list of errors============]
+			;<get-all-analyzed-problems>() => problems  
+			;if <fail-if-has-errors>problems then
+			 	 <debug>$[=========generating artifacts============]
+			 	;init-code-generation  
+				;<list-loop(generate-spx-package)>list-of-package-qname*
+				;<debug>$[=========Generating Build Scipt============]
+				;<emit-build-script> list-of-package-qname*
+				;<debug>$[=========Code Generation is done============] 		
+			else
+				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
+			end		 
+		)
+		;disable-compiler-debugging
+		;!current-term //restoring current term to avoid side effects  
+	
+		
+rules
 
+	should-generate-code-this-package = 
+		?package-qname;
+		where(not(<PackageCodeGenerated>package-qname))
+		
+	// generates artifact for spx packages 
+	generate-spx-package: 
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where 
+			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
+		where
+			if should-generate-code-this-package  then 
+				{|GetEnclosingPackageName:
+						rules ( GetEnclosingPackageName := package-typed-qname);
+						enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname;
+						<list-loop(
+								generate-spx-module
+							)
+						>enclosed-module-typed-qnames;
+						<generate-main> enclosed-module-typed-qnames // generate all the main artifacts now  
+				|};		
+				where(
+					rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)
+				)
+				<+
+				<debug-compiler> $[Generate| generate-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
+				;fail
+			end
+	
+	// generates artifacts fro spx module
+	generate-spx-module: 
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where 
+			<debug-compiler> $[Generate|  generate-spx-module> Planning to generate module for semantic problems: [<pp-aterm>]] 
+		where 
+			if not(<ModuleCodeGenerated>module-typed-qname) then
+				<debug-compiler> $[Generate| generate-spx-module| Currently Generating : [<pp-aterm>]]; 
+				module-decl* := <get-original-module-declaration>module-typed-qname;
+				{|GetEnclosingModuleName:
+						rules( GetEnclosingModuleName := module-typed-qname);
+						<generate-all> module-decl* // generating all the artifacts for the specified module
+				|};
+				module-abs-path := <DeclaredModule>untyped-qname;
+				where(
+					rules(
+						ModuleCodeGenerated:     module-typed-qname -> module-typed-qname
+					)
+				)
+				<+
+				<debug-compiler> $[Generate| generate-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
+				;fail
+			else
+				<debug-compiler> $[Generate| generate-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
+			end		
+			
 
 //TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
 //TODO: OPTIMIZE : DR can be used to construct this imports  

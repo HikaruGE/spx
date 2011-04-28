@@ -17,6 +17,70 @@ imports
 	lib/editor-common.generated
 imports 
 	utils/contract 	
+	
+rules			// Analyze Semantic Errors 
+			
+	should-analyze-this-package = 
+		?package-qname;
+		where(not(<AnalyzedPackage>package-qname))
+		
+
+	fail-if-has-errors : problems@(errors, warning, infos*) -> problems
+		where 
+			if not(!errors => []) then 
+		 		fail	
+		 	end		 	 	
+
+
+	analyze-spx-package: 
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where 
+			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
+		where
+			if should-analyze-this-package  then //FOR handling circular referneces   
+				{|GetEnclosingPackageName:
+						rules ( GetEnclosingPackageName      := package-typed-qname);
+						<list-loop(
+								analyze-spx-module
+							)
+						><get-enclosed-modules>package-typed-qname
+				|};		
+				where(
+					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
+				)
+				<+
+				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
+				;fail
+			end
+
+
+	analyze-spx-module: 
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where 
+			<debug-analysis> $[Analyze|  analyze-spx-module> Planning to analyze module for semantic problems: [<pp-aterm>]] 
+		where 
+			if not(<AnalyzedModule>module-typed-qname) then
+				<debug-analysis> $[Analyze| analyze-spx-module> Currently Analyzing : [<pp-aterm>]]; 
+				module-decl* := <get-module-declarations>module-typed-qname;
+				{|GetEnclosingModuleName:
+						rules( GetEnclosingModuleName := module-typed-qname);
+						<list-loop(
+								analyze
+						 )>module-decl*
+				|};
+				module-abs-path := <DeclaredModule>untyped-qname;
+				where(rules(
+					AnalyzedModule:     module-typed-qname -> module-typed-qname
+					AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
+					)
+				)
+				<+
+				<debug-analysis> $[Analyze| analyze-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
+				;fail
+			else
+				<debug-analysis> $[Analyze| analyze-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
+			end		
+	
 rules
 	
 	//lookups for the analyzed problems

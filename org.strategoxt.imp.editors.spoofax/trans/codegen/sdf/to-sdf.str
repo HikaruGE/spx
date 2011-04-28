@@ -24,7 +24,7 @@ imports
 	utils/debug
 imports 	 
 	codegen/main
-	codegen/generate-all 
+	codegen/generate 
 	utils/contract
 	
       
