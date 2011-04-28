@@ -1,4 +1,4 @@
-package entity-lang1 
+package entity-lang
 
 	module module-main
 		context-free start-symbols 
@@ -7,16 +7,76 @@ package entity-lang1
   	context-free syntax
 	    "module" ID Definition*       -> Start {cons("Module")}
 	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
-	    
 	    ID ":" Type                   -> Property {cons("Property")}
 	    ID                            -> Type {cons("Type")}
 
-		
-	module entity-builders    
+		language General properties
+    	name          : entity-lang
+  		id            : entity-lang
+  		extends       : Root
+                  
+  		description   : "Spoofax/IMP-generated editor for the TestSpoofax language"
+  		url           : http://strategoxt.org
+                  
+  		extensions    : tent
+  		start symbols : Start
+  		
+  	language Syntax properties (static defaults)
+	    // Comment constructs:                   
+	  	line comment                           : "//"
+	 	 	block comment                          : "/*" * "*/"
+	    // Fences (used for matching,            
+	  	// inserting, indenting brackets):       
+	  	fences                                 : [ ]
+	                                           ( )
+	                                           { }
+	                                           
+	  	// Automatic indent hints                
+	  	// (indent after these tokens):          
+	  	indent after                           : "="
+	    // Regular expression for identifiers:   
+	  	identifier lexical                     : "[A-Za-z0-9_]+"	     
+	
+	module entity-builders   
 		imports 
 			entity.Common	  
 			 
+		builders
+    	builder                   : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
+	 
+	 	outliner Default outliner        
+	    // Outliner rules indicate which syntactic constructs should be shown in the outline
+		  // and quick outline views, and take one of the following forms:
+		  //
+		  //   <sort>.<constructor>
+		  //
+		  //   <sort>._
+		  //
+		  //   _.<constructor>
+		  Start.Module
+		  Definition.Entity 	
 		
+		folding Default folding definitions
+  
+		  // Folding rules indicate which syntactic constructs can be folded,
+		  // and take one of the following forms:
+		  //
+		  //   <sort>.<constructor>
+		  //
+		  //   <sort>._
+		  //
+		  //   _.<constructor>
+		  //
+		  // To indicate that an element should always be folded, add
+		  // a (folded) annotation:
+		  //
+		  //   _.Imports (folded)
+		  //
+		  // To disable a folding rule defined elsewhere, add a (disabled) annotation:
+		  //
+		  //   Definition._ (disabled)
+		  Start.Module
+  		Definition.Entity
 		 	
 	module common
 		lexical syntax
@@ -27,7 +87,7 @@ package entity-lang1
     "\"" StringChar* "\"" -> STRING
     ~[\"\n]               -> StringChar
     "\\\""                -> StringChar
-    BackSlashChar         -> StringChar 
+    BackSlashChar         -> StringChar
     "\\"                  -> BackSlashChar
     
     [\ \t\n\r] -> LAYOUT
@@ -38,7 +98,7 @@ package entity-lang1
     
     -> EOF
   
-  lexical restrictions  
+  lexical restrictions 
   
     %% Ensure greedy matching for lexicals
   
