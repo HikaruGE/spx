@@ -1,4 +1,5 @@
 package test
+	
 	module test-main 
 		imports entity-lang
 		
@@ -14,15 +15,16 @@ package test
 
 
 
-	    
+	     
 package entity-lang
+	
 	module module-main
 		imports 
 			libstratego-lib
 		
 		context-free start-symbols 
     	Start
-
+ 
   	context-free syntax
 	    "module" ID Definition*       -> Start {cons("Module")}
 	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}

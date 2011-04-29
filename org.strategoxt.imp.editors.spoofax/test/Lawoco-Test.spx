@@ -1,0 +1,19 @@
+module Lawoco
+	imports entity-lang
+
+context-free syntax
+  
+    "module" Module@=ID Definition*     -> Start {"Module", scope(Entity, Module)}
+    "entity" Entity@=ID "{" Member* "}" -> Definition {"Entity", scope(Property, Function)}
+    Entity@ID Property@=ID              -> Member {"Property"}
+
+    Function@=ID "(" { Param "," }* ")" Stm -> Member {"Function", scope(Var)}
+    Var@=ID ":" Entity@ID           -> Param {"Param"}
+    
+    Function@ID "(" {Exp ","}* ")"      -> Exp {"Call"}        %% or, could be an Entity 
+    "var" Var@=ID ":" Entity@ID         -> Stm {"VarDecl"}
+    "var" Var@=ID ":" Entity@ID "=" Exp -> Stm {"VarDeclInit"}
+    Var@ID "=" Exp                      -> Stm {"Assign"}
+    Var@ID                              -> Exp {"Var"}         %% or, could be a Property!
+    Exp "." Property@ID                 -> Exp {"PropAccess"}
+    "{" Stm* "}"                        -> Stm {"Block", scope(Var)}         

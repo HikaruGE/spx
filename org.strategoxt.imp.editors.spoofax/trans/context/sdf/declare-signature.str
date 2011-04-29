@@ -3,12 +3,15 @@ module context/sdf/declare-signature
 imports 
 	include/SpoofaxLang
 imports		
-	common 
+	common
+	libstrc 
 	utils/debug		
 imports 
 	context/scope-tree
 	context/sdf/declare
-	context/signature	
+	context/signature
+	codegen/sdf/to-name-analysis
+		
 
 // TODO : refactor common functionily in seperate rules/strategy
 // DON'T like several things about this implementation. Need to refactor/re-implement.
@@ -40,18 +43,16 @@ rules
   * Gets the operation name from the Production. It actually search all the attributes 
   * in the attribute list and create  a dynamic rule that stores operation name. 
   */
-  get-opration-name = alltd(store-operation-name)
-  
+  get-opration-name = where(getfirst(fetch-cons-name) ; store-operation-name)  
   
   /**
   *	Store operation name from the RHS of the Production, i.e. from fun constructors.
   * It creates a dynamic rule to store the operation name.
   */
-  store-operation-name : f@fun(quoted( quoted-operation-name) ) -> f
-  	with
-  		opname := <un-double-quote>quoted-operation-name  
-		;rules (get-op-name: _ -> opname)
-  	where 
+  store-operation-name : opname-> opname
+  with  
+		rules (get-op-name: _ -> opname)
+  where 
   		<debug-declaration> $[Operation Name :  [opname]]
 	
 	store-operation-declaration
