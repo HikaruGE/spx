@@ -64,7 +64,7 @@ rules
 			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
 		where
 			if should-generate-code-this-package  then 
-				{|GetEnclosingPackageName:
+				{|GetEnclosingPackageName,GeneratedSignature: 
 						rules ( GetEnclosingPackageName := package-typed-qname);
 						enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname;
 						<list-loop(
@@ -92,7 +92,8 @@ rules
 				module-decl* := <get-original-module-declaration>module-typed-qname;
 				{|GetEnclosingModuleName:
 						rules( GetEnclosingModuleName := module-typed-qname);
-						<generate-all> module-decl* // generating all the artifacts for the specified module
+						<generate-all> module-decl* ;		// generating all the artifacts for the specified module
+						<emit-package-signature-main>()
 				|};
 				module-abs-path := <DeclaredModule>untyped-qname;
 				where(
@@ -119,6 +120,8 @@ rules
 			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
 		<+ 
 			debug(!" Failed in Main Generation. "); fail    
+			
+			
 rules
 	
 	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 
