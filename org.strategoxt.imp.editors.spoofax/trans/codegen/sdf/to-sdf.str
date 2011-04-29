@@ -24,7 +24,7 @@ imports
 	utils/debug
 imports 	 
 	codegen/main
-	codegen/generate 
+	codegen/generate  
 	utils/contract
 	
       
@@ -53,7 +53,7 @@ rules
    		;<ensure-exists>(autogen-root-directory, package-untyped-qname)
 			;output-path     := <get-output-path(|"sdf")>(autogen-root-directory , module-untyped-qname) 
 			; <save-to-file>(output-path , sdf-string )
-			;<refresh-workspace-file>output-path
+			;<refresh-file>output-path
 			;chdir-to-project-path
 			;<debug-compiler>$[ Codegen | SDF | Finishing generation of SDF for [<pp-aterm> module-untyped-qname].] 
 		
@@ -79,7 +79,7 @@ rules
 			;<ensure-exists>(autogen-root-directory , package-qname)
 			;output-path := <get-main-output-path(|"sdf")>(autogen-root-directory , package-qname)   
 			;<save-to-file>(output-path , sdf-string )
-	 		;<refresh-workspace-file>output-path
+	 		;<refresh-file>output-path
 			;chdir-to-project-path
 			;<debug-compiler>$[ Codegen | SDF | Finishing generation of Main SDF Module of package : [<pp-aterm> package-qname].]
 	

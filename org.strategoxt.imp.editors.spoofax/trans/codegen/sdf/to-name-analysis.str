@@ -4,7 +4,7 @@ imports
   lib/editor-common.generated
   context/sdf/declare-signature
   context/sdf/declare
-  include/spoofaxlang
+  include/spoofaxlang 
   analyze/sdf/check
   
 rules
@@ -92,7 +92,7 @@ rules
       cons := <getfirst(fetch-cons-name)> a*
   
   fetch-annotate-names-rule:
-    prod(p*, _, attrs(a*)) ->
+    prod(p*, _, attrs(a*)) -> 
     RDefT(
       "nam-annotate-names"
     , []
@@ -115,7 +115,7 @@ rules
   //       e.g. Var@=ID?
   
   namespace-def-to-x(set-namespace):
-    namespacedef(<set-namespace>, _) -> Var("x")
+    namespacedef(<set-namespace>, _) -> Var("x") 
   
   non-terminal-to-wld:
     <is-non-terminal> -> Wld()

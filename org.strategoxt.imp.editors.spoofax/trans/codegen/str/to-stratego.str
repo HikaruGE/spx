@@ -58,8 +58,8 @@ rules
 			;chdir-to-project-path 
 			;<save-to-file>( output-path-str, str-string )
 			;<WriteToBinaryFile>( output-path-rtree, str-aterm)
-			;<refresh-workspace-file>output-path-str
-			;<refresh-workspace-file>output-path-rtree
+			;<refresh-file>output-path-str
+			;<refresh-file>output-path-rtree
 		  ;<debug-compiler>$[ Codegen | STR | Finishing generation of following module: [<pp-aterm> module-untyped-qname].]
 	
 	
@@ -98,8 +98,8 @@ rules
 			;output-path-rtree := <get-main-output-path(|"rtree")>(autogen-root-directory , package-qname)   
 			;<save-to-file>(output-path-str ,   str-string)		// saving str string 		
 			;<WriteToBinaryFile>(output-path-rtree , str-aterm ) // saving rtree 
-	 		;<refresh-workspace-file>output-path-str
-			;<refresh-workspace-file>output-path-rtree
+	 		;<refresh-file>output-path-str 
+			;<refresh-file>output-path-rtree
 			;<debug-compiler>$[ Codegen | STR | Finishing generation of Main STR Module of package : [<pp-aterm> package-qname].] 
 			
 

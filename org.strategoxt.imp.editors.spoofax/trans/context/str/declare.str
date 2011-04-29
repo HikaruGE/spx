@@ -17,7 +17,8 @@ imports
 	config 
 imports 
 	context/str/signature-generator
-	context/scope-tree   
+	context/scope-tree 
+	spoofaxlang  
  
 
 rules 
@@ -447,13 +448,13 @@ rules
      x -> full-path
      where
         // FIXME: fetch true import paths from someplace
-   			full-path := <file-exists> $[[<project-path>]/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/trans/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/lib/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/src/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/syntax/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/syn/[x]]
-     <+ full-path := <file-exists> $[[<project-path>]/src/syntax/[x]]
+   			full-path := <file-exists> $[[<get-project-path>]/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/trans/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/lib/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/src/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/syntax/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/syn/[x]]
+     <+ full-path := <file-exists> $[[<get-project-path>]/src/syntax/[x]]
  
   fetch-library-ast:
     x -> <pack-stratego-parse-stratego> (IncludeFromPath(x), [])

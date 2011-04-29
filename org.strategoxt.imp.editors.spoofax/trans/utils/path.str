@@ -6,6 +6,7 @@ imports
 	common
 	utils/debug
 	include/spoofaxlang
+	spoofaxlang
 
 rules 
 	
@@ -101,7 +102,7 @@ rules
       ;<chdir>folder-name 		    
   
   chdir-to-project-path =  
-  <chdir><project-path>   
+  <chdir><get-project-path>   
 
 rules 
 	spx-precompiled-cache-path = 
@@ -117,7 +118,7 @@ rules
 	spx-cache-path(|extension-prefix):
     full-path -> cache-path
     with
-      project-path := <project-path>;
+      project-path := <get-project-path>;
       cache-dir    := <file-exists <+ mkdir> $[[project-path]/.spxcache];
       full-path'   := <string-replace(|"/", "+"); string-replace(|"\\", "+"); string-replace(|":", "+")> full-path;
       cache-path   := $[[cache-dir]/[full-path'].[extension-prefix]]
@@ -131,7 +132,7 @@ rules
 		 where (is-string);
 		 {| SourceDir, ProjectDir:
 		 		rules( 
-		 			ProjectDir  := <project-path>
+		 			ProjectDir  := <get-project-path>
 		 			SourceDir		:= sourcedir 
 		 		);	
 			 		 try-resolve-as-sdf

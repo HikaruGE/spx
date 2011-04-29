@@ -3,7 +3,7 @@ module utils/sourcedir
 imports
   lib/editor-common.generated
   libstrc
-
+	spoofaxlang
 rules
   
   get-source-base-dir: mod@Module(x, _) -> mod
@@ -17,7 +17,7 @@ rules
         ; implode-string(|'/') => basedir
         ; rules(SourceDir := basedir)
         
-  get-soure-base-dir = project-path
+  get-soure-base-dir = get-project-path
           
 rules  // string utils
   

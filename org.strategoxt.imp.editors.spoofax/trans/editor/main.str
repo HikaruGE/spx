@@ -14,15 +14,15 @@ rules
 	
 rules
 	//editor-complete 
-	
-	
-	
+
 rules
 	//editor-analyze	
  	editor-analyze: (ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST 
     with 
-			editor-init;
-		  initialize-configuration
+			editor-init
+		with
+			rules(ProjectPath := project-path)
+			;initialize-configuration
 		with 
 			abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]  
 		with 

@@ -24,18 +24,20 @@ rules
 	build-spoofax-main:
 		arg  -> "" // local directory path is specified 
 		where 
-		xtc-io-wrap(
+			xtc-io-wrap(
 		    ?FILE(input);
 				editor-init; 						         // cleaning up and initializing editors
-				initialize-configuration;        // initializes configuration and setting up enviroment variables
 				rules(NoDebugInfo: _);           // HACK: disable origin use for now
 				rules(ProjectPath := input);
+				<chdir>input;
+				initialize-configuration;        // initializes configuration and setting up enviroment variables
 				// Overriding spx.config configured source directory. 
 				// Comment this line if sources configured in the spx.config should be activated
-				<override-configured-source-directories><abspath>arg;
+				//<override-configured-source-directories><abspath>arg;
 				<show-configuration;debug>();     //show configuration for this spx project
-				<build-all>()                     //building all the spx files in the sources directory
-				
+				<build-all>();                     //building all the spx files in the sources directory
+				<debug>$["-----------Build-all succeeds-----------------"];
+				!FILE($[[input]/.shadowdir/Globals/Singatures.str])	 //HACK : just to ensure this strategy is not failing ...
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 		)
@@ -52,10 +54,9 @@ rules
 		where
 			debug(!"=============starting compile-all ===================")
 		with 
-			editor-init;
-		  initialize-configuration
-		with
-			rules(ProjectPath := project-path)
+			editor-init
+		 ;rules(ProjectPath := project-path)
+		 ;initialize-configuration
 		with
 	  	<build-all>()
 		
@@ -70,6 +71,8 @@ rules
 		  initialize-configuration
 		where
 			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+		with
+			rules(ProjectPath := project-path)
 		with 
 			debug(!"=============starting compile-all ===================");
 			<compile-all>()

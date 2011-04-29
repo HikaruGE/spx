@@ -25,9 +25,13 @@ imports
 	utils/debug
 	utils/cache
 	analyze/main
+	codegen/generate
 
-strategies 
+rules 
+	//refresh-file = refresh-workspace-file //temporarily disabling refresh for running the main strategy
+	refresh-file = id
 	
+strategies 
 	build-all = 
 		?current-term
 		;enable-compiler-debugging

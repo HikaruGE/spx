@@ -15,6 +15,8 @@ imports
 imports
 	codegen/compile
 	codegen/main
+	codegen/generate
+	
 	context/signature
 	normalize/signatures
 imports 
@@ -58,8 +60,8 @@ rules
 	where
 		 <save-to-file>( output-path-str, generated-signatures-string)
 		;<save-to-file>(output-path-rtree, signatures-as-aterm-string)
-		;<refresh-workspace-file>output-path-str
-		;<refresh-workspace-file>output-path-rtree
+		;<refresh-file>output-path-str
+		;<refresh-file>output-path-rtree
 	
 	emit-default-signatures:
 		() -> ()
@@ -80,8 +82,8 @@ rules
 		where
 			 <save-to-file>( output-path-str, generated-signatures-string)
 			;<save-to-file>(output-path-rtree, signatures-as-aterm-string)
-			;<refresh-workspace-file>output-path-str
-			;<refresh-workspace-file>output-path-rtree
+			;<refresh-file>output-path-str
+			;<refresh-file>output-path-rtree
 		where
 			rules( GeneratedSignature : sig-file-rel-path );    
 			<debug-compiler>$[ Codegen | SDF | Finishing generation of default signature]
@@ -122,8 +124,8 @@ rules
 			;<ensure-exists>( autogen-dir , package-untyped-qname ) 
 			;<save-to-file>( output-path-str, generated-signatures-string)
 			;<save-to-file>( output-path-rtree, signatures-as-aterm-string)
-			;<refresh-workspace-file>output-path-str
-			;<refresh-workspace-file>output-path-rtree
+			;<refresh-file>output-path-str
+			;<refresh-file>output-path-rtree 
 			;chdir-to-project-path
 		where
 			rules( GeneratedSignature : sig-file-rel-path );

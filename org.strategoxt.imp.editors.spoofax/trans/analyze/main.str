@@ -17,6 +17,7 @@ imports
 	lib/editor-common.generated
 imports 
 	utils/contract 	
+	spoofaxlang
 	
 rules			// Analyze Semantic Errors 
 			
@@ -164,7 +165,7 @@ rules
 	      // We only collect-om since we don't want inner warning dupes
 	      error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
 	      warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
-	      if <file-exists> $[[<project-path>]/.disable-global-analysis] then
+	      if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
 	        serror* := []
 	      else
 	        serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
@@ -179,7 +180,7 @@ rules
     // We only collect-om since we don't want inner warning dupes
     error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
     warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
-    if <file-exists> $[[<project-path>]/.disable-global-analysis] then
+    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
       serror* := []
     else
       serror* := <collect-om(context-free-syntax-sort-error, conc)> ast

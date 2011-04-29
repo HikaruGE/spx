@@ -67,7 +67,7 @@ rules
 			//TODO : create a consistent namming for the file name + move it to lib 
 			;output-path := <get-main-esv-output-path(|"esv")>(autogen-root-directory , package-qname)   
 			;<WriteToBinaryFile>(output-path ,esv-aterm)
-			;<refresh-workspace-file>output-path
+			;<refresh-file>output-path
 			;chdir-to-project-path
 		where
 			<debug-compiler>$[ Codegen | ESV | Finishing generation of packed esv for [<pp-aterm>package-qname].]

@@ -9,9 +9,8 @@ imports
 	utils/debug
 	lib/configuration/SpoofaxConfiguration
 	lib/editor-common.generated
+	spoofaxlang
 	
-
-//TODO : add spxconfig file and move this content to that file 
 rules 
 	default_package_name = !"_Default"
 	
@@ -157,7 +156,7 @@ rules
 
 	// Returns all the resolved directories 	
 	get-all-includes  = 
- 	<conc>(<get-all-sources(|<project-path>)> ,   <get-sources-from-external-projects>)
+ 	<conc>(<get-all-sources(|<get-project-path>)> ,   <get-sources-from-external-projects>)
  	;make-set
  
  
