@@ -1,6 +1,7 @@
-package entity-lang
-
-	module module-main
+package test
+	module test-main 
+		imports entity-lang
+		
 		context-free start-symbols 
     	Start
 
@@ -9,6 +10,28 @@ package entity-lang
 	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
 	    ID ":" Type                   -> Property {cons("Property")}
 	    ID                            -> Type {cons("Type")}
+
+
+
+
+	    
+package entity-lang
+	module module-main
+		imports 
+			libstratego-lib
+		
+		context-free start-symbols 
+    	Start
+
+  	context-free syntax
+	    "module" ID Definition*       -> Start {cons("Module")}
+	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
+	    ID ":" Type                   -> Property {cons("Property")}
+	    ID                            -> Type {cons("Type")}
+
+		rules
+  	 generate-aterm:
+    	(selected, position, ast, path, project-path) -> path
 
 		language General properties
     	name          : entity-lang
@@ -40,7 +63,8 @@ package entity-lang
 	module entity-builders    
 		imports 
 			entity.Common	  
-			 
+			libstratego-lib
+	 
 		builders
     	builder                   : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
 	 
@@ -79,6 +103,9 @@ package entity-lang
   		Definition.Entity
 		 	
 	module common
+		imports 
+			libstratego-lib
+	
 		lexical syntax
    
     [a-zA-Z][a-zA-Z0-9\_]* -> ID
