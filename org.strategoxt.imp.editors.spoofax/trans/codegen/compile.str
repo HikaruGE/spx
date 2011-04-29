@@ -188,7 +188,7 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 		//Phase 2:  Compile all the legacy artifacts referred by Spx Packages 
 		//				  and make them accessible in the Global Scope 
 		;where(<debug-compiler>$[compile-main | compile-legacy-artifacts:])
-		//;where(compile-legacy-artifacts)
+		;where(compile-legacy-artifacts)
 		
 		//Phase 3:  Compile Packagesand make them accessible in the different package 
 		//					namespace.
@@ -197,19 +197,7 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 		;list-loop(compile-spx-package)
 		;list-loop(analyze-spx-package)
 				
-	
-	// Compile sdf, str, esv modules which are imported in the global nameepsace
-	compile-legacy-artifacts: package-tqnames* -> package-tqnames*
-	where
-		<make-set>package-tqnames* => upackages;
-		<debug-compiler>$[compile-main | compile-legacy-artifacts | List:[<pp-aterm>upackages]]
-	where
-		{| Resolved-ExternalArtifact:
-					<compile-legacy-artifact>(Unresolved() , Module(Name("libstratego-lib")) ,Unresolved()); 
-					<list-loop(compile-legacy-artifact-package)>upackages	
-		|}
-	
-			
+				
 	//During analyze-package , just call this strategy 
 	compile-spx-package: 
 		package-typed-qname@Package(untyped-qname) -> <id>
@@ -302,23 +290,38 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 
 
 rules 
-	
-	//Compile legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others 		
+
+	// Compile sdf, str, esv modules which are imported in the global nameepsace
+	compile-legacy-artifacts: package-tqnames* -> package-tqnames*
+	where
+		<make-set>package-tqnames* => upackages;
+		<debug-compiler>$[compile-main | compile-legacy-artifacts | List:[<pp-aterm>upackages]]
+	where
+		{| Resolved-ExternalArtifact:
+					<compile-legacy-artifact>(Unresolved() , Module(Name("libstratego-lib")) ,Unresolved()); 
+					<list-loop(compile-legacy-artifact-package)>upackages	
+		|}
+
+
+	//Compile  a particular legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others 		
 	compile-legacy-artifact-package : p@Package(qname) ->p
 	where	
-		<debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
+		 <debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
 		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
 		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
 	where
 		<map(compile-legacy-artifact)>legacy-artifact-details*	
 		
+	
 	compile-legacy-artifact: 
 		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
 		where
 			<debug-compiler>$[compile-main | compile-legacy-artifact > planning to compile following legacy artifact: [<pp-aterm>]] 
 		where
-			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then 	
-				if (!resolving-path => Unresolved()) then
+			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then // check to see if already taken care off.  	
+				if (!resolving-path => Unresolved()) then 
+					  // logic : we are only supporting legacy STR lib at this moment which are not located in the file system . 
+					  // Hence, it is unresolved , we are giving it a try to resolve it as a lib
 	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
 					<+
 						<read-stratego-signatures;declare-stratego-globals-top> modulename	
@@ -329,7 +332,9 @@ rules
 		where
 			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
 	
-rules 			// Reference Resolving 
+rules 			
+	
+	// Reference Resolving 
 	resolve-package-references = 
 		?list-of-package-tqnames;
 		<list-loop(
@@ -340,7 +345,6 @@ rules 			// Reference Resolving
 			get-enclosed-modules; 
 			get-module-declarations;
 			origin-track-forced(map(store-import-references))
-			//map(store-import-references) 
 		<+
 			where(<debug-compiler>$[resolve-package-references | Failed to resolve package refernece:[<pp-aterm>]]);fail
 		)>list-of-package-tqnames
