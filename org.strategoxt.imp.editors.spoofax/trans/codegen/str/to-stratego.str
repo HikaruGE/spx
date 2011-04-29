@@ -128,7 +128,7 @@ rules
 						 
 			
 	to-str-import: 
-		package-name-> [Import(package-name) , Import(<get-signature-file-name>package-name)]
+		package-name -> [Import(package-name) , Import(<get-signature-file-name>package-name)]
 		where 
 			<is-string>package-name
 			

@@ -45,7 +45,7 @@ rules
 			<debug-compiler>$[Codegen|Generating main signature for the packagees]
 			;generated-signatures-string := $[module [package-name-string]-signatures 
 			 	imports 
-					[<map(\s->$[[s]
+					[<map(\s -> $[[s]
 				]\)	><all-keys-GeneratedSignature>]	
 			]
 			;signatures-as-aterm-string := <to-signature-as-rtree >generated-signatures-string

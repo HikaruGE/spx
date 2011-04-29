@@ -25,10 +25,11 @@ rules
 		arg  -> "" // local directory path is specified 
 		where 
 		xtc-io-wrap(
+		    ?FILE(input);
 				editor-init; 						         // cleaning up and initializing editors
 				initialize-configuration;        // initializes configuration and setting up enviroment variables
 				rules(NoDebugInfo: _);           // HACK: disable origin use for now
-				rules(ProjectPath := <getcwd>);  // Assumption, it will run from command prompt. Hence, setting getcwd as the project path.
+				rules(ProjectPath := input);
 				// Overriding spx.config configured source directory. 
 				// Comment this line if sources configured in the spx.config should be activated
 				<override-configured-source-directories><abspath>arg;
