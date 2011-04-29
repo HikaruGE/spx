@@ -16,8 +16,36 @@ imports
 	normalize/signatures  
 	include/spoofaxlang 
 	utils/path
-	 
+imports 	
+	libstratego-gpp
+	libstratego-xtc 
 rules 
+		
+	build-spoofax-main:
+		arg  -> "" // local directory path is specified 
+		where 
+		xtc-io-wrap(
+				editor-init; 						         // cleaning up and initializing editors
+				initialize-configuration;        // initializes configuration and setting up enviroment variables
+				rules(NoDebugInfo: _);           // HACK: disable origin use for now
+				rules(ProjectPath := <getcwd>);  // Assumption, it will run from command prompt. Hence, setting getcwd as the project path.
+				// Overriding spx.config configured source directory. 
+				// Comment this line if sources configured in the spx.config should be activated
+				<override-configured-source-directories><abspath>arg;
+				<show-configuration;debug>();     //show configuration for this spx project
+				<build-all>()                     //building all the spx files in the sources directory
+				
+			<+
+				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
+		)
+	
+		
+	test-build-spoofax-main:
+		(selected, position, ast, path, project-path) -> None()
+	where 
+		<build-spoofax-main> "test"		
+	
+
 	build-all:
 		(selected, position, ast, path, project-path) -> None()
 		where
