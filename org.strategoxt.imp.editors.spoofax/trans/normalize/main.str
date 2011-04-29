@@ -14,10 +14,12 @@ imports
 	utils/cache
 imports 
 	common
+	config
+	
 imports 
 	context/scope-tree
 	context/signature	
-
+ 
 //FIX : 
 // Design issues : 
 //		Package Common Imports are only for the current spx file at this moment
@@ -28,6 +30,14 @@ strategies
 	nomalize-all = desugar-compilationa-unit
 
 rules	
+	
+	desugar-compilationa-unit: 
+		CompilationUnit(moduledef*) -> 	<desugar-compilationa-unit>CompilationUnit([] , [appneded-default-package-declaration])
+		where 
+			 appneded-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
+	
+	
+	
 	desugar-compilationa-unit: 
 		CompilationUnit(import* , package*) -> 	CompilationUnit( import* , modified-packages) 
 		with 
@@ -42,6 +52,8 @@ rules
 			rules(
 				PackageCommonImports:+ _ -> i
 			)
+	
+	
 	
 	desugar-spx-package:
 		Package(Name(package-name) , modules* ) -> normalized-package-definition

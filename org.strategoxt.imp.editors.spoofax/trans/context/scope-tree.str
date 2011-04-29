@@ -305,7 +305,7 @@ rules
 		where 
 			resolved-path := <resolve-legacy-import-path(|<current-source-directory>)>modulename
 			;if (!resolved-path => Unresolved()) then 
-				<debug>$[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<pp-aterm>i]]
+				<debug-symboltable>$[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<pp-aterm>i]]
 				;annotated-import-decl :=  <add-annotation(|Unresolved())>i
 			else
 				annotated-import-decl :=  i

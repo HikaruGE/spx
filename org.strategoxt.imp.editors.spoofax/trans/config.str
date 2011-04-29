@@ -12,7 +12,9 @@ imports
 	
 
 //TODO : add spxconfig file and move this content to that file 
-
+rules 
+	default_package_name = !"_Default"
+	
 rules 
 	initialize-configuration = 
 		?current-term
