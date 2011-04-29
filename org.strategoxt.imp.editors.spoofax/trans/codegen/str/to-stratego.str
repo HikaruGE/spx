@@ -118,7 +118,18 @@ rules
 			
 	to-str-import: 
 		package-name-> [Import(package-name) , Import(<get-signature-file-name>package-name)]
-	
+		where 
+			<is-string>package-name
+			
+	to-str-import: 
+		legacy-artifact@Name(name)  -> 	result 
+ 	where
+ 			if(<UsedLegacyArtifacts>(Globals(), name) => Unresolved()) then
+ 				result := [Import(name)]  // Probably lib legacy imports . SInce, it is unresolved, no signature is generated for this import
+ 			else 
+ 				result :=  [Import(name) , Import(<get-signature-file-name>name)] 
+			end	
+ 		
 	to-str-import: 
 		Module(q@QName(qnameparts*))->[Import(str-import),Import(sig-import)]
 		where 

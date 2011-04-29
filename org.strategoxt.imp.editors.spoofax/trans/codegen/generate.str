@@ -134,10 +134,13 @@ rules
 	
 	
 rules
-	
+	// generates the import declaration for the artifacts .  
+	// s is a artifact specific adapted strategy applied to all the import declaration 
+	// to get the artifact-specific import declaration. 
 	to-generated-artifacts-import-declarations(s) =
 		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set; 	where(<debug-compiler>$[Codegen | Imports | Resultant imports :  [<pp-aterm>]]) 
 		
+	
 		
 	to-import-declaration(s): 
 		i@ImportPackage(package-qname@QName(_)) -> results
@@ -175,8 +178,8 @@ rules
 				<get-enclosed-modules>Package(QName([package-name])) => modules*
 				;<map(?Module(<id>) ; qname-to-path ; s)> modules*   => result
 			else
-				 <s>package-name => result'
-				;result          := [result']	
+				 // since it is not declared as a spx package , it could be a legacy artifact . 
+				 result := <to-import-declaration(s)>ImportLegacyArtifact(Name(package-name))
 			end
 		where 
 			<debug-compiler>$[ Codegen | Imports Conversion  | import pcakage/legacy artifact Result :  [<pp-aterm>result]] 
@@ -184,8 +187,7 @@ rules
 	to-import-declaration(s): 
 		ImportLegacyArtifact(Name(modulename)) -> result
 		where 
-				<s>modulename => result'
-				;result			 := [result']	
+				<s>Name(modulename) => result
 		where 
 			<debug-compiler>$[Codegen | Imports Conversion |  import legacy artifact Result : [<pp-aterm>result].]
 	

@@ -106,11 +106,28 @@ rules
 	where 
 		spx-import-stmt* := <collect-om(?Imports(<id>) , conc);flatten-list;make-set> sections*;
 		if <ensure-list-is-not-empty>spx-import-stmt*  then
-			sdf-import-block := <to-generated-artifact-block(to-generated-artifacts-import-declarations(\name -> 'module(unparameterized(name))\), \s -> ['imports(s)]\)>spx-import-stmt*
+			sdf-import-block := <to-generated-artifact-block(to-generated-artifacts-import-declarations(sdf-import-adapter), \s -> ['imports(s)]\)>spx-import-stmt*
 		else
 			sdf-import-block := []
 		end		
  
+ 	
+ 	sdf-import-adapter : name  -> 	'module(unparameterized(name))
+ 	where debug(!" in sdf-import-adapter: " )
+ 	where 
+ 		<is-string>name
+ 	
+ 	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
+ 	where debug(!" in sdf-import-adapter : legacy : " )
+ 	where 
+ 			if(<UsedLegacyArtifacts>(Globals(), name) => Unresolved()) then
+ 				result := [] 
+ 			else 
+ 				result :=  'module(unparameterized(name)) 
+			end 
+	where
+		<debug(!" in sdf-import-adapter : legacy : " )> result		
+
 rules
 
 	override pp-sdf-string = fail // ensure compiler doesn't blow up
