@@ -22,7 +22,7 @@ imports
 rules 
 	getOperationSignatures = 
 		?opname; 
- 		<resolve-symbol-declarations(all-keys-Get-Operation-Singature, bagof-Get-Operation-Singature)><to-scoped-symbol>opname 
+ 		<resolve-symbol-declarations(all-keys-Get-Operation-Signature, bagof-Get-Operation-Signature)><to-scoped-symbol>opname 
  	<+
  		<debug-declaration> $[Waring | Failed to retrive OperationSignatures for opname[<pp-aterm>]. Returning  empty list . ];
  		![]
@@ -237,7 +237,7 @@ strategies
 		where (
 			arg-length := <length>operand-sort*;
 			rules(
-					Get-Operation-Singature  :+  scoped-op-name   -> (opname  , arg-length )
+					Get-Operation-Signature  :+  scoped-op-name   -> (opname  , arg-length )
 				 	Get-Operation-Declaration:+  scoped-op-name   -> (opname  , operand-sort* , resultant-sort)
 				)
 			; <debug-declaration> $[DeclareSignature | Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]

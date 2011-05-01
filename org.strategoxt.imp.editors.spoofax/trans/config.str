@@ -12,7 +12,7 @@ imports
 	spoofaxlang
 	
 rules 
-	default_package_name = !"_Default"
+	default_package_name = !"_default"
 	
 rules 
 	initialize-configuration = 

@@ -91,7 +91,7 @@ exports
     "restrictions"      -> Reserved
   	"as"								-> Reserved
  		"main"							-> Reserved 
- 		"_Default"					-> Reserved 
+ 		"_default"					-> Reserved 
  		
  		Reserved 						-> ReservedName[[ESV]]
  		ReservedName[[ESV]]	-> ID {reject}
