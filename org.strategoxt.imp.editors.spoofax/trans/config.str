@@ -152,7 +152,7 @@ rules
     )
 	
 	//Returns output directory for the code generation
-	get-code-output-directory = collect-all(?OutputDirectory(<id>), union) ; ?[<id>]
+	get-code-output-directory = collect-one(?OutputDirectory(<id>))
 
 	// Returns all the resolved directories 	
 	get-all-includes  = 

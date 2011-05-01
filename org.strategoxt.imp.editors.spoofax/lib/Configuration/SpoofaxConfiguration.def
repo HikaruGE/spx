@@ -18,7 +18,7 @@ exports
     
     [\*]                             -> CommentChar
     "/*" (~[\*] | CommentChar)* "*/" -> LAYOUT
-    "%%" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT
+    "//" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT
     
     -> EOF
   
@@ -44,7 +44,6 @@ exports
 
     LAYOUT? -/- [\ \t\n\r]
     LAYOUT? -/- [\/].[\/]
-    LAYOUT? -/- [\%].[\%]
     LAYOUT? -/- [\/].[\*]
 
 module SpoofaxConfiguration
@@ -72,10 +71,14 @@ exports
 	    "RootDirectory"												  ->   IncludeOption{cons("RootDirectory")}
 
 	lexical syntax 
-		[a-zA-Z\.][A-Za-z0-9\_\-\/\ \.\+]* 		-> RelativePath
-		"/" RelativePath											-> AbsolutePath
-		[a-zA-Z]":/" RelativePath							-> AbsolutePath
-		"../" RelativePath										-> AbsolutePath{prefer}
+		%%STRING -> RelativePath
+		PathChar                                   	-> RelativePath
+		PathChar (PathChar | Slash)* PathChar       -> RelativePath
+		[A-Za-z0-9\_\-\.\+]                         -> PathChar
+		"/"                                         -> Slash
+    Slash RelativePath				                  -> AbsolutePath
+		[a-zA-Z]":" Slash RelativePath              -> AbsolutePath
+		".." Slash RelativePath                     -> AbsolutePath{prefer}
 		
 	lexical syntax     
     
@@ -85,18 +88,21 @@ exports
     "Configuration"     		   	-> Reserved
     "Includes"        					-> Reserved		
     "AllDirectories"   					-> Reserved		
+    "CodeGeneration"            -> Reserved   
     "RootDirectory" 				  -> Reserved		
    
     Reserved -> RelativePath{reject}
 	    
 	    
 	lexical restrictions
-		RelativePath -/- [A-Za-z0-9\_\-\/\ \.\+]
+	  Slash        -/- [\/]
+		RelativePath -/- [A-Za-z0-9\_\-\/\.\+]
 			
 		"SpxProjects" 
 		"Sources" 
 		"SpxSources"
 		"Configuration" 
+    "CodeGeneration" 
 		"Includes"
 		"AllDirectories"
 		"RootDirectory" -/- [A-Za-z0-9\_]

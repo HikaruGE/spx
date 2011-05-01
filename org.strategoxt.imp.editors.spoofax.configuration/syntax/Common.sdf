@@ -17,7 +17,7 @@ exports
     
     [\*]                             -> CommentChar
     "/*" (~[\*] | CommentChar)* "*/" -> LAYOUT
-    "%%" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT
+    "//" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT
     
     -> EOF
   
@@ -43,5 +43,4 @@ exports
 
     LAYOUT? -/- [\ \t\n\r]
     LAYOUT? -/- [\/].[\/]
-    LAYOUT? -/- [\%].[\%]
     LAYOUT? -/- [\/].[\*]

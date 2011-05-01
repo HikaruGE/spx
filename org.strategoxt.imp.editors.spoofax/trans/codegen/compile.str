@@ -46,12 +46,15 @@ rules			// Starting a new compilation session
 					DeclaredPackage,
 					GetEnclosingScope,
 					GetEnclosedScope:
-						where(
-							<debug-compiler>$[============Starting new compiler session ==============]
-						);
-						compiler-init; // initializing compiler session 
-						where(<debug-compiler>$[============Initialization is done  ==============]);
-						s	
+					  with(
+							where(
+								<debug-compiler>$[============Starting new compiler session ==============]
+							);
+							compiler-init; // initializing compiler session 
+							where(<debug-compiler>$[============Initialization is done  ==============]);
+							s;	
+				      ?x
+				    ); !x
 			|}
 
 
