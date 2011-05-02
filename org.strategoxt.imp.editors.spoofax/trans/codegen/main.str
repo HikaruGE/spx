@@ -37,7 +37,7 @@ rules
 				<show-configuration;debug>();     //show configuration for this spx project
 				<build-all>();                     //building all the spx files in the sources directory
 				<debug>$["-----------Build-all succeeds-----------------"];
-				!FILE($[[input]/.shadowdir/Globals/Singatures.str])	 //HACK : just to ensure this strategy is not failing ...
+				!FILE($[[input]/.shadowdir/Globals/Signatures.str])	 //HACK : just to ensure this strategy is not failing ...
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 		)
