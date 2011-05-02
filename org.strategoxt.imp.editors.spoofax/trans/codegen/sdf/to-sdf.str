@@ -67,7 +67,7 @@ rules
  			<debug-compiler>$[ Codegen | SDF | Generating main for the following package : [<pp-aterm> package-qname].]
  		where
 			sdf-string := 
-	    $[module [relative-autogen-path]/[<get-main-file-name>package-qname]
+	    $[module [<get-main-file-name>package-qname]
 	         imports
 		      	[<map(pp-sdf-import)>module-qname*]   									 
 	     ]

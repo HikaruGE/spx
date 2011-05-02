@@ -12,6 +12,7 @@ imports
 	include/SpoofaxLang
 imports 
 	codegen/main 
+	codegen/generate
 	context/scope-tree 
 	context/signature
 imports

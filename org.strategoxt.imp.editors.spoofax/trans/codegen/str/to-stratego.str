@@ -83,7 +83,7 @@ rules
  		where 
  			<debug-compiler> $[CodeGen | STR | generate-str-main from package-name: [<pp-aterm>package-qname]]	  
  		where
- 			 main-str-module-name := <concat-strings>[relative-autogen-path, "/", <get-main-file-name>package-qname] 
+ 			 main-str-module-name :=  <get-main-file-name>package-qname 
 			;str-aterm := Module( main-str-module-name  ,[Imports(<map(to-str-import);flatten-list>module-qname*)])
 			;str-string := <pp-stratego-string> <parenthesize-Stratego>  str-aterm
 		where

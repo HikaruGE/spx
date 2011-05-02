@@ -12,7 +12,8 @@ imports
 	spoofaxlang
 	
 rules 
-	default_package_name = !"_default"
+	//default_package_name = !"_default"
+	default_package_name = !"Lawoco" // HACK : Temporarily added for LWC submission
 	
 rules 
 	initialize-configuration = 
