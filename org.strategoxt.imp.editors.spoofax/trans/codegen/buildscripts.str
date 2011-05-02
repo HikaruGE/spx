@@ -10,6 +10,7 @@ imports
 	utils/path
 	normalize/signatures
 	codegen/main
+	codegen/generate
 
 rules
 	emit-build-script: package-qnames* -> package-qnames*  
@@ -536,6 +537,8 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
 	        
 		<target name="sdf2imp.eclipse" if="eclipse.running" >
 			<copy file="${package.path}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.packed.esv" preservelastmodified="true"/>
+			<copy file="${package.path}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.main.esv" preservelastmodified="true"/>
+			<antcall target = "refresh"/>  
 			<java classname="org.strategoxt.imp.metatooling.building.AntSpxDescriptorBuilder" failonerror="true">
 				<arg value="${include}/${package.name}.packed.esv"/> <!-- esv main file-->
 			</java>
