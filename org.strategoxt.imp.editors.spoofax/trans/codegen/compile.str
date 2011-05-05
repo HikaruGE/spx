@@ -71,7 +71,7 @@ rules 	// Compiler initialization
 		//Initializes global symbols / default primitives 
 		init-declaration    	
 
-
+rules
 	parse-spx-sources : 
 		(sourcedir , searchOption) -> <id>
 		where
@@ -110,7 +110,10 @@ rules 	// Compiler initialization
 				)
 			end 
 
-strategies				// Pre-compilation before starting up actual compilation    
+
+strategies				    
+	
+	// Pre-compilation before starting up actual compilation
 	
 	// Before starting primary compilation, 
 	// pre-compile normalize the parsed tree
@@ -120,8 +123,9 @@ strategies				// Pre-compilation before starting up actual compilation
 		origin-track-forced(nomalize-all) // nomalize and builds scope-tree and  partial symbol table with the local information availble
 		//nomalize-all
 
-strategies 				// Main compilation events  
+strategies 			  
 	
+	// Main compilation events
 	compile-all = 
 		?current-term ; 
 		enable-compiler-debugging;
@@ -136,6 +140,7 @@ strategies 				// Main compilation events
 		;!current-term //restoring current term to avoid side effects
 	
 	
+	// compiles all the packages stored at the filepath specified 
 	compile-packages-of: file-abs-path -> issues*
 	where
 		<debug-compiler>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
@@ -158,6 +163,7 @@ strategies 				// Main compilation events
 			end
 	
 	
+	// internal strategy of compilation used by different main compile strategies
 	compile-internal : list-of-package-qname* -> list-of-package-qname* 
 	where 
 		<debug-compiler>$[=========Compiling packages===============
@@ -174,8 +180,9 @@ strategies 				// Main compilation events
 
 
 
-rules				// Compiler main : Compiles provided list of packages and stores semantic problems   
+rules			   
 	
+	// Compiler main : Compiles provided list of packages and stores semantic problems
 	compile-main= 
 		?list-of-package-qnames;
 		where(
@@ -192,7 +199,6 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 		//				  and make them accessible in the Global Scope 
 		;where(<debug-compiler>$[compile-main | compile-legacy-artifacts:])
 		;where(compile-legacy-artifacts)
-		
 		//Phase 3:  Compile Packagesand make them accessible in the different package 
 		//					namespace.
 		//					Use the dependency graph to first compile the depending on packages.
@@ -239,6 +245,7 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 				<debug-compiler>$[compile-spx-package| Ignored as already in the queue : [<pp-aterm>]]
 			end
 
+	// Compiles imported spx packages/modules
 	compile-depending-spx: 
 		typed-qname -> typed-qname
 		where 
@@ -263,6 +270,7 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 					
 			end		 
 	
+	// Compiles Spx Modules
 	compile-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
 		where 
@@ -284,13 +292,12 @@ rules				// Compiler main : Compiles provided list of packages and stores semant
 				<debug-compiler>$[compile-spx-module| Ignored as already in the queue : [<pp-aterm>]] //this package is not compiled before
 			end	
 	
-		
+	
+	//TODO : append additional checks . compilation should be incremental and if source not changed, show the cached errors/warnings/infos	
 	should-compile-this-package = 
 		?package-qname;
 		where(not(<currently-compiling-package>package-qname))
-		//TODO : add checking of PDL caching. If souce is newer than pdl version of the
-		//package, do not compile it. use the pdl instantly.
-
+		
 
 rules 
 
