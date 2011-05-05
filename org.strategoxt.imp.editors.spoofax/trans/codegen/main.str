@@ -14,7 +14,7 @@ imports
 	context/scope-tree
 	context/signature 
 	normalize/signatures  
-	include/spoofaxlang 
+	include/spoofaxlang
 	utils/path
 imports 	
 	libstratego-gpp
@@ -36,7 +36,7 @@ rules
 				//<override-configured-source-directories><abspath>arg;
 				<show-configuration;debug>();     //show configuration for this spx project
 				<build-all>();                     //building all the spx files in the sources directory
-				<debug>$["-----------Build-all succeeds-----------------"];
+				<debug>$[".................Build-all succeeds................."];
 				!FILE($[[input]/.shadowdir/Globals/Signatures.str])	 //HACK : just to ensure this strategy is not failing ...
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
@@ -52,7 +52,7 @@ rules
 	build-all:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			debug(!"=============starting compile-all ===================")
+			<debug>$[.................starting compile + build all ..........................]
 		with 
 			editor-init
 		 ;rules(ProjectPath := project-path)
@@ -64,8 +64,6 @@ rules
 	//Intregation Test of the compile-all is working as expected 
 	compile-spx:
 		(selected, position, ast, path, project-path) -> None()
-		where
-			debug(!"=============starting compile-all ===================")
 		with 
 			editor-init;
 		  initialize-configuration
@@ -74,5 +72,5 @@ rules
 		with
 			rules(ProjectPath := project-path)
 		with 
-			debug(!"=============starting compile-all ===================");
+			<debug>$[.................starting compile-all ..........................];
 			<compile-all>()
