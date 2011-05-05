@@ -34,6 +34,7 @@ rules
 				// Overriding spx.config configured source directory. 
 				// Comment this line if sources configured in the spx.config should be activated
 				//<override-configured-source-directories><abspath>arg;
+				enable-command-line-mode;  
 				<show-configuration;debug>();     //show configuration for this spx project
 				<build-all>();                     //building all the spx files in the sources directory
 				<debug>$[".................Build-all succeeds................."];

@@ -12,8 +12,7 @@ imports
 	spoofaxlang
 	
 rules 
-	//default_package_name = !"_default"
-	default_package_name = !"Lawoco" // HACK : Temporarily added for LWC submission
+	default_package_name = !"_default"
 	
 rules 
 	initialize-configuration = 
@@ -24,9 +23,12 @@ rules
 		;<init-ignored-directories>[".svn"]
 		;enable-caching
 		;enable-lib-cache-invalidation
-		;enable-pretty-printing       
+		;enable-pretty-printing
+		;enable-command-line-mode  
+		;disable-command-line-mode       
 		;disable-caching
-		;disable-pretty-printing    
+		;disable-pretty-printing 
+		    
 		;!current-term
 
 	show-configuration: (selected, position, ast, path, project-path) -> (filename, result)
@@ -76,26 +78,32 @@ rules
 		[enabled-caching-string] 
 				
 		] 
-		
+rules		
 	// enables library cache invalidation 
 	enable-lib-cache-invalidation = with( rules(invalidate-lib-cache: _ ) )
 	
 	disable-lib-cache-invalidation = with( rules(invalidate-lib-cache:- _ ) )
+rules	
+	//enable command line mode
+	enable-command-line-mode =  with (rules(Enable-CommandLine-Mode : _ ))
 	
+	disable-command-line-mode = with(rules(Enable-CommandLine-Mode:- _ ))
 	
+	is-in-command-line-mode = where ( Enable-CommandLine-Mode )
+	
+rules	
 	//enable caching 
 	enable-caching =  with (rules(Enable-Caching : _ ))
 	
 	disable-caching = with(rules(Enable-Caching :- _ ))
 	
-	
-	
+rules	
 	// enable pp-aterm
 	enable-pretty-printing = with (rules(disable-pp-aterm : _ ))
 	 
-	disable-pretty-printing = with (rules(disable-pp-aterm :- _ ))	
-	
-	
+	disable-pretty-printing = with (rules(disable-pp-aterm :- _ ))
+		
+rules	
 	init-ignored-directories : [] -> [] 
 	
 	init-ignored-directories: [current-dir | rest] ->[current-dir | <init-ignored-directories>rest]    

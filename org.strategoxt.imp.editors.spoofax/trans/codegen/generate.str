@@ -28,8 +28,9 @@ imports
 	codegen/generate
 
 rules 
-	//refresh-file = refresh-workspace-file //temporarily disabling refresh for running the main strategy
-	refresh-file = id
+	
+	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
+	
 	
 strategies 
 	build-all = 
@@ -38,15 +39,15 @@ strategies
 		;new-compile-session(
 			list-of-package-qname* := <get-package-list> 
 			;<compile-internal>list-of-package-qname*
-			;<debug>$[=========Getting list of errors============]
+			;<debug>$[......................Getting list of errors......................]
 			;<get-all-analyzed-problems>() => problems  
 			;if <fail-if-has-errors>problems then
-			 	 <debug>$[=========generating artifacts============]
+			 	 <debug>$[......................Generating artifacts......................]
 			 	;init-code-generation  
 				;<list-loop(generate-spx-package)>list-of-package-qname*
-				;<debug>$[=========Generating Build Scipt============]
+				;<debug>$[......................Generating Build Scipt......................]
 				;<emit-build-script> list-of-package-qname*
-				;<debug>$[=========Code Generation is done============] 		
+				;<debug>$[......................Code Generation is done......................] 		
 			else
 				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
 			end		 
