@@ -20,7 +20,7 @@ imports
 	codegen/sdf/to-name-analysis
 	
 imports	
-	context/signature
+	context/signatures
 	context/scope-tree
 imports	
 	normalize/signatures

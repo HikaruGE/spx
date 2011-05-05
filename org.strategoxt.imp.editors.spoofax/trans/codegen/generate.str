@@ -16,7 +16,7 @@ imports
 	include/spoofaxlang
 imports	
 	context/scope-tree
-	context/signature
+	context/signatures
 	normalize/signatures
 imports 	
 	utils/path 

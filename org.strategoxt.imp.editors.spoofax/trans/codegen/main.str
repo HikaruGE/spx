@@ -12,7 +12,7 @@ imports
 	utils/cache
 	lib/editor-common.generated
 	context/scope-tree
-	context/signature 
+	context/signatures 
 	normalize/signatures  
 	include/spoofaxlang
 	utils/path

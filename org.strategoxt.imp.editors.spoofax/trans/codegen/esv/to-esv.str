@@ -14,7 +14,7 @@ imports
 	codegen/main 
 	codegen/generate
 	context/scope-tree 
-	context/signature
+	context/signatures
 imports
 	lib/editor-common.generated
 

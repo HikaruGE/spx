@@ -3,7 +3,7 @@ imports
 	include/SpoofaxLang 
 	lib/editor-common.generated
 imports 
-	context/signature
+	context/signatures
 	normalize/signatures
 	codegen/compile
 imports 	

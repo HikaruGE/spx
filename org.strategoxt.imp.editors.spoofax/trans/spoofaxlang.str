@@ -27,7 +27,7 @@ imports
 	normalize/signatures   
 imports 
 	context/scope-tree
-	context/signature
+	context/signatures
 imports	 
 	utils/cache
 	common

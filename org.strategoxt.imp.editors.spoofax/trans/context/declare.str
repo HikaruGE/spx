@@ -5,7 +5,7 @@ imports
 	context/sdf/declare-signature
 	context/str/declare
 	context/scope-tree
-	context/signature
+	context/signatures
 	normalize/signatures 
 imports 
 	include/SpoofaxLang

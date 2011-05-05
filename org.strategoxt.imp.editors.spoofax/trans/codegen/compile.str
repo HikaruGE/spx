@@ -10,7 +10,7 @@ imports
 imports 
 	analyze/main
 	context/scope-tree
-	context/signature
+	context/signatures
 	context/declare
 imports
 	common 

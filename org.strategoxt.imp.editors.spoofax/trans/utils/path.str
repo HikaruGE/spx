@@ -1,7 +1,7 @@
 module utils/path 
 imports 
 	lib/editor-common.generated 
-	context/signature
+	context/signatures
 imports
 	common
 	utils/debug
