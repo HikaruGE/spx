@@ -202,13 +202,17 @@ rules
 	
 
 rules 
-	save-artifact( | package-untyped-qname, root-directory,output-path) : 
+	save-artifact(s | package-untyped-qname, root-directory,output-path) : 
 		content -> content
 		with 
 			 <ensure-exists>(root-directory, package-untyped-qname)
-		 	;<save-to-file>(output-path , content)
+		 	;<s>(output-path , content)
 		 	;<refresh-file>output-path 
 		 	;chdir-to-project-path
+		
+	
+	save-artifact( | package-untyped-qname, root-directory,output-path) : 
+		content -> <save-artifact( save-to-file | package-untyped-qname, root-directory,output-path)>content 
 		
 		
 	
