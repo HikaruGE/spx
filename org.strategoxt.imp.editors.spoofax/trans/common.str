@@ -121,7 +121,8 @@ rules
   	 		 	 package-name   := <last>modname-part*;
   	 		 	 relative-autogen-path := <dirname>name'  
   	 		end
-	
+
+rules	
   get-qualified-spxmodulename: 
   	(namespace-name,module-name) -> result
 		where
@@ -138,15 +139,16 @@ rules
   
   get-fullyqualified-autogen-path(|extension): 
   	(project-path, base-dir,spx-modulename) -> $[[project-path]/[base-dir]/[spx-modulename].[extension]]  
-  
-  save-to-file:(fileName, fileContent) -> None()  
-      where
-          not(<eq>("", fileContent))
-      with  
-      		<debug-compiler> $[Writing to the following file : [fileName] the following content: 
+ 
+rules 
+	save-to-file:(fileName, fileContent) -> None()  
+  	where
+    	not(<eq>("", fileContent))
+    where
+    	<debug-compiler> $[Writing to the following file : [fileName] the following content: 
       							[fileContent] 
-      						 ]
-          ;handle := <fopen> (fileName, "w+")
-          ;<fputs>(fileContent , handle)
-          ;fclose
- 	 					 
+    	]
+    with
+    	filedescr := <fopen> (fileName, "w+")
+      ;<fputs>(fileContent , filedescr)
+      ;<fclose>filedescr			 
