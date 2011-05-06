@@ -128,7 +128,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   <condition property="java.jar.classpath" value=":${include}/${package.main.str.module}-java.jar" else="">
       <isset property="java.jar.enabled"/>
   </condition>
-  <available file="${package.path}/${package.main.str.module}.rtree" property="build.stratego.enabled"/>
+  <available file="${packages.root}/${package.main.str.module}.rtree" property="build.stratego.enabled"/>
   <dirname property="externaldefdir" file="${externaldef}"/>
   <condition property="externaldefimport" value="-I ${externaldefdir}" else="">
       <isset property="externaldef"/>
@@ -143,7 +143,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
       <isset property="externaljarflags"/>
   </condition>
   <condition property="metasdfmodule.available" value="1">
-      <available file="${package.path}/${metasdfmodule}.sdf"/>
+      <available file="${packages.root}/${metasdfmodule}.sdf"/>
   </condition>
     
 	<fail unless="build" message="Please use build.spx.main.xml to build this project or configure the required properties manually"/>
@@ -234,7 +234,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
         <java classname="run" failonerror="true">
             <arg value="org.strategoxt.tools.main-pack-sdf"/>
             <arg value="-i"/>
-            <arg value="${package.path}/${package.main.sdf.module}.sdf"/>
+            <arg value="${packages.root}/${package.main.sdf.module}.sdf"/>
             <arg value="-o"/>
             <arg value="${include}/${package.name}.def"/>
             <arg value="-I"/>
@@ -419,7 +419,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
 	
   <!-- Aster to Stratego -->
    <target name="stratego.aster">
-       <available file="${package.path}/${package.main.str.module}.rtree" property="aster-output.available"/>
+       <available file="${packages.root}/${package.main.str.module}.rtree" property="aster-output.available"/>
        <pathconvert property="aster-input" setonempty="false" pathsep=" ">
            <path><fileset dir="${basedir}" includes="*.astr"/></path>
        </pathconvert>
@@ -427,15 +427,15 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
            <srcfileset dir="${basedir}">
                <include name="**/*.astr"/>
            </srcfileset>
-           <targetfileset file="${package.path}/${package.main.str.module}.rtree"/>
+           <targetfileset file="${packages.root}/${package.main.str.module}.rtree"/>
        </dependset>
        <condition property="aster-output.uptodate">
            <and>
                <isset property="aster-output.available"/>
-               <available file="${package.path}/${package.main.str.module}.rtree"/>
+               <available file="${packages.root}/${package.main.str.module}.rtree"/>
            </and>
        </condition>
-       <available file="${package.path}/${package.main.str.module}.rtree" property="aster-output.uptodate"/>
+       <available file="${packages.root}/${package.main.str.module}.rtree" property="aster-output.uptodate"/>
        <antcall target="stratego.aster.helper"/>
    </target>
 
@@ -508,13 +508,13 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   	<delete file="${include}/${package.name}.rtree" failonerror="false"/>
   	<java classname="org.strategoxt.strj.Main" failonerror="true">
   		<arg value="-I"/>
-    	<arg value="${packages.root}"/>
+    	<arg value="${packages.path}"/>
   		<arg value="-i"/>
-      <arg value="${package.path}/${package.main.str.module}.str"/>
+      <arg value="${packages.root}/${package.main.str.module}.str"/>
       <arg value="-o"/>
       <arg value="${build.stratego.outputfile}"/>
   		<arg value="-p"/> 
-  	  <arg value="${package.qname}"/>
+  	  <arg value="${package.qname}"/>  <!-- TODO : after incorporating lang name in code  generation package.qname will be package.main.str.module -->
       <arg value="--library"/>
       <arg value="--clean"/>
   		<arg line="${build.stratego.args}"/>
@@ -536,8 +536,8 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
 	  <target name="sdf2imp" depends="sdf2table,sdf2imp.eclipse,sdf2imp.standalone"/>
 	        
 		<target name="sdf2imp.eclipse" if="eclipse.running" >
-			<copy file="${package.path}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.packed.esv" preservelastmodified="true"/>
-			<copy file="${package.path}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.main.esv" preservelastmodified="true"/>
+			<copy file="${packages.root}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.packed.esv" preservelastmodified="true"/>
+			<copy file="${packages.root}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.main.esv" preservelastmodified="true"/>
 			<antcall target = "refresh"/>  
 			<java classname="org.strategoxt.imp.metatooling.building.AntSpxDescriptorBuilder" failonerror="true">
 				<arg value="${include}/${package.name}.packed.esv"/> <!-- esv main file-->
@@ -547,7 +547,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   <target name="sdf2imp.standalone" unless="eclipse.running" depends="sdf2table,sdf2rtg">
 		<java classname="org.strategoxt.imp.generator.sdf2imp" failonerror="true">
 			<arg value="-i"/>
-      <arg value="${package.path}/${package.main.esv.module}.packed.esv"/>
+      <arg value="${packages.root}/${package.main.esv.module}.packed.esv"/>
       <arg value="-p"/>
       <arg value="${include}/${package.name}.tbl"/>
     </java>
