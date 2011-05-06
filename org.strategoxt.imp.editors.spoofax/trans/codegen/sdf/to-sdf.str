@@ -102,20 +102,17 @@ rules
  
  	
  	sdf-import-adapter : name  -> 	'module(unparameterized(name))
- 	where debug(!" in sdf-import-adapter: " )
  	where 
  		<is-string>name
  	
  	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
- 	where debug(!" in sdf-import-adapter : legacy : " )
  	where 
  			if(<UsedLegacyArtifacts>(Globals(), name) => Unresolved()) then
  				result := [] 
  			else 
  				result :=  'module(unparameterized(name)) 
 			end 
-	where
-		<debug(!" in sdf-import-adapter : legacy : " )> result		
+			
 
 rules
 
