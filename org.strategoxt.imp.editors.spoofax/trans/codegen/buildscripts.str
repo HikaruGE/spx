@@ -238,7 +238,9 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
             <arg value="-o"/>
             <arg value="${include}/${package.name}.def"/>
             <arg value="-I"/>
-            <arg value="${package.path}"/>
+            <arg value="${packages.root}"/>
+            <arg value="-I"/>
+            <arg value="${packages.path}"/>
             <arg value="-I"/>
             <arg value="${lib}"/>
             <arg line="${utils-include}"/>
