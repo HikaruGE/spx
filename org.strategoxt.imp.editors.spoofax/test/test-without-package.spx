@@ -8,6 +8,6 @@ module test-main
 	    "module" ID Definition*       -> Start {cons("Module")}
 	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
 	    ID ":" Type                   -> Property {cons("Property")}
-	    ID                            -> Type {cons("Type")}  
- 
+	    ID                            -> Type {cons("Type")}   
+  
  
