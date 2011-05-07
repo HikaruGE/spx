@@ -67,7 +67,14 @@ rules
 			rules( Declaration : (Type, scoped-x) -> x)
 		where
 			<debug-symboltable>$[ScopeTree|Storing Declaration [<pp-aterm>(Type, scoped-x)] -> [<pp-aterm>x]]	
-		
+	
+	store-langauge-name (| package-typed-qname ) : 
+		LanguageName(name) -> <id>
+		with 
+			<debug> $[ [<pp-aterm>package-typed-qname] has following language name : [<pp-aterm>name]]
+		with 
+			rules( DeclaredLangaugeName :+ package-typed-qname -> name)		
+
 rules 
 	get-module-abs-filepath : Module(qname) -> result
 	where 

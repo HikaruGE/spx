@@ -104,9 +104,10 @@ rules
 		  enclosing-module-name   								:=  [package-name-part*| [mod-name-string]];
 		  enclosing-module-qname   								:=  QName(enclosing-module-name) 
 		where 
-			{| EnclosingNamespace:
+			{| EnclosingNamespace, EnclosingParentNamespace:
 			  	rules(
-						EnclosingNamespace 								:= 	Module(enclosing-module-qname)  
+						EnclosingNamespace 								:= 	Module(enclosing-module-qname)
+						EnclosingParentNamespace					:= package   
 					);
 					sections' := <conc>(<reverse><bagof-PackageCommonImports>, <alltd(desugar-spx)>section*)
 					;<debug-symboltable> $[ Storing enclosing namespace : [<pp-aterm>enclosing-module-qname]]
@@ -120,7 +121,7 @@ rules
 			<store-scope-reference>(Module(enclosing-module-qname),  package);
 			<store-original-declaration(|Modules())>(enclosing-module-qname,  m) // stored original ast 
 		
-		 
+		  
 		
 	//Desugaring SDF Sections 
 	desugar-spx : SDFSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
@@ -132,8 +133,7 @@ rules
 	
 	//Desugaring ESV Sections 
 	desugar-spx : ESVSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
-	
-	
-
+		with
+			<alltd(store-langauge-name(|<EnclosingParentNamespace>))>sectionDef 
 
 			
