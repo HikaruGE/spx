@@ -20,6 +20,14 @@ imports
 	utils/debug 
 			
 rules 
+	
+	get-unique-language-name  = where(?Package(QName(_))) ; DeclaredLangaugeName
+	 
+	get-unique-language-name = where(?Package(QName(_))) ; bagof-DeclaredLangaugeName; ?[<id>]
+	
+	get-all-language-name = where(?Package(QName(_))) ; bagof-DeclaredLangaugeName	
+	
+rules 
 	// TODO refactor : reduce the duplicate codes.
 	get-package-declaration = ?package-qname; get-declaration(|Packages())
 	

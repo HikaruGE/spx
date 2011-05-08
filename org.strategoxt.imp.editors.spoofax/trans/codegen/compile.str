@@ -168,12 +168,13 @@ strategies
 		 				 [<pp-aterm-forced>list-of-package-qname* ]
 		 				 ]
 	where
-		<compile-main>list-of-package-qname*
-		;<debug-compiler>$[=========Compilation is done===============]
+		<compile-main>list-of-package-qname*;
+		<analyze-main>list-of-package-qname*;
+		<debug-compiler>$[=========Compilation is done===============]
 	where 	    
 		if Enable-Caching then 
-			<debug-compiler>$[=========Caching Semantic Problems============] 
-			;<cache-semantic-problems>()
+			<debug-compiler>$[=========Caching Semantic Problems============]; 
+			<cache-semantic-problems>()
 		end
 
 
@@ -181,7 +182,7 @@ strategies
 rules			   
 	
 	// Compiler main : Compiles provided list of packages and stores semantic problems
-	compile-main= 
+	compile-main = 
 		?list-of-package-qnames;
 		where(
 			<debug-compiler>$[Compile-main | compiling packages : [<pp-aterm>] with modules:	
@@ -202,7 +203,7 @@ rules
 		//					Use the dependency graph to first compile the depending on packages.
 		//					TODO : Optimize. Phase 2 and Phase 3 can be compiled together. 
 		;list-loop(compile-spx-package)
-		;list-loop(analyze-spx-package)
+		
 				
 				
 	//During analyze-package , just call this strategy 

@@ -20,9 +20,18 @@ imports
 imports 
 	utils/contract 	
 	spoofaxlang
+
+rules 
+	// performs static analysis and semantic checking 
+	analyze-main = 
+		?list-of-package-qnames
+		;list-loop(analyze-spx-package)
+
 	
 rules			 
-	// Analyze Semantic Errors
+	// Package specific semantic error checking 
+
+	// verify whether this package will be analyzed or not
 	should-analyze-this-package = 
 		?package-qname;
 		where(not(<AnalyzedPackage>package-qname))
@@ -41,8 +50,8 @@ rules
 			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
 		where
 				if should-analyze-this-package  then //FOR handling circular referneces   
-					{|
-						GetEnclosingPackageName:
+					<analyze>package-typed-qname;
+					{|GetEnclosingPackageName:
 							rules ( GetEnclosingPackageName      := package-typed-qname);
 							<list-loop(
 									analyze-spx-module
@@ -53,12 +62,11 @@ rules
 					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
 				)
 				<+
-				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
-				;fail
+				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ];
+				fail
 			end
-
-
-
+			
+	// Perform analysis on module definition 
 	analyze-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
 		where 
@@ -86,6 +94,7 @@ rules
 				<debug-analysis> $[Analyze| analyze-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
 			end		
 	
+
 rules
 	
 	//lookups for the analyzed problems
@@ -101,26 +110,7 @@ rules
 			<GetSemanticProblems>scope => problems 
 		where
 			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
-rules 
-	//analyzes module errors returns it as a touple of errors , warnings and infos 
-	analyze-module-semantics : m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
-	where 
-		<collect-all(module-constraint-error, conc)>m  => merrors'
-
-		
-	// analyzes module errors and appened it with the existing problems  
-	append-semantic-problems(s|unziped-issues*):  m@Module(attrb* , modname , section*)  -> semantic-problems*
-	with 
-		(merrors,mwarnings,minfos) 	:=  <s> m;
-		!unziped-issues*  =>(err, warning, info);
-		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
-	where		
-		<unzip-semantic-issuses>combined-problmes*=> semantic-problems* 
-
-      
 rules
-
-
 	/* Converts a list as following 
 	[([a1] , [b1] , [c1])
 	([a2] , [b2] , [c2])
@@ -151,44 +141,4 @@ rules
 		)
 		
 	unzip-semantic-issuse(|errors, warning, infos) : [] -> (errors, warning, infos)		
- 		
- 		
- 	
-/*
-	Idea is following . Build a scope tree as follows .
-	
-	Globals   = all the symbols from the legacy import will stored in this namespace
-	  |
-	Packages  = package consist of modules 
-		|
-	Modules		= modules consist of Sections i.e. STR Sections , SDF Sections and ESV Sections
-	
-*/	
-
-
-
-/*
-Todo: 
-	without import => make the package analysis and code generation works
-*/
-
-
-/*
-TODO : 
------------------------------------------------------------------------
-Visibility to package level : 
-Follow the nested scoping as mentioned in Language Implementation Patterns 
-
-	* Add visibility modifier such as   > Public : Visibility , Private : Visibility  , Internal : 
-	
-		Internal > internal to assembly
-		Private  > private to a concept  todo >>> will be useful to handle hiddens. Take care of hiddens in the symbol table that we are about to build. 
-		Public   > public  , everything is by default public. 
-		
-	* While creating a nested scope , anotate the tree with the extra attributes . 
-	* Import-chain > 1 => Internal Visibility 
-	
-Accessing Internal members will results in "Are you missing any reference to ..."
-
-*/	 		
  		     

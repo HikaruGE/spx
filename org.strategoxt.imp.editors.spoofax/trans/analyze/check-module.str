@@ -30,6 +30,24 @@ rules
 			where 
 				require(<bagof-DeclaredModule>module-qname => [_])
 
+
+rules 
+	//analyzes module errors returns it as a touple of errors , warnings and infos 
+	analyze-module-semantics : m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
+	where 
+		<collect-all(module-constraint-error, conc)>m  => merrors'
+
+		
+	// analyzes module errors and appened it with the existing problems  
+	append-semantic-problems(s|unziped-issues*):  m@Module(attrb* , modname , section*)  -> semantic-problems*
+	with 
+		(merrors,mwarnings,minfos) 	:=  <s> m;
+		!unziped-issues*  =>(err, warning, info);
+		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
+	where		
+		<unzip-semantic-issuses>combined-problmes*=> semantic-problems* 
+
+
 rules
 	
 	analyze: 
@@ -38,7 +56,7 @@ rules
 				 package-typed-qname := <GetEnclosingPackageName> 
 				;module-typed-qname  := <GetEnclosingModuleName>
 				<+ 
-				debug(!"ErrorChecking | Failed to create current scope.")
+				 debug(!"ErrorChecking | Failed to create current scope.")
 				;fail
 		with
 				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 

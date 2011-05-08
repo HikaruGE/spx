@@ -18,14 +18,23 @@ imports
 imports 
 	utils/contract 	
 	spoofaxlang
-	
-	
+
 rules
-	
 	package-constraint-error :
-		package-typed-qname@Package(untyped-qname) -> <id>
-			
-			 
+		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[Multple definitions of Language Name in a Package. Following definition is found : [<pp-aterm><get-all-language-name>package-typed-qname]])
+		where 
+			not(<get-unique-language-name>package-typed-qname)
+rules 
+	analyze : p@Package(untyped-name) -> <id>
+	with 
+		current-scope := p
+	where 
+		errors*   := 	<collect-all(package-constraint-error, conc)>p  ;
+		warnings* := [];
+		infos*    := []
+	where 	
+		rules
+		(
+			GetPackageSpecificSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
+		)	
 		 
-	
-	
