@@ -26,11 +26,7 @@ imports
 	normalize/main
 	normalize/signatures   
 imports 
-	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
-	context/signatures
+	context/-
 imports	 
 	utils/cache
 	common

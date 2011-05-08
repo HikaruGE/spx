@@ -18,12 +18,8 @@ imports
 	codegen/main
 	codegen/generate
 	codegen/sdf/to-name-analysis
-	
 imports	
-	context/signatures
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+	context/-
 imports	
 	normalize/signatures
 	utils/contract

@@ -7,9 +7,7 @@ imports
 	libstrc 
 	utils/debug		
 imports	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+	context/-
 imports  
 	context/sdf/declare
 	context/signatures

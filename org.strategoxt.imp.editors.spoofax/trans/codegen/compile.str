@@ -8,19 +8,14 @@ imports
 	utils/debug
 	utils/path
 imports 
-	analyze/main
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
-
-	context/signatures
-	context/declare
+	analyze/-
+	context/-
 imports
 	common 
 	config
 imports 
 	lib/editor-common.generated
-	lib/configuration/SpoofaxConfiguration 
+	lib/configuration/SpoofaxConfiguration  
 	include/SpoofaxLang
 imports	
 	codegen/generate

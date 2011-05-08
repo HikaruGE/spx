@@ -2,7 +2,7 @@ module analyze/check-module
 
 imports 
 	context/sdf/declare
-	context/scope-tree
+	context/-
 	normalize/signatures
 imports 
 	include/SpoofaxLang

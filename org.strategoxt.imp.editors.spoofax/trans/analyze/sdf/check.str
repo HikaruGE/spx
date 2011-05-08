@@ -4,9 +4,7 @@ imports
  	common
  	utils/debug
   context/sdf/declare
-  context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+  context/-
   include/SpoofaxLang
 	
 

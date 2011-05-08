@@ -11,11 +11,8 @@ imports
 	config 
 	utils/cache
 	lib/editor-common.generated
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
-	context/signatures 
-	normalize/signatures  
+	context/-
+  normalize/signatures  
 	include/spoofaxlang
 	utils/path
 imports 	

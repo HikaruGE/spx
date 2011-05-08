@@ -13,10 +13,7 @@ imports
 imports 
 	codegen/main 
 	codegen/generate
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols 
-	context/signatures
+	context/-
 imports
 	lib/editor-common.generated
 

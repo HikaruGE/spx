@@ -1,0 +1,65 @@
+module context/resolve-declarations
+
+imports
+	include/SpoofaxLang 
+	lib/editor-common.generated
+imports 
+	context/signatures
+	context/scope-tree
+  context/resolve-symbols
+  context/store-imports
+  context/resolve-annotations
+  context/resolve-types
+imports  
+  normalize/signatures
+	codegen/compile
+imports 	
+	common
+	utils/annotations
+	utils/path
+	utils/debug 
+			
+rules 
+	// TODO refactor : reduce the duplicate codes.
+	get-package-declaration = ?package-qname; get-declaration(|Packages())
+	
+	// Given a Module's Qualified Typed name , it returns the module declaration 
+	get-module-declarations = where(?Module(QName(_)));get-untyped-qname ; !(Modules() , <id>); bagof-Declared
+	
+	get-module-declaration = where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); Declared		
+	
+	get-original-module-declaration = 	where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); DeclaredOriginal
+	
+	get-module-and-verfity-unique = where(?Module(QName(_)));	get-untyped-qname ;	!(Modules() , <id>); bagof-Declared; ?[<id>]		  	
+		
+	// Given a List of Modules' Qualified Type name, it returns the list of module declaration 
+	get-module-declarations =  mapconcat(	get-module-declarations	)	<+	debug(!"Failed to get module declarations: ") ;fail
+
+	get-declaration(|ScopedSymbol)= !(ScopedSymbol, <id>); Declared
+	
+	get-enclosed-declarations(s) =?package-qname ; !Package(package-qname);	bagof-GetEnclosedScope;filter(s)
+	
+	// Get a list of Package declared in the current Project
+	// Retunrs: List of Packages' Typed-QName , i.e. , Package(QName(_))						  
+	get-package-list = all-keys-DeclaredPackage; get-typed-qnames(|PackageType())
+	
+	get-packages-of-file: file-abs-path -> result
+	with 
+		<has-extension(|"spx")>file-abs-path 
+		;<file-exists>  file-abs-path
+	where
+		<bagof-PackagesDeclaredIn>file-abs-path; get-typed-qnames(|PackageType()) => result
+	
+	// Given Typed-QName of Package, it returns list of enclosed Modules in the Package
+	// Returns:  List of Modules' Typed-QName, i.e. Module(QName(_))
+	get-enclosed-modules =  where (?Package(uqname));	bagof-GetEnclosedScope;	filter(?Module(_)) <+ debug(!"Failed to get enclosed modules: ") ;fail
+
+	// Returns a list of package/modules that <id> is depeding on. 
+	// Requires the <ID> to be untyped QName to look it up in the symbol tree.
+	// Otherwise, it throws <illegal argument exception>
+	get-all-usings =  where(?QName(_));	?package-untyped-qname; all-keys-Using;	filter(?(package-untyped-qname, _)); mapconcat(bagof-Using)	
+	
+	get-all-usings : (package-untyped-qname , module-untyped-qname) -> lstUsings*
+	where 
+		<bagof-Using>(package-untyped-qname , module-untyped-qname) => lstUsings* 			
+	

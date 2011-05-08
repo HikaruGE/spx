@@ -4,16 +4,17 @@ imports
 	lib/editor-common.generated
 imports 
 	context/signatures
-	
 	context/scope-tree
   context/resolve-symbols
-	normalize/signatures
+  context/resolve-annotations
+  context/resolve-types
+ 	normalize/signatures
 	codegen/compile
 imports 	
 	common
 	utils/annotations
 	utils/path
-	utils/debug 
+	utils/debug  
 
 rules
 	store-import-references: m@Module(attrb*,modname,section*) -> Module(attrb*,modname,resulting-section*)

@@ -17,10 +17,7 @@ imports
 	config 
 imports 
 	context/str/signature-generator
-	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols 
+	context/- 
 	spoofaxlang  
  
 

@@ -12,10 +12,7 @@ imports
   lib/sdf-parenthesize  
 imports 
 	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
-	context/signatures
+	context/-
 	context/sdf/declare
 imports
 	normalize/signatures

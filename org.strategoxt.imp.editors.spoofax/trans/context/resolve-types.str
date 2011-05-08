@@ -1,0 +1,65 @@
+module context/resolve-types
+imports
+	include/SpoofaxLang 
+	lib/editor-common.generated
+imports 
+	context/signatures
+	context/scope-tree
+  context/resolve-symbols
+  context/resolve-declarations
+  context/store-imports
+  normalize/signatures
+	codegen/compile
+imports 	
+	common
+	utils/annotations
+	utils/path
+	utils/debug 
+			
+rules
+	//TODO : better handling of Typed and Untyped QName
+	
+	//Strongly typing/untyping qname
+	get-untyped-qname : typed-qname -> u-qname
+		where
+			!typed-qname => Package(u-qname)
+			<+ 
+			 !typed-qname => Module(u-qname)
+
+	get-typed-qnames(|Type) : list-qname -> result
+		where 
+			<is-list>list-qname
+		where
+			 <map(get-typed-qname(|Type))>list-qname => result
+		
+	get-typed-qname(|Type) = 
+		?QName(q-name-parts*); where(<is-list>q-name-parts*);<get-typed-qname>(Type , <id>)
+		<+
+		<debug>$[Type| FAIL | Failed to cast  [<pp-aterm-forced>] to [<pp-aterm-forced>Type]]; fail 	
+	
+	get-typed-qname: (ModuleType() , qname) -> Module(qname)
+	
+	get-typed-qname: (PackageType() , qname) -> Package(qname)
+
+	get-module-typed-qname: (Package(QName(package-qname-parts*)), spxmodulename) -> <get-typed-qname(|ModuleType())> <get-module-untyped-qname>(QName(package-qname-parts*), spxmodulename)
+	
+	get-module-typed-qname: (QName(package-qname-parts*), spxmodulename) -> <get-typed-qname(|ModuleType())>(<get-module-untyped-qname><id>)
+		  
+	get-module-untyped-qname: 
+		p@(package-qname-parts*, spxmodulename) ->QName(<conc>( package-qname-parts* , [modname]))
+		 where 
+		 	<is-list>package-qname-parts* 	
+		 where 
+				if <is-string>spxmodulename then 
+		 			modname := spxmodulename
+		 		else
+		 			!spxmodulename => SPXModuleName(modname-string);
+		 			 modname := modname-string 
+		 			<+ 
+		 			debug(!"Type| Illegal <spxmodulename> argument in get-module-untyped-qname ");fail
+				end		 				
+			<+
+				<debug>$[Type| FAIL |get-module-untyped-qname failed to cast  [<pp-aterm-forced>p] to [<pp-aterm-forced>ModuleType()]]; fail 	
+
+	get-module-untyped-qname: (QName(package-qname-parts*), spxmodulename) -> <get-module-untyped-qname>(package-qname-parts*, spxmodulename)
+	 					

@@ -7,9 +7,7 @@ imports
 imports
 	common
 imports	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+	context/-
 imports  
 	context/signatures 
 	normalize/signatures

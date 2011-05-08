@@ -2,10 +2,7 @@ module analyze/main
 
 imports 
 	context/sdf/declare
-	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+	context/-
 	normalize/signatures
 imports 
 	include/SpoofaxLang

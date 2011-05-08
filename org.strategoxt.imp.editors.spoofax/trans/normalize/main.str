@@ -16,12 +16,8 @@ imports
 	common
 	config
 imports 
+	context/-
 	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
-	context/signatures	
- 
 //TODO FIX : 
 // Design issues : 
 //		Package Common Imports are only for the current spx file at this moment

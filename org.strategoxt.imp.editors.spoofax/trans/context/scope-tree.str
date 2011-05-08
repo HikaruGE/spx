@@ -1,17 +1,12 @@
 module context/scope-tree
 imports
 	include/SpoofaxLang 
-	lib/editor-common.generated
 imports 
-	context/signatures
-	context/store-imports
+	context/signatures 
 	context/resolve-symbols
 	normalize/signatures
-	codegen/compile
 imports 	
 	common
-	utils/annotations
-	utils/path
 	utils/debug 
 
 	
@@ -80,111 +75,5 @@ rules
 			<debug> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language name : [<pp-aterm>name]]
 		with 
 			rules( DeclaredLangaugeName :+ package-typed-qname -> name)		
-
-
-			
-rules 
-	// TODO refactor : reduce the duplicate codes.
-	get-package-declaration = ?package-qname; get-declaration(|Packages())
-	
-	// Given a Module's Qualified Typed name , it returns the module declaration 
-	get-module-declarations = where(?Module(QName(_)));get-untyped-qname ; !(Modules() , <id>); bagof-Declared
-	
-	get-module-declaration = where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); Declared		
-	
-	get-original-module-declaration = 	where(?Module(QName(_)));	get-untyped-qname ; !(Modules() , <id>); DeclaredOriginal
-	
-	get-module-and-verfity-unique = where(?Module(QName(_)));	get-untyped-qname ;	!(Modules() , <id>); bagof-Declared; ?[<id>]		  	
-		
-	// Given a List of Modules' Qualified Type name, it returns the list of module declaration 
-	get-module-declarations =  mapconcat(	get-module-declarations	)	<+	debug(!"Failed to get module declarations: ") ;fail
-
-	get-declaration(|ScopedSymbol)= !(ScopedSymbol, <id>); Declared
-	
-	get-enclosed-declarations(s) =?package-qname ; !Package(package-qname);	bagof-GetEnclosedScope;filter(s)
-	
-	// Get a list of Package declared in the current Project
-	// Retunrs: List of Packages' Typed-QName , i.e. , Package(QName(_))						  
-	get-package-list = all-keys-DeclaredPackage; get-typed-qnames(|PackageType())
-	
-	get-packages-of-file: file-abs-path -> result
-	with 
-		<has-extension(|"spx")>file-abs-path 
-		;<file-exists>  file-abs-path
-	where
-		<bagof-PackagesDeclaredIn>file-abs-path; get-typed-qnames(|PackageType()) => result
-	
-	// Given Typed-QName of Package, it returns list of enclosed Modules in the Package
-	// Returns:  List of Modules' Typed-QName, i.e. Module(QName(_))
-	get-enclosed-modules =  where (?Package(uqname));	bagof-GetEnclosedScope;	filter(?Module(_)) <+ debug(!"Failed to get enclosed modules: ") ;fail
-
-	// Returns a list of package/modules that <id> is depeding on. 
-	// Requires the <ID> to be untyped QName to look it up in the symbol tree.
-	// Otherwise, it throws <illegal argument exception>
-	get-all-usings =  where(?QName(_));	?package-untyped-qname; all-keys-Using;	filter(?(package-untyped-qname, _)); mapconcat(bagof-Using)	
-	
-	get-all-usings : (package-untyped-qname , module-untyped-qname) -> lstUsings*
-	where 
-		<bagof-Using>(package-untyped-qname , module-untyped-qname) => lstUsings* 			
-
-rules
-	//TODO : better handling of Typed and Untyped QName
-	
-	//Strongly typing/untyping qname
-	get-untyped-qname : typed-qname -> u-qname
-		where
-			!typed-qname => Package(u-qname)
-			<+ 
-			 !typed-qname => Module(u-qname)
-
-	get-typed-qnames(|Type) : list-qname -> result
-		where 
-			<is-list>list-qname
-		where
-			 <map(get-typed-qname(|Type))>list-qname => result
-		
-	get-typed-qname(|Type) = 
-		?QName(q-name-parts*); where(<is-list>q-name-parts*);<get-typed-qname>(Type , <id>)
-		<+
-		<debug>$[Type| FAIL | Failed to cast  [<pp-aterm-forced>] to [<pp-aterm-forced>Type]]; fail 	
-	
-	get-typed-qname: (ModuleType() , qname) -> Module(qname)
-	
-	get-typed-qname: (PackageType() , qname) -> Package(qname)
-
-	get-module-typed-qname: (Package(QName(package-qname-parts*)), spxmodulename) -> <get-typed-qname(|ModuleType())> <get-module-untyped-qname>(QName(package-qname-parts*), spxmodulename)
-	
-	get-module-typed-qname: (QName(package-qname-parts*), spxmodulename) -> <get-typed-qname(|ModuleType())>(<get-module-untyped-qname><id>)
-		  
-	get-module-untyped-qname: 
-		p@(package-qname-parts*, spxmodulename) ->QName(<conc>( package-qname-parts* , [modname]))
-		 where 
-		 	<is-list>package-qname-parts* 	
-		 where 
-				if <is-string>spxmodulename then 
-		 			modname := spxmodulename
-		 		else
-		 			!spxmodulename => SPXModuleName(modname-string);
-		 			 modname := modname-string 
-		 			<+ 
-		 			debug(!"Type| Illegal <spxmodulename> argument in get-module-untyped-qname ");fail
-				end		 				
-			<+
-				<debug>$[Type| FAIL |get-module-untyped-qname failed to cast  [<pp-aterm-forced>p] to [<pp-aterm-forced>ModuleType()]]; fail 	
-
-	get-module-untyped-qname: (QName(package-qname-parts*), spxmodulename) -> <get-module-untyped-qname>(package-qname-parts*, spxmodulename)
-	 					
-strategies
-	
-	// Returns matching strategy for looking up package annotations
-	get-package-annotation = ?Package(qname)
-	
-	// Returns matching strategy for looking up package annotations
-	get-module-annotation = ?Module(qname)
-	
-	
-	// Returns matching strategy for looking up Unresolved symbol annotations
-	get-unresolved-symbol-annotation = ?Unresolved()
-	
 	
 	 		 		

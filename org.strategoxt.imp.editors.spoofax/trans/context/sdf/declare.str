@@ -4,10 +4,7 @@ imports
   lib/editor-common.generated
 	include/SpoofaxLang
 imports 
-	
-	context/scope-tree
-  context/store-imports
-  context/resolve-symbols
+	context/-
 	analyze/main
 	normalize/signatures	
 imports
