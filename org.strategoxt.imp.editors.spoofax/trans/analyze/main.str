@@ -16,6 +16,8 @@ imports
 	analyze/str/check 
 	analyze/check-module
 	analyze/check-package
+	analyze/check-project
+imports	
 	lib/editor-common.generated
 imports 
 	utils/cache
@@ -27,7 +29,8 @@ rules
 	// performs static analysis and semantic checking 
 	analyze-main = 
 		?list-of-package-qnames
-		;list-loop(analyze-spx-package)
+		;<analyze-global>()
+		;<list-loop(analyze-spx-package)>list-of-package-qnames
 
 	
 rules	// Package specific semantic error checking 
