@@ -1,25 +1,26 @@
 module context/sdf/declare
-
 imports 
 	libstratego-sdf
   lib/editor-common.generated
 	include/SpoofaxLang
 imports 
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+	analyze/main
 	normalize/signatures	
 imports
 	common
 	utils/debug
 	utils/annotations
 imports  
-	context/sdf/declare-signature	
-
+	context/sdf/declare-signature
 imports 
 	libstratego-sdf
   lib/editor-common.generated
 	include/SpoofaxLang
-	context/scope-tree
-
+ 
 rules 
 	resolve-sdf-declaration = 
  		?symbol; 

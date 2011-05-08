@@ -15,17 +15,17 @@ imports
 imports 
 	common
 	config
-	
 imports 
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	context/signatures	
  
-//FIX : 
+//TODO FIX : 
 // Design issues : 
 //		Package Common Imports are only for the current spx file at this moment
 //		It could be kept as it is or make it common in the whole package. 
- 
-
 strategies		
 	nomalize-all = desugar-compilationa-unit
 
@@ -65,7 +65,7 @@ rules
 		
 	desugar-spx-package:	
 		p@Package(package-qname , modules* ) -> modifiedPackageDescription
-		with 
+		with
 			!package-qname => QName(_);
 				<debug-compiler>$[Desugaring Packages [<pp-aterm>package-qname]]
 		with
@@ -95,7 +95,6 @@ rules
 		m@Module(attrb* , modname , section*) -> modifiedModuleDescription
 		with 
 			<debug-compiler>$[Desugaring Modules : [<pp-aterm>modname]]
-			
 		where
 			EnclosingNamespace      								=>  package;
 			modname-with-annotation 					      :=  <add-annotation(|package)>modname;
@@ -120,9 +119,7 @@ rules
 			<store-declaration(|Modules())>(enclosing-module-qname,  modifiedModuleDescription);
 			<store-scope-reference>(Module(enclosing-module-qname),  package);
 			<store-original-declaration(|Modules())>(enclosing-module-qname,  m) // stored original ast 
-		
-		  
-		
+
 	//Desugaring SDF Sections 
 	desugar-spx : SDFSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
 	

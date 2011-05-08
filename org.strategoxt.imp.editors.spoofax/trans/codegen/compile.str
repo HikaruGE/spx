@@ -10,6 +10,9 @@ imports
 imports 
 	analyze/main
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+
 	context/signatures
 	context/declare
 imports

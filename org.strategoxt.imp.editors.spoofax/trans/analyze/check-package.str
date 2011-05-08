@@ -1,0 +1,33 @@
+module analyze/check-package 
+
+imports 
+	context/sdf/declare
+	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+	normalize/signatures
+imports 
+	include/SpoofaxLang
+imports
+	common
+	utils/annotations
+	utils/debug	
+imports 
+	analyze/sdf/check 
+	analyze/esv/check
+	analyze/str/check 
+	lib/editor-common.generated
+imports 
+	utils/contract 	
+	spoofaxlang
+	
+	
+rules
+	
+	package-constraint-error :
+		package-typed-qname@Package(untyped-qname) -> <id>
+			
+			 
+		 
+	
+	

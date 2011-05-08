@@ -4,7 +4,10 @@ imports
 	context/sdf/declare
 	context/sdf/declare-signature
 	context/str/declare
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	context/signatures
 	normalize/signatures 
 imports 
@@ -62,7 +65,7 @@ rules
 	
 	declare-esv-section: STRSection(def*) -> <id>
  
-	declare-esv-section: ESVSection(def*) -> <id>
+	declare-esv-section: ESVSection(def*) -> <id> 
 	
 	
 	

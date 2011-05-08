@@ -11,7 +11,10 @@ imports
   lib/sdf-desugar
   lib/sdf-parenthesize  
 imports 
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	context/signatures
 	context/sdf/declare
 imports

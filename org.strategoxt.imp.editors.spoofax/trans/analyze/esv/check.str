@@ -6,9 +6,12 @@ imports
 imports 
 	utils/debug
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+
 imports
   include/SpoofaxLang
-
+ 
 // TODO: warn about multi-char highlighted brackets
 // TODO: check if provider/imported/etc. files exist
 // TODO: check if there is _any_ provider for observer etc.

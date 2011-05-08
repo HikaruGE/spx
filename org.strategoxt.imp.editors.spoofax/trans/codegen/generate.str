@@ -15,7 +15,10 @@ imports
 	lib/editor-common.generated
 	include/spoofaxlang
 imports	
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	context/signatures
 	normalize/signatures
 imports 	

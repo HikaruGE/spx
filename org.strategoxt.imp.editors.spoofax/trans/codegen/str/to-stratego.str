@@ -22,6 +22,8 @@ imports
 imports	
 	context/signatures
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 imports	
 	normalize/signatures
 	utils/contract

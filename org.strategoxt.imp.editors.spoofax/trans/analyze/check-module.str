@@ -1,0 +1,111 @@
+module analyze/check-module
+
+imports 
+	context/sdf/declare
+	context/scope-tree
+	normalize/signatures
+imports 
+	include/SpoofaxLang
+imports
+	common
+	utils/annotations
+	utils/debug	
+imports 
+	analyze/sdf/check 
+	analyze/esv/check
+	analyze/str/check 
+	analyze/main
+	lib/editor-common.generated
+imports 
+	utils/contract 	
+	spoofaxlang
+
+rules	
+	//module specific semantic error checking 	
+	module-constraint-error : 
+		Module(attrb* , s@SPXModuleName(modname) , section*) -> (modname, $[Multiple declaration of module '[modname]' ])
+			with
+				package-typed-qname := <get-annotation(get-package-annotation)> s
+				;Module(module-qname)  := <get-module-typed-qname>(package-typed-qname, s)
+			where 
+				require(<bagof-DeclaredModule>module-qname => [_])
+
+rules
+	
+	analyze: 
+		m@Module(attrb* , modname , section*) -> m
+		with
+				 package-typed-qname := <GetEnclosingPackageName> 
+				;module-typed-qname  := <GetEnclosingModuleName>
+				<+ 
+				debug(!"ErrorChecking | Failed to create current scope.")
+				;fail
+		with
+				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 
+				;issues* := <map(analyze-section)>section*
+				;unziped-issues* := <unzip-semantic-issuses>issues*
+		where		 
+				<append-semantic-problems(analyze-module-semantics|unziped-issues*)> m  => unziped-issues'*
+				;current-scope := (package-typed-qname ,module-typed-qname)
+				;rules(
+						GetSemanticProblems :  current-scope  ->unziped-issues'*  
+				)	
+		where
+			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
+			Problems :[<pp-aterm-forced> unziped-issues*]]
+							
+rules 
+			 
+	analyze-section = 
+		where(not(?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
+		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
+		;!([], [], [])		
+
+	analyze-section: 
+			SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
+	
+	analyze-section: 
+			SDFSection(ast) -> <analyze-sdf-errors>ast 
+			where
+				<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+    	with
+	      // We only collect-om since we don't want inner warning dupes
+	      error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+	      warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+	      if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
+	        serror* := []
+	      else
+	        serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+	      end;
+	      error'*   := <conc;flatten-list> (serror*, error*);
+	      warning'* := <flatten-list> warning*
+	
+	analyze-sdf-errors : ast -> (error'*, warning'*, [])
+	where
+		<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+	with
+    // We only collect-om since we don't want inner warning dupes
+    error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+    warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
+      serror* := []
+    else
+      serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+    end;
+    error'*   := <conc;flatten-list> (serror*, error*);
+    warning'* := <flatten-list> warning*
+	       
+  analyze-section: 
+		ESVSection(ast) -> (error-esv*, [], [])
+  	where
+  		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
+		where
+  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+      	
+  analyze-section: 
+		STRSection(ast) -> ( errors, warnings, [])
+		where
+  		<debug-analysis>$[ErrorChecking | STR Section : [<pp-aterm>]]
+		with
+    	errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
+      warnings := <collect-all(constraint-warning, conc)> ast

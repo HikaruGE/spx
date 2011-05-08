@@ -6,7 +6,11 @@ imports
 	utils/debug
 imports
 	common
+imports	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+imports  
 	context/signatures 
 	normalize/signatures
 	utils/contract

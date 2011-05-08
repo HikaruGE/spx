@@ -9,7 +9,10 @@ imports
 imports 
 	codegen/compile
 	utils/cache
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	
 rules 
 	//Intregation Test of the compile-all is working as expected 

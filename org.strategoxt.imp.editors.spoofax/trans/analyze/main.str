@@ -2,7 +2,10 @@ module analyze/main
 
 imports 
 	context/sdf/declare
+	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
 	normalize/signatures
 imports 
 	include/SpoofaxLang
@@ -14,38 +17,41 @@ imports
 	analyze/sdf/check 
 	analyze/esv/check
 	analyze/str/check 
+	analyze/check-module
+	analyze/check-package
 	lib/editor-common.generated
 imports 
 	utils/contract 	
 	spoofaxlang
 	
-rules			// Analyze Semantic Errors 
-			
+rules			 
+	// Analyze Semantic Errors
 	should-analyze-this-package = 
 		?package-qname;
 		where(not(<AnalyzedPackage>package-qname))
-		
-
+	
+	// Fails if there is any semantic problems 
 	fail-if-has-errors : problems@(errors, warning, infos*) -> problems
 		where 
 			if not(!errors => []) then 
 		 		fail	
 		 	end		 	 	
 
-
+	// Analyzes SPX packages. 
 	analyze-spx-package: 
 		package-typed-qname@Package(untyped-qname) -> <id>
 		where 
 			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
 		where
-			if should-analyze-this-package  then //FOR handling circular referneces   
-				{|GetEnclosingPackageName:
-						rules ( GetEnclosingPackageName      := package-typed-qname);
-						<list-loop(
-								analyze-spx-module
-							)
-						><get-enclosed-modules>package-typed-qname
-				|};		
+				if should-analyze-this-package  then //FOR handling circular referneces   
+					{|
+						GetEnclosingPackageName:
+							rules ( GetEnclosingPackageName      := package-typed-qname);
+							<list-loop(
+									analyze-spx-module
+								)
+							><get-enclosed-modules>package-typed-qname
+					|};		
 				where(
 					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
 				)
@@ -53,6 +59,7 @@ rules			// Analyze Semantic Errors
 				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
 				;fail
 			end
+
 
 
 	analyze-spx-module: 
@@ -71,7 +78,7 @@ rules			// Analyze Semantic Errors
 				|};
 				module-abs-path := <DeclaredModule>untyped-qname;
 				where(rules(
-					AnalyzedModule:     module-typed-qname -> module-typed-qname
+					AnalyzedModule:     module-typed-qname -> module-typed-qname 
 					AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
 					)
 				)
@@ -97,16 +104,6 @@ rules
 			<GetSemanticProblems>scope => problems 
 		where
 			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
-
-rules	
-	//module specific semantic error checking 	
-	module-constraint-error : 
-		Module(attrb* , s@SPXModuleName(modname) , section*) -> (modname, $[Multiple declaration of module '[modname]' ])
-			with
-				package-typed-qname := <get-annotation(get-package-annotation)> s
-				;Module(module-qname)  := <get-module-typed-qname>(package-typed-qname, s)
-			where 
-				require(<bagof-DeclaredModule>module-qname => [_])
 rules 
 	//analyzes module errors returns it as a touple of errors , warnings and infos 
 	analyze-module-semantics : m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
@@ -122,86 +119,7 @@ rules
 		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
 	where		
 		<unzip-semantic-issuses>combined-problmes*=> semantic-problems* 
-		
-rules
-	
-	analyze: 
-		m@Module(attrb* , modname , section*) -> m
-		with
-				 package-typed-qname := <GetEnclosingPackageName> 
-				;module-typed-qname  := <GetEnclosingModuleName>
-				<+ 
-				debug(!"ErrorChecking | Failed to create current scope.")
-				;fail
-		with
-				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 
-				;issues* := <map(analyze-section)>section*
-				;unziped-issues* := <unzip-semantic-issuses>issues*
-		where		 
-				<append-semantic-problems(analyze-module-semantics|unziped-issues*)> m  => unziped-issues'*
-				;current-scope := (package-typed-qname ,module-typed-qname)
-				;rules(
-						GetSemanticProblems :  current-scope  ->unziped-issues'*  
-				)	
-		where
-			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
-			Problems :[<pp-aterm-forced> unziped-issues*]]
-							
-rules 
-			 
-	analyze-section = 
-		where(not(?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
-		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
-		;!([], [], [])		
 
-	analyze-section: 
-			SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
-	
-	analyze-section: 
-			SDFSection(ast) -> <analyze-sdf-errors>ast 
-			where
-				<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
-    	with
-	      // We only collect-om since we don't want inner warning dupes
-	      error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
-	      warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
-	      if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
-	        serror* := []
-	      else
-	        serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
-	      end;
-	      error'*   := <conc;flatten-list> (serror*, error*);
-	      warning'* := <flatten-list> warning*
-	
-	analyze-sdf-errors : ast -> (error'*, warning'*, [])
-	where
-		<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
-	with
-    // We only collect-om since we don't want inner warning dupes
-    error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
-    warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
-    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
-      serror* := []
-    else
-      serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
-    end;
-    error'*   := <conc;flatten-list> (serror*, error*);
-    warning'* := <flatten-list> warning*
-	       
-  analyze-section: 
-		ESVSection(ast) -> (error-esv*, [], [])
-  	where
-  		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
-		where
-  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast
-      	
-  analyze-section: 
-		STRSection(ast) -> ( errors, warnings, [])
-		where
-  		<debug-analysis>$[ErrorChecking | STR Section : [<pp-aterm>]]
-		with
-    	errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
-      warnings := <collect-all(constraint-warning, conc)> ast
       
 rules
 

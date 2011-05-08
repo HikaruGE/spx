@@ -6,8 +6,11 @@ imports
 	common
 	libstrc 
 	utils/debug		
-imports 
+imports	
 	context/scope-tree
+  context/store-imports
+  context/resolve-symbols
+imports  
 	context/sdf/declare
 	context/signatures
 	codegen/sdf/to-name-analysis
