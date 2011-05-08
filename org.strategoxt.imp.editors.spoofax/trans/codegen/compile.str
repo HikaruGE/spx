@@ -1,18 +1,15 @@
 module codegen/compile
 
 imports 
-	normalize/main
-	normalize/signatures 
-imports 
-	utils/cache 
+	normalize/- 
 	utils/debug
+	utils/cache
 	utils/path
-imports 
 	analyze/-
 	context/-
 imports
 	common 
-	config
+	config 
 imports 
 	lib/editor-common.generated
 	lib/configuration/SpoofaxConfiguration  
@@ -53,7 +50,7 @@ rules			// Starting a new compilation session
 							s;	
 				      ?x
 				    ); !x
-			|}
+			|} 
 
 
 rules 	// Compiler initialization 
@@ -153,7 +150,8 @@ strategies
 				;<compile-internal>list-of-package-qname 
 				;<debug-compiler>$[=========Getting list of errors============] 
 				;<get-semantic-problmes-by-file>file-abs-path => issues* 
-			) //find out the semantic errors  
+			) 
+			//find out the semantic errors  
 			//;disable-compiler-debugging
 		where
 			if not(<fail-if-has-errors>issues*) then  
@@ -360,36 +358,3 @@ rules
 		<+ 
 		<debug-compiler>$[resolve-package-references | Failed to resolve package referneces:[<pp-aterm>]];fail
 		
-	
-rules			// Caching Resulting Semantic Errors 	
-
-	cache-semantic-problems: () -> ()
-	where
-		all-keys-AnalyzedModulesDeclaredIn => list-file*;
-	 	<map(store-semantic-problmes)> list-file*
-	
-	store-semantic-problmes : filepath -> filepath
-	where
-		<debug-compiler>$[Caching | caching semantic issues : [<pp-aterm>]]
-	where 
-		<get-semantic-problmes-by-file> filepath=> problmes-to-save*
-	where
-		<debug-compiler>$[Caching | Saving problems: [<pp-aterm>problmes-to-save*]];
-		<cache-semantic-issues>( filepath , problmes-to-save*)
-	
-	get-semantic-problmes-by-file : file-abs-path -> problems*
-		where 
-			<bagof-AnalyzedModulesDeclaredIn>file-abs-path=> list-of-modules*;
-			<map(get-semantic-problmes-by-module)>list-of-modules*  => problmes-zipped* ;  
-			<unzip-semantic-issuses>problmes-zipped* => problems*
-		
-	get-semantic-problmes-by-module : module-typed-qname -> problems
-	where
-			<debug-compiler>$[Caching | Caching semantic issues for module [<pp-aterm>]]
-	where
-		<GetEnclosingScope> module-typed-qname => package-typed-qname;
-		<get-analyzed-problems-of> (package-typed-qname,module-typed-qname)=>problems
-	<+
-		problems := ([] , [] , [])
-	where
-		<debug-compiler>$[Caching | Found Problems for this module : [<pp-aterm>problems]]	

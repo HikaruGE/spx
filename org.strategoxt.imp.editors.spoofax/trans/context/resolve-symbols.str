@@ -11,7 +11,7 @@ imports
 	normalize/signatures
 	codegen/compile 
 imports 	 
-	common
+	common 
 	utils/annotations
 	utils/path
 	utils/debug
@@ -51,10 +51,6 @@ rules
 	remove-scope-from-symbol = ?(_,_, <id>) + ?(Globals(), <id>)
 
 rules
-	
-	//After ensuring result is unique i.e. list contains only one element, it returns the unique result
-	ensure-is-unique = ?[<id>] <+ debug(!"SymbolTable| Failed to resolve unique declaration.");fail
-	
 	//resolving symbol in global scope and returing list of result	
 	resolve-symbol-global-declarations(key-resolver, value-resolver)= 
 		?symbol; // NOTE : symbol does not contain any scope information
@@ -166,6 +162,5 @@ rules
 			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> ( symbol, rest*)
 	
 	
-	// Verifies tha tthe current term is not a empty list 
-	is-not-empty-list = ?[_|_] 
+
 			 

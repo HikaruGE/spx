@@ -18,7 +18,9 @@ imports
 	analyze/check-package
 	lib/editor-common.generated
 imports 
-	utils/contract 	
+	utils/cache
+	utils/debug
+	utils/contract
 	spoofaxlang
 
 rules 
@@ -28,8 +30,7 @@ rules
 		;list-loop(analyze-spx-package)
 
 	
-rules			 
-	// Package specific semantic error checking 
+rules	// Package specific semantic error checking 
 
 	// verify whether this package will be analyzed or not
 	should-analyze-this-package = 
@@ -50,9 +51,9 @@ rules
 			<debug-analysis> $[Analyze| Analyze-spx-package| Planning to Analyze : [<pp-aterm>]] 
 		where
 				if should-analyze-this-package  then //FOR handling circular referneces   
-					<analyze>package-typed-qname;
 					{|GetEnclosingPackageName:
 							rules ( GetEnclosingPackageName      := package-typed-qname);
+							<analyze>package-typed-qname;
 							<list-loop(
 									analyze-spx-module
 								)
@@ -82,9 +83,10 @@ rules
 						 )>module-decl*
 				|};
 				module-abs-path := <DeclaredModule>untyped-qname;
-				where(rules(
-					AnalyzedModule:     module-typed-qname -> module-typed-qname 
-					AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
+				where(
+					rules(
+						AnalyzedModule:     module-typed-qname -> module-typed-qname 
+						AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
 					)
 				)
 				<+
@@ -107,9 +109,21 @@ rules
 					contract-requires(?Module(QName(_))  |module-typed-qname)
 			)	
 		where
-			<GetSemanticProblems>scope => problems 
+			<GetSemanticProblems>scope 							=> problems-module-level;
+			<GetSemanticProblems>package-typed-qname => problems-package-level;
+			problems := <merge-semantic-problems> ( problems-package-level , problems-module-level) 
 		where
 			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
+		
+	merge-semantic-problems : (unziped-issues1 , unzipped-issues2)-> semantic-problems*
+	with 
+		!unziped-issues1  =>(merrors,mwarnings,minfos);
+		!unzipped-issues2 =>(err, warning, info);
+		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
+	where		
+		<unzip-semantic-issuses>combined-problmes* => semantic-problems* 
+
+
 rules
 	/* Converts a list as following 
 	[([a1] , [b1] , [c1])
@@ -141,4 +155,38 @@ rules
 		)
 		
 	unzip-semantic-issuse(|errors, warning, infos) : [] -> (errors, warning, infos)		
+
+	
+rules			// Caching Resulting Semantic Errors 	
+
+	cache-semantic-problems: () -> ()
+	where
+		all-keys-AnalyzedModulesDeclaredIn => list-file*;
+	 	<map(store-semantic-problmes)> list-file*
+	
+	store-semantic-problmes : filepath -> filepath
+	where
+		<debug-compiler>$[Caching | Caching semantic issues : [<pp-aterm>]]
+	where 
+		<get-semantic-problmes-by-file> filepath=> problmes-to-save*
+	where
+		<debug-compiler>$[Caching | Saving problems: [<pp-aterm>problmes-to-save*]];
+		<cache-semantic-issues>( filepath , problmes-to-save*)
+	
+	get-semantic-problmes-by-file : file-abs-path -> problems*
+		where 
+			<bagof-AnalyzedModulesDeclaredIn>file-abs-path=> list-of-modules*;
+			<map(get-semantic-problmes-by-module)>list-of-modules*  => problmes-zipped* ;  
+			<unzip-semantic-issuses>problmes-zipped* => problems*
+		
+	get-semantic-problmes-by-module : module-typed-qname -> problems
+	where
+			<debug-compiler>$[Caching | Caching semantic issues for module [<pp-aterm>]]
+	where
+		<GetEnclosingScope> module-typed-qname => package-typed-qname;
+		<get-analyzed-problems-of> (package-typed-qname,module-typed-qname)=>problems
+	<+
+		problems := ([] , [] , [])
+	where
+		<debug-compiler>$[Caching | Found Problems for this module : [<pp-aterm>problems]]	
  		     

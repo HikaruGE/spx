@@ -26,7 +26,16 @@ strategies
 
 strategies
 	/*internal*/ require(s) = not(s)
-		
+
+strategies 
+	
+	//After ensuring result is unique i.e. list contains only one element, it returns the unique result
+	ensure-is-unique = ?[<id>] <+ debug(!"SymbolTable| Failed to resolve unique declaration.");fail
+	
+	// Verifies that the current term is not a empty list 
+	is-not-empty-list = ?[_|_] 
+	
+			
 rules
  	
  	/**

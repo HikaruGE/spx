@@ -41,13 +41,8 @@ rules
 	// analyzes module errors and appened it with the existing problems  
 	append-semantic-problems(s|unziped-issues*):  m@Module(attrb* , modname , section*)  -> semantic-problems*
 	with 
-		(merrors,mwarnings,minfos) 	:=  <s> m;
-		!unziped-issues*  =>(err, warning, info);
-		combined-problmes* := [(merrors,mwarnings,minfos),(err, warning, info)]
-	where		
-		<unzip-semantic-issuses>combined-problmes*=> semantic-problems* 
-
-
+		<merge-semantic-problems>( <s> m , unziped-issues*) => semantic-problems*
+		
 rules
 	
 	analyze: 

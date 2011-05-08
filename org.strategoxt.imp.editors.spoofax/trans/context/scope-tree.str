@@ -72,8 +72,9 @@ rules
 	store-langauge-name (| package-typed-qname ) : 
 		LanguageName(name) -> <id>
 		with 
-			<debug> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language name : [<pp-aterm>name]]
-		with 
-			rules( DeclaredLangaugeName :+ package-typed-qname -> name)		
+			rules( DeclaredLangaugeName :+ package-typed-qname -> name)
+		where
+			<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language name : [<pp-aterm>name]]
+				
 	
 	 		 		

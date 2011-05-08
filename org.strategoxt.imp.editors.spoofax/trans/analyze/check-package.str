@@ -20,21 +20,30 @@ imports
 	spoofaxlang
 
 rules
-	package-constraint-error :
-		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[Multple definitions of Language Name in a Package. Following definition is found : [<pp-aterm><get-all-language-name>package-typed-qname]])
+	package-constraint-warning :
+		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[No definitions of Language Name in the Package. Hence, this package will be considered as a langauge library only.])
 		where 
-			not(<get-unique-language-name>package-typed-qname)
+			not(<get-language-name>package-typed-qname)
+	
+	package-constraint-error :
+		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<pp-aterm>configure-lang-names]])
+		where 
+			<get-all-language-name>package-typed-qname => configure-lang-names;
+			is-not-empty-list;
+			not(ensure-is-unique)
+			
+			
 rules 
 	analyze : p@Package(untyped-name) -> <id>
 	with 
 		current-scope := p
 	where 
 		errors*   := 	<collect-all(package-constraint-error, conc)>p  ;
-		warnings* := [];
+		warnings* := <collect-all(package-constraint-warning, conc)>p  ;
 		infos*    := []
 	where 	
 		rules
 		(
-			GetPackageSpecificSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
-		)	
+			GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
+		)
 		 

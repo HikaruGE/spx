@@ -21,7 +21,7 @@ imports
 			
 rules 
 	
-	get-unique-language-name  = where(?Package(QName(_))) ; DeclaredLangaugeName
+	get-language-name  = where(?Package(QName(_))) ; DeclaredLangaugeName
 	 
 	get-unique-language-name = where(?Package(QName(_))) ; bagof-DeclaredLangaugeName; ?[<id>]
 	
