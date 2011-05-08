@@ -3,6 +3,7 @@ module analyze/esv/check
 imports
 	common
 	context/sdf/declare
+
 imports 
 	utils/debug
 	context/-
@@ -37,4 +38,11 @@ rules
     where
       not(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
    		
-   		 
+   constraint-esv-error: 
+   	LanguageName( name ) -> (name, $[ Duplicate declaration of language name. Declared in following packages : [<pp-aterm>packages*]])
+   	where
+   		<get-languagename-declaration-sites> name =>packages*;
+   			is-not-empty-list;
+				not(ensure-is-unique)
+   		
+   	 		 

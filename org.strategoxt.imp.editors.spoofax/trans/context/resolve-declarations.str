@@ -23,9 +23,14 @@ rules
 	
 	get-language-name  = where(?Package(QName(_))) ; DeclaredLangaugeName
 	 
-	get-unique-language-name = where(?Package(QName(_))) ; bagof-DeclaredLangaugeName; ?[<id>]
+	get-unique-language-name = get-all-language-name; ?[<id>]
 	
 	get-all-language-name = where(?Package(QName(_))) ; bagof-DeclaredLangaugeName	
+	
+	get-languagename-declaration-sites = where (is-string) ; bagof-DeclaredLangaugeNameInScope
+	
+	get-languagename-unique-declaration-site = get-languagename-declaration-sites ; ?[<id>]  
+	
 	
 rules 
 	// TODO refactor : reduce the duplicate codes.
