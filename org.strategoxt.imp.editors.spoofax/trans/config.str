@@ -157,7 +157,7 @@ rules
 	parse-spoofaxconfiguration-file =
     parse-file(
       strsglr-perror, strsglr-report-parse-error
-    | <import-term(lib/configuration/SpoofaxConfiguration.tbl)>
+    | <import-term(lib/Configuration/SpoofaxConfiguration.tbl)>
     )
 	
 	//Returns output directory for the code generation
