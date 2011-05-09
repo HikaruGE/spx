@@ -13,7 +13,7 @@ imports
 	lib/editor-common.generated
 	context/-
   normalize/signatures  
-	include/spoofaxlang
+	include/SpoofaxLang
 	utils/path
 imports 	
 	libstratego-gpp

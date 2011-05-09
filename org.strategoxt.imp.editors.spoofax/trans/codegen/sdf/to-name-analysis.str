@@ -4,7 +4,7 @@ imports
   lib/editor-common.generated
   context/sdf/declare-signature
   context/sdf/declare
-  include/spoofaxlang 
+  include/SpoofaxLang 
   analyze/sdf/check
   
 rules

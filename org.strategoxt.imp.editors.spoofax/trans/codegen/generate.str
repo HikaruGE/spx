@@ -13,7 +13,7 @@ imports
 	common
 imports	
 	lib/editor-common.generated
-	include/spoofaxlang
+	include/SpoofaxLang
 imports	
 	
 	context/-

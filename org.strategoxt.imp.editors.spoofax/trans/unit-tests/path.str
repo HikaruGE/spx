@@ -3,7 +3,7 @@ module unit-tests/path
 imports 
 	common
 	utils/path
-	include/spoofaxlang
+	include/SpoofaxLang
 rules
 	test-path:
 		(selected, position, ast, path, project-path) -> selected

@@ -12,7 +12,7 @@ imports
 	config 
 imports 
 	lib/editor-common.generated
-	lib/configuration/SpoofaxConfiguration  
+	lib/Configuration/SpoofaxConfiguration  
 	include/SpoofaxLang
 imports	
 	codegen/generate

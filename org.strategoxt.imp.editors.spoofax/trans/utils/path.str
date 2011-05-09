@@ -5,7 +5,7 @@ imports
 imports
 	common
 	utils/debug
-	include/spoofaxlang
+	include/SpoofaxLang
 	spoofaxlang
 
 rules 
