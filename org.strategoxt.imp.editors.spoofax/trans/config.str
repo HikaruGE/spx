@@ -7,7 +7,7 @@ imports
 imports 
 	common
 	utils/debug
-	lib/configuration/SpoofaxConfiguration
+	lib/Configuration/SpoofaxConfiguration
 	lib/editor-common.generated
 	spoofaxlang
 	
