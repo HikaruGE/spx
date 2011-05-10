@@ -41,7 +41,7 @@ rules
    constraint-esv-error: 
    	LanguageName( name ) -> (name, $[ Duplicate declaration of language name. Declared in following packages : [<pp-aterm>packages*]])
    	where
-   		<get-languagename-declaration-sites> name =>packages*;
+   			<get-languagename-declaration-sites> name =>packages*;
    			is-not-empty-list;
 				not(ensure-is-unique)
    		

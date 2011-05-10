@@ -29,4 +29,10 @@ rules
 	
 	
 	
-	contracts ( s ) =  where(s) <+ fail    
+	contracts ( s ) =  where(s) <+ fail
+	
+	
+	with-verification (preconditions, s ) = with-verification (preconditions, s , id)
+	 
+	
+	with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail    

@@ -46,7 +46,7 @@ strategies
 			 	;init-code-generation  
 				;<list-loop(generate-spx-package)>list-of-package-qname*
 				;<debug>$[......................Generating Build Scipt......................]
-				;<emit-build-script> list-of-package-qname*
+				;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
 				;<debug>$[......................Code Generation is done......................] 		
 			else
 				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
@@ -55,6 +55,7 @@ strategies
 		;disable-compiler-debugging
 		;!current-term //restoring current term to avoid side effects  
 	
+	has-language-name-configured = ?Package(QName(_)) ; where(get-language-name)
 		
 rules
 
@@ -67,25 +68,41 @@ rules
 		package-typed-qname@Package(untyped-qname) -> <id>
 		where 
 			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
+		with 
+			enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname
 		where
 			if should-generate-code-this-package  then 
-				{|GetEnclosingPackageName,GeneratedSignature: 
-						rules ( GetEnclosingPackageName := package-typed-qname);
-						enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname;
-						<list-loop(
-								generate-spx-module
-							)
-						>enclosed-module-typed-qnames;
-						<generate-main> enclosed-module-typed-qnames // generate all the main artifacts now  
+				{|GetEnclosingPackageName,GeneratedSignature:
+					 	rules (GetEnclosingPackageName := package-typed-qname);
+						// Generates artifacts from all the modules 	
+						<list-loop(generate-spx-module)>enclosed-module-typed-qnames;
+						if (language-name  := <get-language-name> package-typed-qname) then
+							// Since, the language-name is defined for this language 
+							// generate all the main artifacts  for this package
+							// if Language name is not defined for certain packaged, they will not be considered 
+							// as a language , rather will be treated as a langauge library to be reused by other 
+							// languages.
+							
+							//language-name := <get-language-name> package-typed-qname;
+							//<debug(!"Language name : ")>language-name ;
+							{| GetLanguageName : 
+										rules( GetLanguageName  := language-name);
+										<emit-package-signature-main>();
+										<generate-main> enclosed-module-typed-qnames 
+							|}  
+						end	  
 				|};		
-				where(
-					rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)
-				)
-				<+
+				where(rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)) // TODO : delete this rules. probably , it is reduntant 
+			<+
 				<debug-compiler> $[Generate| generate-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
 				;fail
 			end
 	
+	
+	get-main-file-name : () ->lang-name 
+	with 
+		lang-name := <GetLanguageName> <+ debug(!"GetLanguageName encountered error. Please verify it is called within the scope defined for the DR")
+
 	// generates artifacts fro spx module
 	generate-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
@@ -97,8 +114,8 @@ rules
 				module-decl* := <get-original-module-declaration>module-typed-qname;
 				{|GetEnclosingModuleName:
 						rules( GetEnclosingModuleName := module-typed-qname);
-						<generate-all> module-decl* ;		// generating all the artifacts for the specified module
-						<emit-package-signature-main>()
+						
+								<generate-all> module-decl* 	// generating all the artifacts for the specified module
 				|};
 				module-abs-path := <DeclaredModule>untyped-qname;
 				where(
@@ -138,7 +155,8 @@ rules
 		<post-coversion-adapter>adapted-result*  => resultant-block*
 
 
-	ensure-list-is-not-empty =  is-not-empty-list
+	// Verifies wheter a particular list is empty or not.
+	ensure-list-is-not-empty =  contracts(contract-requires (is-list| <id>)); is-not-empty-list
 	
 	
 rules

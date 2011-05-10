@@ -44,10 +44,10 @@ rules
 	with 
  			project-path := <ProjectPath>
  			;Package(package-qname)   := <GetEnclosingPackageName>
- 			;package-name-string			:= <qname-to-string>package-qname
+ 			;language-name-string			:= <get-main-file-name>()
  	where 
 			<debug-compiler>$[Codegen|Generating main signature for the packagees]
-			;generated-signatures-string := $[module [package-name-string]-signatures 
+			;generated-signatures-string := $[module [language-name-string]-signatures 
 			 	imports 
 					[<map(\s -> $[[s]
 				]\)	><all-keys-GeneratedSignature>]	
@@ -55,8 +55,8 @@ rules
 			;signatures-as-aterm-string := <to-signature-as-rtree >generated-signatures-string
 	where
 		 autogen-dir := $[[project-path]/include]
-	 	;output-path-str 		:=   $[[autogen-dir]/[package-name-string]-signatures.str]
-	 	;output-path-rtree 		:= $[[autogen-dir]/[package-name-string]-signatures.rtree]
+	 	;output-path-str 		:=   $[[autogen-dir]/[language-name-string]-signatures.str]
+	 	;output-path-rtree 		:= $[[autogen-dir]/[language-name-string]-signatures.rtree]
 	 	;<ensure-path-exists>(project-path, "include") 
    	;chdir-to-project-path 
 	where
