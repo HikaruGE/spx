@@ -16,11 +16,11 @@ package test
 
 
 	     
-package entity-lang
+package entity-lang 
 	
 	module module-main
-		imports 
-			libstratego-lib
+		imports  
+			libstratego-lib 
 		
 		context-free start-symbols 
     	Start
@@ -37,7 +37,7 @@ package entity-lang
 
 		language General properties
     	name          : entity-lang
-  		id            : entity-lang
+    	id            : entity-lang 
   		extends       : Root
                   
   		description   : "Spoofax/IMP-generated editor for the TestSpoofax language"
@@ -53,7 +53,7 @@ package entity-lang
 	    // Fences (used for matching,            
 	  	// inserting, indenting brackets):       
 	  	fences                                 : [ ]
-	                                           ( )
+	                                           ( ) 
 	                                           { }
 	                                           
 	  	// Automatic indent hints                

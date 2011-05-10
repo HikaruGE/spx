@@ -16,4 +16,6 @@ context-free syntax
     Var@ID "=" Exp                      -> Stm {"Assign"}
     Var@ID                              -> Exp {"Var"}         %% or, could be a Property!
     Exp "." Property@ID                 -> Exp {"PropAccess"}
-    "{" Stm* "}"                        -> Stm {"Block", scope(Var)}         
+    "{" Stm* "}"                        -> Stm {"Block", scope(Var)}   
+    
+                
