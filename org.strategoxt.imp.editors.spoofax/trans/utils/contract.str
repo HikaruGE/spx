@@ -21,12 +21,14 @@ rules
 			;fail 	 
 	
 	
-	contract-requires ( s | arg ) =
-			where(<s>arg)
-		<+
-			<debug> $[Contract | Requires Failed - argument :[<pp-aterm>arg] ]
-			;fail 	 
+	contract-requires ( s | arg ) = <contract-requires (s)> arg
 	
+	
+	contract-requires (s) =
+			where(s)
+		<+
+			<debug> $[Contract | Requires Failed - argument :[<pp-aterm>] ]
+			;fail 	 
 	
 	
 	contracts ( s ) =  where(s) <+ fail

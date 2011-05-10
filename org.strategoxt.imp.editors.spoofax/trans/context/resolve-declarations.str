@@ -18,10 +18,18 @@ imports
 	utils/annotations
 	utils/path
 	utils/debug 
+	utils/contract
 			
 rules 
 	
-	get-language-name  = where(?Package(QName(_))) ; DeclaredLangaugeName
+	get-language-name  = 
+		contracts(
+			contract-requires(
+				?Package(QName(_)
+				)
+			)
+		); 
+		DeclaredLangaugeName
 	 
 	get-unique-language-name = get-all-language-name; ?[<id>]
 	
