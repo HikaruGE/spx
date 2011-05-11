@@ -55,10 +55,10 @@ exports
  
   context-free syntax
     QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
-    QID		  									 -> LegacyImportName {cons("Name")}	
-    {ID "." }+								 -> QName	 {cons("QName")}
-	  ID 												 -> QName	 {cons("Name"),prefer}
-    ID  											 -> SPXModuleName	 {cons("SPXModuleName")}
+    QID		  				   -> LegacyImportName {cons("Name")}	
+    {ID "." }+				   -> QName	 {cons("QName")}
+	ID	 					   -> QName	 {cons("Name"),prefer}
+    ID  					   -> SPXModuleName	 {cons("SPXModuleName")}
    	  
 	context-free syntax %% Imports   	
     %% TODO: SDF: "retains" clause eliminates need for "hiddens" section. except we need something to hide the start symbols
@@ -74,10 +74,10 @@ exports
     "(" Import ")"                       -> Import {bracket, deprecated}
 
 	context-free syntax    
-    LegacyImportName				 				   -> ImportedModule{cons("ImportLegacyArtifact"), prefer}
-    QName "::" SPXModuleName 				   -> ImportedModule{cons("ImportSpxModule"), prefer} 
-    QName		   					   					 	 -> ImportedModule{cons("ImportPackage")}
-    QName "as" ID					   					 -> ImportedModule{cons("ImportPackageWithAlias"),prefer}	
+    LegacyImportName				 		-> ImportedModule{cons("ImportLegacyArtifact")}
+    QName "::" SPXModuleName 				-> ImportedModule{cons("ImportSpxModule"),prefer} 
+    QName		   					   		-> ImportedModule{cons("ImportPackage")  , prefer}
+    QName "as" ID					   		-> ImportedModule{cons("ImportPackageWithAlias"),prefer}	
 
 	context-free syntax
 		"[" {AttributeDef "," }+ "]"  	-> Attribute{cons("AttributeSection")}
