@@ -50,7 +50,7 @@ rules
 	store-scope-reference: (typed-qname, typed-qname-ofparent) -> <id>
 		with 
 			rules( 
-				GetEnclosingScope :+ 	typed-qname 				 -> typed-qname-ofparent
+				GetEnclosingScope :+  typed-qname 				 -> typed-qname-ofparent
 				GetEnclosedScope  :+  typed-qname-ofparent -> typed-qname 
 			)				
 		where	

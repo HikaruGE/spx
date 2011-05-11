@@ -11,13 +11,24 @@ imports
 	normalize/signatures
 	codegen/compile 
 imports 	 
-	common 
+	common
+	config 
 	utils/annotations
 	utils/path
 	utils/debug
+
+rules 
+	
+	get_internal_module_qtname = 
+		?package-qt-name;
+		where(!package-qt-name => Package(QName(package-name-part*)));
+		!Module(QName([package-name-part*| [<internal_module_name_string>]]))
+
+	get_internal_module_qtname(|package-qt-name)  = <get_internal_module_qtname>package-qt-name
 	
 	
 rules 
+	
 	get-module-abs-filepath : Module(qname) -> result
 	where 
 			result := <DeclaredModule>qname 
@@ -32,11 +43,22 @@ rules
 	
 rules	
 	// Add scopes for the symbol 
+	
 	to-global-symbol =
 		!(Globals(), <id>)
 	<+
 		<debug> $[Type| FAIL | Failed to convert it to Global symbol. <symbol> [<pp-aterm-forced>]]
 		;fail	
+	
+	to-intenal-scoped-symbol =
+		!(<GetEnclosingPackageName> , <GetEnclosingPackageName;get_internal_module_qtname> , <id>)
+		<+
+		to-global-symbol //if enclosing scope is not declared, then considering the namespace of the Symbol to be global 
+		<+
+		<debug> $[Type| FAIL | Failed to convert it to scoped symbol. 
+										<enclosing package> [<pp-aterm><GetEnclosingPackageName>] <enclosing module>[<pp-aterm-forced><GetEnclosingModuleName>] <symbol> [<pp-aterm-forced>]]
+		;fail	
+	 	
 		
 	to-scoped-symbol =  
 		!(<GetEnclosingPackageName> , <GetEnclosingModuleName> , <id>)
@@ -95,7 +117,8 @@ rules
 	resolve-symbol-declarations(key-resolver, value-resolver) = 
 		?( current-package , current-module,symbol )
 		;<resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)> symbol
-	
+
+rules	
 	// resolving declarations incrementally	
 	resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)= 
 		?symbol; // NOTE : symbol does not contain any scope information
@@ -118,8 +141,10 @@ rules
 			<+
 				where(<debug-symboltable>$[SymbolResolver| Resoving [<pp-aterm>symbol] in Imported Scopes.]);
 				where( 
+					// current package and module's untyped QName to create the scope 
 					!current-package => Package(untyped-package-qname);
 					!current-module  => Module(untyped-module-qname)
+					// getting all the using packages 
 					;<get-all-usings>( untyped-package-qname , untyped-module-qname) => imported-typedqname*
 					;<debug-symboltable>$[SymbolResolver| Getting List of dependening-on packages/modules : [<pp-aterm>]]
 					
@@ -132,14 +157,21 @@ rules
 				fail
 		)
 
+rules
+		
 	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
 		key-resolver;
+		debug(!"1 : ");
 		filter(namespace-filter);
-	  mapconcat(value-resolver)
+		debug(!"2 : ");
+	  mapconcat(value-resolver);
+	  debug(!"3 : ")
 	<+     			 
 		<debug-symboltable>$[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<pp-aterm>]]
 		;fail
-
+		 
+rules
+	
 	resolve-imported-symbol-declarations(key-resolver,value-resolver):
 		(symbol, scopes*) -> resolved*
 		where 
@@ -151,7 +183,17 @@ rules
 			end
 		where 
 			if !currentscope => Package(_) then 
-				resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(currentscope, _ , symbol))>symbol
+				internal_module_name := <get_internal_module_qtname>currentscope;
+				resolved* := <is-not-empty-list>
+												<resolve-symbol-declarations-internal(
+														key-resolver, 
+														value-resolver,
+														( 
+															//Filter to search all the symbold in package's scope
+															// Also, ensuring the visibility of the internal scope active 
+															?(currentscope, _ , symbol) ; not(?(currentscope, internal_module_name , symbol))
+														)
+												)>symbol
 			else
 				if !currentscope => Module(_) then 
 					resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(_ , currentscope , symbol))>symbol
@@ -160,7 +202,3 @@ rules
 			where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<pp-aterm>resolved*]. Found in :[<pp-aterm>currentscope] ])
 		<+
 			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> ( symbol, rest*)
-	
-	
-
-			 

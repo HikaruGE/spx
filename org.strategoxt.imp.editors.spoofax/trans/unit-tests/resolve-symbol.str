@@ -8,7 +8,24 @@ imports
 	common
 	context/-
 	normalize/signatures
+	config
 rules
+	
+	get-internal-module-name-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			package-name := Package(QName(["Test" , "A"]));
+			expected 		 := Module( QName(["Test" , "A" , <internal_module_name_string>] ))
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <get_internal_module_qtname(|package-name)>
+		where
+			<debug> $[Verifying Expectaions .... ];
+			!expected  => actual;
+			<debug(!"SUCCESS. Actual and Expected :  ")> [actual, expected]
+		<+ 
+			<debug(!"FAILED. ")> [actual, expected]	
+				
 		
 	// Unit Test to check the resolve symbol is working as expected.	
 	test-resolving-symbol:

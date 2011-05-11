@@ -10,13 +10,17 @@ imports
 	lib/Configuration/SpoofaxConfiguration
 	lib/editor-common.generated
 	spoofaxlang
+	normalize/signatures
 	
 rules 
-	default_package_name = !"_default"
+	default_package_name = !"__default"
 	
+	internal_module_name_string = !"__internal"
+	
+		
 rules 
 	initialize-configuration = 
-		?current-term
+		?current-term 
 		;<parse-spoofaxconfiguration-file>"spx.config" => config-aterms
 		;init-output-directory
 		;init-source-directory    		

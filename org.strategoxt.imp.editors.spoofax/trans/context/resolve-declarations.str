@@ -15,18 +15,18 @@ imports
 	codegen/compile
 imports 	
 	common
+	config
 	utils/annotations
 	utils/path
 	utils/debug 
 	utils/contract
-			
+	
 rules 
 	
 	get-language-name  = 
 		contracts(
 			contract-requires(
-				?Package(QName(_)
-				)
+				?Package(QName(_))
 			)
 		); 
 		DeclaredLangaugeName

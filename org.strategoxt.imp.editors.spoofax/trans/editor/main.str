@@ -8,6 +8,7 @@ imports
 imports 
 	config
 	utils/cache	
+	utils/debug
 rules
 	//editor-resolve 
 	
@@ -23,10 +24,13 @@ rules
 		with
 			rules(ProjectPath := project-path)
 			;initialize-configuration
+			 
 		with 
 			abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]  
 		with 
 			<cache-currently-analyzing-ast>(abs-path  , ast)	 
 		with 
-			<compile-packages-of> abs-path  => ( errors, warnings, infos)
+			enable-symboltable-debugging;
+			<compile-packages-of> abs-path  => ( errors, warnings, infos);
+			disable-symboltable-debugging
 			 
