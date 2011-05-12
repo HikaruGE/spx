@@ -23,14 +23,4 @@ rules
 		where 
 			parsed-string:= ""
 	
-	
-	parse-legacy-artifact: 
-		resolving-path -> parsed-string
-		with 
-			has-extension(|"esv") 
-		where 
-			parsed-string:= ""
-			
-			
-	
-    
+	    

@@ -5,6 +5,28 @@ imports
 	utils/path
 	include/SpoofaxLang
 rules
+
+	has-known-extensions-success-test:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			<debug>$[Running Test .... ];
+			<has-known-extensions> "c:\\A.sdf" ;
+			<debug>$[SUCCESS...]
+		<+ 
+			<debug>$[FAILED...]		
+				
+	has-known-extensions-should-fail-test:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			<debug>$[Running Test .... ];
+			<has-known-extensions> "c:\\A.doc" ;
+			<debug>$[SUCCESS...]
+		<+ 
+			<debug>$[FAILED...]	
+	
+
+	
+	
 	test-path:
 		(selected, position, ast, path, project-path) -> selected
 		where

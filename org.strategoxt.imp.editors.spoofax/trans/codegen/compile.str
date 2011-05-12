@@ -290,7 +290,7 @@ rules
 			end	
 	
 	
-	//TODO : append additional checks . compilation should be incremental and if source not changed, show the cached errors/warnings/infos	
+	//TODO : append additional checks . compilation should be incremental and if source not changed, show the cached errors/warnings/infos
 	should-compile-this-package = 
 		?package-qname;
 		where(not(<currently-compiling-package>package-qname))
@@ -298,6 +298,7 @@ rules
 
 rules 
 
+	
 	// Compile sdf, str, esv modules which are imported in the global nameepsace
 	compile-legacy-artifacts: package-tqnames* -> package-tqnames*
 	where
@@ -335,7 +336,17 @@ rules
 					<+ 
 						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
 				end 	 
-			end	
+			else
+				debug(!"Not UnResolved + Hence legacy artifacts")
+				// checks whether it has known extension
+				
+				
+				
+				//read + normalize and then sent to declare
+				 
+				
+			end
+				
 		where
 			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
 	

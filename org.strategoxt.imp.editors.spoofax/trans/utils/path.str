@@ -5,9 +5,23 @@ imports
 	codegen/generate
 imports
 	common
+	config
 	utils/debug
 	include/SpoofaxLang
 	spoofaxlang
+
+rules 
+	
+	has-known-extensions  =
+		?file-path ;
+		get-known-legacy-extensions;
+		filter(?ext; <has-extension(|ext)>file-path);
+		is-not-empty-list;
+		!file-path
+	<+
+		<debug> $[Unknown File Type found at :[<pp-aterm>] . Supported File Extensions are : [<get-known-legacy-extensions;pp-aterm>]];
+		fail
+		
 
 rules 
 	

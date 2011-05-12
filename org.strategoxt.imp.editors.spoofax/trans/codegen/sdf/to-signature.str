@@ -14,9 +14,9 @@ imports
 	include/SpoofaxLang
 imports
 	codegen/compile
+	codegen/str/parser
 	codegen/main
 	codegen/generate
-	
 	context/signatures
 	normalize/signatures
 imports 
@@ -25,16 +25,8 @@ imports
 	
 rules
 	
-		parse-str-string =
-    parse-string(
-      strsglr-report-parse-error
-    | <import-term(lib/Stratego-Sugar.tbl)>
-    )  
-	
 	to-signature-as-rtree =   
-		parse-str-string
-	
-	
+		parse-stratego-string
 			
 rules
 	
