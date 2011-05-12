@@ -5,22 +5,25 @@ imports
 	context/signatures
 	normalize/signatures
 
+imports 
+	codegen/sdf/parser
+	codegen/str/parser
 	
 rules
 	
 	parse-legacy-artifact: 
-		resolving-path -> parsed-string
+		resolved-path-> parsed-string
 		with 
 			has-extension(|"sdf") + has-extension(|"def")
 		where 
-			parsed-string:= ""
+			parsed-string:= <parse-sdf-file>resolved-path
 	
 	
 	parse-legacy-artifact: 
-		resolving-path -> parsed-string
+		resolved-path -> parsed-string
 		with 
 			has-extension(|"rtree") + has-extension(|"str")
 		where 
-			parsed-string:= ""
+			parsed-string:= <parse-sdf-file>resolved-path
 	
 	    

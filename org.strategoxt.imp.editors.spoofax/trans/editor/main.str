@@ -30,7 +30,5 @@ rules
 		with 
 			<cache-currently-analyzing-ast>(abs-path  , ast)	 
 		with 
-			enable-symboltable-debugging;
-			<compile-packages-of> abs-path  => ( errors, warnings, infos);
-			disable-symboltable-debugging
+			<compile-packages-of> abs-path  => ( errors, warnings, infos)
 			 

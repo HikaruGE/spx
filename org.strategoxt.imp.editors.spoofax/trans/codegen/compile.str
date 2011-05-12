@@ -337,7 +337,7 @@ rules
 						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
 				end 	 
 			else
-				debug(!"Not UnResolved + Hence legacy artifacts")
+				<debug(!"Not UnResolved + Hence legacy artifacts")>resolving-path
 				// checks whether it has known extension
 				
 				

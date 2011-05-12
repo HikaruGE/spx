@@ -161,11 +161,9 @@ rules
 		
 	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
 		key-resolver;
-		debug(!"1 : ");
 		filter(namespace-filter);
-		debug(!"2 : ");
-	  mapconcat(value-resolver);
-	  debug(!"3 : ")
+		mapconcat(value-resolver)
+	  
 	<+     			 
 		<debug-symboltable>$[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<pp-aterm>]]
 		;fail
