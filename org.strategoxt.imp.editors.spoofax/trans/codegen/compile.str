@@ -335,18 +335,20 @@ rules
 						<read-stratego-signatures;declare-stratego-globals-top> modulename	
 					<+ 
 						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
+				else
+					<debug-compiler>$[compile-main | compile-legacy-artifact > Parsing following legacy artifacts : [<pp-aterm>resolving-path]];
+					
+					// Verify that the resource has a known extension.
+					<has-known-extensions>resolving-path 
+					
+					
+					
+					<+ <debug-compiler>$[compile-main | compile-legacy-artifact > Error occured in handling [<pp-aterm>resolving-path]. Hence, it is ignored.]  
+					
+					
+					//read + normalize and then sent to declare
 				end 	 
-			else
-				<debug(!"Not UnResolved + Hence legacy artifacts")>resolving-path
-				// checks whether it has known extension
-				
-				
-				
-				//read + normalize and then sent to declare
-				 
-				
 			end
-				
 		where
 			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
 	

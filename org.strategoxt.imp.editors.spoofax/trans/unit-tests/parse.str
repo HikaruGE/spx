@@ -1,0 +1,9 @@
+module parse
+
+
+imports
+	codegen/sdf/parse
+	codegen/str/parse
+	
+
+//C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/test2/Concepts.sdf

@@ -6,8 +6,8 @@ imports
 	normalize/signatures
 
 imports 
-	codegen/sdf/parser
-	codegen/str/parser
+	codegen/sdf/parse
+	codegen/str/parse
 	
 rules
 	

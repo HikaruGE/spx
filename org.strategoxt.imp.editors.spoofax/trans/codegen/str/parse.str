@@ -1,4 +1,4 @@
-module codegen/sdf/parser 
+module codegen/sdf/parse 
 
 imports
   libstratego-lib
