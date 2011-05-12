@@ -17,6 +17,8 @@ rules
 	
 	internal_module_name_string = !"__internal"
 	
+	
+	get-known-legacy-extensions = !["sdf" , "def" , "str" , "rtree"] 
 		
 rules 
 	initialize-configuration = 
