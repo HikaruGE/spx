@@ -13,7 +13,7 @@ rules
 	
 	parse-legacy-artifact: 
 		resolved-path-> parsed-string
-		with 
+		where 
 			has-extension(|"sdf") + has-extension(|"def")
 		where 
 			parsed-string:= <parse-sdf-file>resolved-path
@@ -21,9 +21,16 @@ rules
 	
 	parse-legacy-artifact: 
 		resolved-path -> parsed-string
-		with 
-			has-extension(|"rtree") + has-extension(|"str")
 		where 
-			parsed-string:= <parse-sdf-file>resolved-path
+			has-extension(|"str")
+		where 
+			parsed-string:= <parse-stratego>resolved-path
 	
+	
+	parse-legacy-artifact: 
+		resolved-path -> parsed-string
+		where 
+			has-extension(|"rtree") 
+		where 
+			parsed-string:= <ReadFromFile>resolved-path
 	    

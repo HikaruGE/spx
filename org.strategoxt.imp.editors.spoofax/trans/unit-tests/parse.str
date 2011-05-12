@@ -2,8 +2,69 @@ module parse
 
 
 imports
-	codegen/sdf/parse
-	codegen/str/parse
+	common
+	codegen/parse-adapter
 	
+rules 
+	
+	parse-sdf-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/syntax/Concepts.sdf"
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+		<+ 
+			<debug>$[FAILED...]
+			
+	parse-str-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/trans/spoofaxlang.str"
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+		<+ 
+			<debug>$[FAILED...]		
+				
+	
+		parse-def-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/lib/SDF.def"
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+		<+ 
+			<debug>$[FAILED...]		
+			
+		parse-rtree-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/.shadowdir/entity-lang.rtree"
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+		<+ 
+			<debug>$[FAILED...]			
+							
 
+
+	
 //C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/test2/Concepts.sdf
