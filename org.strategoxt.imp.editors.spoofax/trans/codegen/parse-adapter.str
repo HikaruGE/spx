@@ -1,0 +1,36 @@
+module codegen/parse-adapter
+
+imports
+	include/SpoofaxLang
+	context/signatures
+	normalize/signatures
+
+	
+rules
+	
+	parse-legacy-artifact: 
+		resolving-path -> parsed-string
+		with 
+			has-extension(|"sdf") + has-extension(|"def")
+		where 
+			parsed-string:= ""
+	
+	
+	parse-legacy-artifact: 
+		resolving-path -> parsed-string
+		with 
+			has-extension(|"rtree") + has-extension(|"str")
+		where 
+			parsed-string:= ""
+	
+	
+	parse-legacy-artifact: 
+		resolving-path -> parsed-string
+		with 
+			has-extension(|"esv") 
+		where 
+			parsed-string:= ""
+			
+			
+	
+    
