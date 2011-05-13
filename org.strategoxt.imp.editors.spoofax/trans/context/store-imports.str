@@ -3,18 +3,35 @@ imports
 	include/SpoofaxLang 
 	lib/editor-common.generated
 imports 
-	context/signatures
-	context/scope-tree
-  context/resolve-symbols
-  context/resolve-annotations
-  context/resolve-types
- 	normalize/signatures
+	context/-
+	normalize/signatures
 	codegen/compile
 imports 	
 	common
 	utils/annotations
 	utils/path
 	utils/debug  
+
+rules 			
+	
+	// Reference Resolving 
+	resolve-package-references = 
+		?list-of-package-tqnames;
+		<list-loop(
+			// Get the list of enclosed modules
+			// and then get module declarations
+			// Afterwards, from the declarations, import references are resolved.
+			where(<debug-compiler>$[ resolve-package-references |  Currently working on package : [<pp-aterm>]]);
+			get-enclosed-modules; 
+			get-module-declarations;
+			origin-track-forced(map(store-import-references))
+		<+
+			where(<debug-compiler>$[resolve-package-references | Failed to resolve package refernece:[<pp-aterm>]]);fail
+		)>list-of-package-tqnames
+		<+ 
+		<debug-compiler>$[resolve-package-references | Failed to resolve package referneces:[<pp-aterm>]];fail
+		
+
 
 rules
 	store-import-references: m@Module(attrb*,modname,section*) -> Module(attrb*,modname,resulting-section*)

@@ -4,13 +4,23 @@ module parse
 imports
 	common
 	codegen/parse-adapter
+	lib/editor-common.generated
 	
 rules 
 	
+	parse-tests : 
+		a@(selected, position, ast, path, project-path) -> None()
+	where
+		<try(parse-sdf-test)>a;
+		<try(parse-str-test)>a;
+		<try(parse-def-test)>a;
+		<try(parse-rtree-test)>a
+			
+		
 	parse-sdf-test:
 		(selected, position, ast, path, project-path) -> None()
 		with 
-			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/syntax/Concepts.sdf"
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.sdf"] 
 		where 
 			<debug>$[Running Test .... ];
 			actual :=  <parse-legacy-artifact>file-path
@@ -24,7 +34,7 @@ rules
 	parse-str-test:
 		(selected, position, ast, path, project-path) -> None()
 		with 
-			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/trans/spoofaxlang.str"
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.str"]
 		where 
 			<debug>$[Running Test .... ];
 			actual :=  <parse-legacy-artifact>file-path
@@ -39,7 +49,7 @@ rules
 		parse-def-test:
 		(selected, position, ast, path, project-path) -> None()
 		with 
-			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/lib/SDF.def"
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/SDF.def"]
 		where 
 			<debug>$[Running Test .... ];
 			actual :=  <parse-legacy-artifact>file-path
@@ -53,7 +63,7 @@ rules
 		parse-rtree-test:
 		(selected, position, ast, path, project-path) -> None()
 		with 
-			file-path := "C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/.shadowdir/entity-lang.rtree"
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.rtree"]
 		where 
 			<debug>$[Running Test .... ];
 			actual :=  <parse-legacy-artifact>file-path
@@ -63,7 +73,6 @@ rules
 			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
 		<+ 
 			<debug>$[FAILED...]			
-							
 
 
 	

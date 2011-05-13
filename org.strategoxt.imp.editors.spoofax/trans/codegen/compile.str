@@ -7,29 +7,23 @@ imports
 	utils/path
 	analyze/-
 	context/-
+	context/str/-
+	codegen/-
 imports
 	common 
 	config 
 imports 
-	lib/editor-common.generated
-	lib/Configuration/SpoofaxConfiguration  
 	include/SpoofaxLang
 imports	
-	codegen/generate
-	codegen/buildscripts
 	analyze/main
-	
-imports
-	context/declare 	
-	context/str/declare  
-	
+	lib/editor-common.generated
 	
 		
 //TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs
 	 
 
-rules			// Starting a new compilation session   
-	
+rules			
+	// Starting a new compilation session   
 	new-compile-session(s) =
 			{| 	CompiledPackage,currently-compiling-package,CompiledModule, 
 			 		UsedBy,Using,
@@ -53,8 +47,8 @@ rules			// Starting a new compilation session
 			|} 
 
 
-rules 	// Compiler initialization 
-			
+rules 	
+	// Compiler initialization 
 	compiler-init = 
 		// Getting Source directory to start parsing files if needed. 
 		// Otherwise, it reads from the cache
@@ -62,54 +56,14 @@ rules 	// Compiler initialization
 			bagof-SPX-Source-Dir => spx-sources
 		);
 		//Iterating all the configured source directory 
-		<list-loop(parse-spx-sources)> spx-sources;
+		<list-loop(parse-spx-sources)> spx-sources; 
 		//Initializes global symbols / default primitives 
 		init-declaration    	
 
-rules
-	parse-spx-sources : 
-		(sourcedir , searchOption) -> <id>
-		where
-			{| current-working-root-dir :  
-				rules(
-					current-working-root-dir  := <getcwd>
-				);
-				<chdir>sourcedir;
-				<parse-spx-compilationUnits(|searchOption)> <getcwd>;
-				<chdir> <current-working-root-dir>
-			|}
-		
-	parse-spx-compilationUnits(|search-option) = 
-		readdir;
-		list-loop(
-    	if <isdir> <filemode> then  //FIXME : filemode / isdir contains bug. Common folder is not considered as directory which is a bug
-    		if not(Ignored-Spx-Souce-Dir); !search-option => AllDirectories()  then
-       		 chdir;
-        	 <parse-spx-compilationUnits(|search-option)<+ throw-unable-read-exception(|"Failed to read this directory : ")><getcwd>;
-           <chdir> ".."
-        end
-      else
-        where(parse-spx-compilationUnit) <+ throw-unable-read-file 
-      end
-    )
-    
- 	parse-spx-compilationUnit: filename -> <id>
- 		where
- 			if has-extension(|"spx") then 
-	 			where (<debug-compiler>$[Pre-Compiling| Parsing following file : [<pp-aterm>]]);
-	 			open-spx-compilation-unit(
-					spx-compilation-unit-path, 
-					spx-precompiled-cache-path, 
-					parse-spoofaxlang-file ,
-					pre-complile-compilation-unit
-				)
-			end 
 
 
 strategies				    
-	
 	// Pre-compilation before starting up actual compilation
-	
 	// Before starting primary compilation, 
 	// pre-compile normalize the parsed tree
 	// and creates scope-tree and namespace-reference table for 
@@ -351,23 +305,3 @@ rules
 			end
 		where
 			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
-	
-rules 			
-	
-	// Reference Resolving 
-	resolve-package-references = 
-		?list-of-package-tqnames;
-		<list-loop(
-			// Get the list of enclosed modules
-			// and then get module declarations
-			// Afterwards, from the declarations, import references are resolved.
-			where(<debug-compiler>$[ resolve-package-references |  Currently working on package : [<pp-aterm>]]);
-			get-enclosed-modules; 
-			get-module-declarations;
-			origin-track-forced(map(store-import-references))
-		<+
-			where(<debug-compiler>$[resolve-package-references | Failed to resolve package refernece:[<pp-aterm>]]);fail
-		)>list-of-package-tqnames
-		<+ 
-		<debug-compiler>$[resolve-package-references | Failed to resolve package referneces:[<pp-aterm>]];fail
-		
