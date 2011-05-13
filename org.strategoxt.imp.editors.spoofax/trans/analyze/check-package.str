@@ -43,4 +43,7 @@ rules
 		infos*    := []
 	where 	
 		rules(GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*))
+	where
+			<debug-compiler>$[ErrorChecking | Found semantic problems for ([<pp-aterm-forced> current-scope])  
+			                                  Problems :[<pp-aterm-forced> ( errors* , warnings*, infos*)]]
 		 

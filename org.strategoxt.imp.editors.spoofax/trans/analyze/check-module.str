@@ -65,7 +65,7 @@ rules
 				)	
 		where
 			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
-			Problems :[<pp-aterm-forced> unziped-issues*]]
+			                                  Problems :[<pp-aterm-forced> unziped-issues*]]
 							
 rules 
 			 
