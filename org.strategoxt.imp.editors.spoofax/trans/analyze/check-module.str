@@ -107,13 +107,15 @@ rules
     end;
     error'*   := <conc;flatten-list> (serror*, error*);
     warning'* := <flatten-list> warning*
+
 	       
   analyze-section: 
-		ESVSection(ast) -> (error-esv*, [], [])
+		ESVSection(ast) -> (error-esv*, warning-esv* , [])
   	where
   		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
 		where
-  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast
+  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
+  		warning-esv* := <collect-all(constraint-esv-warning, conc)> ast
       	
   analyze-section: 
 		STRSection(ast) -> ( errors, warnings, [])

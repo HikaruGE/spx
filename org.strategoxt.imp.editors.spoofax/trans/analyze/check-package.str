@@ -26,24 +26,21 @@ rules
 			not(<get-language-name>package-typed-qname)
 	
 	package-constraint-error :
-		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<pp-aterm>configure-lang-names]])
+		package-typed-qname@Package(untyped-qname) -> (package-typed-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<pp-aterm>configure-lang-names]])
 		where 
 			<get-all-language-name>package-typed-qname => configure-lang-names;
 			is-not-empty-list;
+			make-set;
 			not(ensure-is-unique)
-			
 			
 rules 
 	analyze : p@Package(untyped-name) -> <id>
-	with 
+	with
 		current-scope := p
 	where 
-		errors*   := 	<collect-all(package-constraint-error, conc)>p  ;
+		errors*   := <collect-all(package-constraint-error, conc)> p  ;
 		warnings* := <collect-all(package-constraint-warning, conc)>p  ;
 		infos*    := []
 	where 	
-		rules
-		(
-			GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
-		)
+		rules(GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*))
 		 

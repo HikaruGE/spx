@@ -62,8 +62,12 @@ rules	// Package specific semantic error checking
 								)
 							><get-enclosed-modules>package-typed-qname
 					|};		
+				package-abs-path := <DeclaredPackage>untyped-qname;
 				where(
-					rules(AnalyzedPackage: package-typed-qname -> package-typed-qname)
+					rules(
+						AnalyzedPackage: package-typed-qname -> package-typed-qname
+						AnalyzedPackageDeclaredIn:+ package-abs-path -> package-typed-qname
+					)
 				)
 				<+
 				<debug-analysis> $[Analyze| analyze-spx-package > [<pp-aterm>package-typed-qname] Failed. ];
@@ -105,19 +109,48 @@ rules
 	//lookups for the analyzed problems
 	get-all-analyzed-problems =  all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
 	
+	
+	get-semantic-problmes-by-file : file-abs-path ->problems
+		where
+			problems-at-modules*  := <get-semantic-problems(get-semantic-problmes-at-module-level)><bagof-AnalyzedModulesDeclaredIn>file-abs-path;
+			problems-at-packages* := <get-semantic-problems(get-semantic-problmes-at-package-level)><bagof-AnalyzedPackageDeclaredIn>file-abs-path;
+			problems := <merge-semantic-problems> ( problems-at-modules*   , problems-at-packages*) 
+			
+	
+	get-semantic-problems(s): scopes* -> problems
+	where
+			<map(s)>scopes* => problmes-zipped* ;  
+			<unzip-semantic-issuses>problmes-zipped* => problems
+	
+	get-semantic-problmes-at-package-level : p@Package(QName(_)) -> problems-package-level
+		where
+			<GetSemanticProblems>p => problems-package-level 
+	
+	get-semantic-problmes-at-module-level : module-typed-qname -> problems-module-level
+	where
+			<debug-compiler>$[ErrorChecking | Caching semantic issues for module [<pp-aterm>]]
+	where
+		<GetEnclosingScope> module-typed-qname => package-typed-qname;
+		<get-analyzed-problems-of> (package-typed-qname,module-typed-qname)=>problems-module-level
+		
+	<+
+		problems-module-level := ([] , [] , [])
+	where
+		<debug-compiler>$[ErrorChecking | Found Problems for this module : [<pp-aterm>problems-module-level]]	
+ 
+ 
 	get-analyzed-problems-of: scope@(package-typed-qname, module-typed-qname) -> problems
 		where 
 			contracts (
 					contract-requires(?Package(QName(_)) |package-typed-qname);
 					contract-requires(?Module(QName(_))  |module-typed-qname)
 			)	
+			;<GetSemanticProblems>scope 							=> problems
 		where
-			<GetSemanticProblems>scope 							=> problems-module-level;
-			<GetSemanticProblems>package-typed-qname => problems-package-level;
-			problems := <merge-semantic-problems> ( problems-package-level , problems-module-level) 
-		where
-			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]	
-		
+			<debug-compiler> $[ErrorChecking |  Problmes found [<pp-aterm-forced>scope] :  [<pp-aterm-forced>problems]]
+				
+rules 
+			
 	merge-semantic-problems : (unziped-issues1 , unzipped-issues2)-> semantic-problems*
 	with 
 		!unziped-issues1  =>(merrors,mwarnings,minfos);
@@ -126,15 +159,14 @@ rules
 	where		
 		<unzip-semantic-issuses>combined-problmes* => semantic-problems* 
 
-
-rules
 	/* Converts a list as following 
-	[([a1] , [b1] , [c1])
-	([a2] , [b2] , [c2])
-	([a3] , [b3] , [c3])
-	] 
-	To:
-	([a1,a2,a3] , [b1,b2,b3] , [c1,c2,c3])
+					[([a1] , [b1] , [c1])
+					([a2] , [b2] , [c2])
+					([a3] , [b3] , [c3])
+					] 
+		to:
+				([a1,a2,a3] , [b1,b2,b3] , [c1,c2,c3])
+				
 	*/
 	unzip-semantic-issuses:
 		list-of-semantic-issues -> unziped-list
@@ -175,21 +207,3 @@ rules			// Caching Resulting Semantic Errors
 	where
 		<debug-compiler>$[Caching | Saving problems: [<pp-aterm>problmes-to-save*]];
 		<cache-semantic-issues>( filepath , problmes-to-save*)
-	
-	get-semantic-problmes-by-file : file-abs-path -> problems*
-		where 
-			<bagof-AnalyzedModulesDeclaredIn>file-abs-path=> list-of-modules*;
-			<map(get-semantic-problmes-by-module)>list-of-modules*  => problmes-zipped* ;  
-			<unzip-semantic-issuses>problmes-zipped* => problems*
-		
-	get-semantic-problmes-by-module : module-typed-qname -> problems
-	where
-			<debug-compiler>$[Caching | Caching semantic issues for module [<pp-aterm>]]
-	where
-		<GetEnclosingScope> module-typed-qname => package-typed-qname;
-		<get-analyzed-problems-of> (package-typed-qname,module-typed-qname)=>problems
-	<+
-		problems := ([] , [] , [])
-	where
-		<debug-compiler>$[Caching | Found Problems for this module : [<pp-aterm>problems]]	
- 		     
