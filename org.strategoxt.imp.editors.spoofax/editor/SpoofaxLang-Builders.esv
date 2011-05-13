@@ -39,7 +39,7 @@ builders
   //builder : "test desugar" =
   // generate-desugar (openeditor) (realtime) (meta)
   
-  builder : "Compile" =  
+  builder : "Compile-All" =  
     compile-spx(openeditor) (realtime) (meta)
   
   
