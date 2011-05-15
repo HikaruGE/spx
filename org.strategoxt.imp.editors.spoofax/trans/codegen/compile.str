@@ -294,7 +294,7 @@ rules
 					// Verify that the resource has a known extension.
 					<has-known-extensions>resolving-path ;
 					{|GetEnclosingModuleName, LegacyModuleResolvedPath:
-							<declare-current-module-scope> <internal-module-typed-qname>;
+							<declare-current-module-scope> <get_internal_module_qtname> <GetEnclosingPackageName>;
 							with( rules(LegacyModuleResolvedPath := resolving-path));  
 						
 							// Known Extension found. Handling it.  

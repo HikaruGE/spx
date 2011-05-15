@@ -26,10 +26,67 @@ rules
 		<+ 
 			<debug(!"FAILED. ")> [actual, expected]	
 				
-		
+	resolving-in-imported-scope-internal-symbol-fail:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			debug(!"starting test now. ");
+			editor-init;
+			enable-debug-all	
+		where	
+			pqname := QName(["A" , "P1"]);
+			mqname := QName(["A" , "P1" , "M1"]);
+			p1 := Package(pqname);
+			m1 := Package(mqname);
+			p2 := Package(QName(["A" , "P2"]))
+			;rules(Using :+ (pqname, mqname) -> p2) 	
+		where
+			symbol1 := "ID";
+			// Symbol is declared in the internal scope of the P2 package
+			<setup-declaration>( p2, <get_internal_module_qtname>p2, symbol1)		
+		where
+			{|GetEnclosingPackageName, GetEnclosingModuleName:	
+					rules(
+						GetEnclosingPackageName      :=  p1  
+						GetEnclosingModuleName			 :=  m1
+					);
+					<debug>$[Test1: Resolve Declaration in imported scopes:-----------------];
+					if not(<resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1) then 
+						<debug>$[ Resolve Failed. Test Successful]
+					end	
+			 |} 
+				
+	resolving-in-package-scope-internal-symbol-success:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			debug(!"starting test now. ");
+			editor-init;
+			enable-debug-all	
+		where	
+			pqname := QName(["A" , "P1"]);
+			mqname := QName(["A" , "P1" , "M1"]);
+			p1 := Package(pqname);
+			m1 := Package(mqname);
+			p2 := Package(QName(["A" , "P2"]))
+			;rules(Using :+ (pqname, mqname) -> p2) 	
+		where
+			symbol1 := "ID";
+			// Symbol is declared in the internal scope of the P2 package
+			<setup-declaration>( p1, <get_internal_module_qtname>p1, symbol1)		
+		where
+			{|GetEnclosingPackageName, GetEnclosingModuleName:	
+					rules(
+						GetEnclosingPackageName      :=  p1  
+						GetEnclosingModuleName			 :=  m1
+					);
+					<debug>$[Test1: Resolve Declaration in imported scopes:-----------------];
+					if (result := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1) then 
+						<debug>$[ Resolve Successful. Test Successful . Resolved Symbol : [<pp-aterm>result]]
+					end	
+			 |}
+			 			
 	// Unit Test to check the resolve symbol is working as expected.	
 	test-resolving-symbol:
-		(selected, position, ast, path, project-path) -> selected
+		(selected, position, ast, path, project-path) -> None()
 		where 
 			debug(!"starting test now. ");
 			editor-init

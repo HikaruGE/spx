@@ -181,15 +181,15 @@ rules
 			end
 		where 
 			if !currentscope => Package(_) then 
-				internal_module_name := <get_internal_module_qtname>currentscope;
+				internal_module_qname := <get_internal_module_qtname>currentscope;
 				resolved* := <is-not-empty-list>
 												<resolve-symbol-declarations-internal(
 														key-resolver, 
 														value-resolver,
 														( 
-															//Filter to search all the symbold in package's scope
-															// Also, ensuring the visibility of the internal scope active 
-															?(currentscope, _ , symbol) ; not(?(currentscope, internal_module_name , symbol))
+															//Filter scopes to search in the imported scopes.
+															//In addition, skipping package's intenral scope. 
+															?(currentscope, _ , symbol) ; not(?(currentscope, internal_module_qname , symbol))
 														)
 												)>symbol
 			else

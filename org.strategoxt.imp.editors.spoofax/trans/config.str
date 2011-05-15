@@ -22,8 +22,6 @@ rules
 	
 	internal_module_name_string = !"__internal"
 	
-	internal-module-typed-qname = !Module(QName([<internal_module_name_string>]))  
-	
 	get-known-legacy-extensions = !["sdf" , "def" , "str" , "rtree"] 
 		
 rules 
