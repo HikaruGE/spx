@@ -1,4 +1,4 @@
-module codegen/sdf/parse 
+module analyze/sdf/parse
 
 imports
   libstratego-lib
@@ -7,21 +7,23 @@ imports
 	
 strategies
 
-	parse-stratego =
+  
+  parse-sdf-file =
     parse-file(
       strsglr-perror, strsglr-report-parse-error
-    | <import-term(lib/Stratego-Sugar.tbl)>
+    | <import-term(lib/SDF.tbl)>
     )
 
-  parse-stratego-string =
+  
+  parse-sdf-string =
     parse-string(
       strsglr-report-parse-error
-    | <import-term(lib/Stratego-Sugar.tbl)>
+    | <import-term(lib/SDF.tbl)>
     )
   
-  parse-stratego-stream =
+  
+  parse-sdf-stream =
     parse-stream(
       strsglr-report-parse-error
-    | <import-term(lib/Stratego-Sugar.tbl)>
+    | <import-term(lib/SDF.tbl)>
     )
- 	

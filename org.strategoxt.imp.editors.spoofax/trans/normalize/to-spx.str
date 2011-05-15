@@ -8,6 +8,7 @@ imports
 	
 rules 
 	
+	//TODO : normalize legacy artifacts to spx definition
 	to-spx = to-spx-main-internal
 	
 	

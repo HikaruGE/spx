@@ -3,7 +3,7 @@ module parse
 
 imports
 	common
-	codegen/parse-adapter
+	analyze/parse-adapter
 	lib/editor-common.generated
 	
 rules 
