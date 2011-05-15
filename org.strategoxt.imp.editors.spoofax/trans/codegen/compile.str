@@ -178,7 +178,7 @@ rules
 				;<list-loop(compile-depending-spx)>depeneding-typedqname*
 			
 				;{|GetEnclosingPackageName:
-						rules ( GetEnclosingPackageName      := package-typed-qname);
+						<declare-current-package-scope> package-typed-qname;
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
@@ -231,7 +231,7 @@ rules
 				<debug-compiler>$[compile-spx-module| Currently Compiling : [<pp-aterm>]]; //this package is not compiled before
 				module-decl* := <get-module-declarations>module-typed-qname;
 				{|GetEnclosingModuleName:
-						rules( GetEnclosingModuleName := module-typed-qname);
+						<declare-current-module-scope> module-typed-qname; 
 						<list-loop(
 								origin-track-forced(declare-all)
 								//declare-all
@@ -264,7 +264,6 @@ rules
 					<list-loop(compile-legacy-artifact-package)>upackages	
 		|}
 
-
 	//Compile  a particular legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others 		
 	compile-legacy-artifact-package : p@Package(qname) ->p
 	where	
@@ -272,9 +271,11 @@ rules
 		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
 		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
 	where
-		<map(compile-legacy-artifact)>legacy-artifact-details*	
-		
-	
+			{|GetEnclosingPackageName:
+						<declare-current-package-scope> p;
+						<map(compile-legacy-artifact)>legacy-artifact-details*	
+			|}
+			
 	compile-legacy-artifact: 
 		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
 		where
@@ -282,7 +283,7 @@ rules
 		where
 			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then // check to see if already taken care off.  	
 				if (!resolving-path => Unresolved()) then 
-					  // logic : we are only supporting legacy STR lib at this moment which are not located in the file system . 
+					  // we are only supporting legacy STR lib at this moment which are not located in the file system . 
 					  // Hence, it is unresolved , we are giving it a try to resolve it as a lib
 	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
 					<+
@@ -290,14 +291,20 @@ rules
 					<+ 
 						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
 				else
-					<debug-compiler>$[compile-main | compile-legacy-artifact > Parsing following legacy artifacts : [<pp-aterm>resolving-path]];
-					
 					// Verify that the resource has a known extension.
-					<has-known-extensions>resolving-path 
-					
-					
-					
-					<+ <debug-compiler>$[compile-main | compile-legacy-artifact > Error occured in handling [<pp-aterm>resolving-path]. Hence, it is ignored.]  
+					<has-known-extensions>resolving-path ;
+					{|GetEnclosingModuleName, LegacyModuleResolvedPath:
+							<declare-current-module-scope> <internal-module-typed-qname>;
+							with( rules(LegacyModuleResolvedPath := resolving-path));  
+						
+							// Known Extension found. Handling it.  
+							// Parsing the legacy content.
+							// Recoding the declarations for further analysis. 
+							<debug-compiler>$[compile-main | compile-legacy-artifact | Compiling following legacy artifacts : [<pp-aterm>resolving-path]];
+							<declare-legacy-artifact(|resolving-path)><parse-legacy-artifact>resolving-path
+					|}
+				<+ 
+					<debug-compiler>$[compile-main | compile-legacy-artifact > Error occured in handling [<pp-aterm>resolving-path]. Hence, it is ignored.]  
 					
 					
 					//read + normalize and then sent to declare

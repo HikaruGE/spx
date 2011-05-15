@@ -22,7 +22,7 @@ rules
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.sdf"] 
 		where 
-			<debug>$[Running Test .... ];
+			<debug>$[Running Test | parse-sdf-test ];
 			actual :=  <parse-legacy-artifact>file-path
 		where
 			<debug> $[Verifying Expectaions .... ];
@@ -36,7 +36,7 @@ rules
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.str"]
 		where 
-			<debug>$[Running Test .... ];
+			<debug>$[Running Test | parse-str-test];
 			actual :=  <parse-legacy-artifact>file-path
 		where
 			<debug> $[Verifying Expectaions .... ];
@@ -46,12 +46,12 @@ rules
 			<debug>$[FAILED...]		
 				
 	
-		parse-def-test:
+	parse-def-test:
 		(selected, position, ast, path, project-path) -> None()
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/SDF.def"]
 		where 
-			<debug>$[Running Test .... ];
+			<debug>$[Running Test | parse-def-test];
 			actual :=  <parse-legacy-artifact>file-path
 		where
 			<debug> $[Verifying Expectaions .... ];
@@ -65,7 +65,7 @@ rules
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.rtree"]
 		where 
-			<debug>$[Running Test .... ];
+			<debug>$[Running Test | parse-def-test];
 			actual :=  <parse-legacy-artifact>file-path
 		where
 			<debug> $[Verifying Expectaions .... ];

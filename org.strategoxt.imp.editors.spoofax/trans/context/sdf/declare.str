@@ -5,6 +5,7 @@ imports
 	include/SpoofaxLang
 imports 
 	context/-
+	codegen/-
 	analyze/main
 	normalize/signatures	
 imports
@@ -43,7 +44,23 @@ rules
     	alltd(declare-sdf-definition)
   
 rules
-	 
+
+
+	declare-sdf-definition:
+    renamed-module(x, renamings(y)) -> <id>
+    where
+      <all(try(?symbol(_, <id>); declare-sdf-simple-definition))> y
+
+
+	declare-sdf-definition:
+    parameterized(x, y) -> parameterized(x, y)
+    where
+      <declare-sdf-definition> unparameterized(x);
+      <alltd(declare-sdf-simple-definition)> y
+
+
+rules
+	  	 
  declare-sdf-definition:
     prod @ prod(lhs, sort, _) -> <id>
     where
@@ -56,15 +73,17 @@ rules
     with
       <Declaration> qualified-sort-name 
     <+
-      file := <get-module-abs-filepath> <GetEnclosingModuleName>;
-      rules(
-       	Declaration		 :    qualified-sort-name  -> prod
-        DeclarationFile:    qualified-sort-name  -> file
-        // Added following two dynamic rules for the ESV Def. analysis
-        SortDeclaration  :  qualified-sort-name -> x
-       	SortProductionLHS:+ qualified-sort-name -> lhs
-      );
-      <debug-declaration> $[DeclareSDF | Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
+      (
+      	(GetEnclosingModuleName;get-module-abs-filepath <+ LegacyModuleResolvedPath) => file;
+      	rules(
+       		Declaration		 :    qualified-sort-name  -> prod
+        	DeclarationFile:    qualified-sort-name  -> file
+        	// Added following two dynamic rules for the ESV Def. analysis
+        	SortDeclaration  :  qualified-sort-name -> x
+       		SortProductionLHS:+ qualified-sort-name -> lhs
+      	);
+      	<debug-declaration> $[DeclareSDF | Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
+      )
     with
       <alltd(declare-sdf-usage)> lhs 
   
@@ -78,9 +97,10 @@ rules
   declare-sdf-definition:
 		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
 		with{| IsInsideLexicalSyntaxBlock:
-						rules (IsInsideLexicalSyntaxBlock :_);
-					  <declare-sdf-definition-main> lex-defintions
-				|} 
+							mark-as-lexical-syntax-block; 
+							<declare-sdf-definition-main> lex-defintions
+				|}
+					 
 				
 	declare-sdf-definition:
 		parameterized(x, y) -> parameterized(x, y)

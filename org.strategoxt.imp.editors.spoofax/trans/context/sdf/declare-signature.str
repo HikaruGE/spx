@@ -32,10 +32,25 @@ strategies
 	// Returns right hand side of the production. In case of A -> B, it
 	// retunrs B.
 	get-rhs-sort-name = 
-			try(?cf(<id>) + ?lex(<id>));
-      repeat(?label(_, <id>));
-      (?sort(<id>) + ?parameterized-sort(<id>, _))
+			try(
+					?cf(<id>) 
+				+ ?lex(<id>)
+			);
+      repeat(
+      	?label(_, <id>)
+      );
+      ( 
+      		?sort(<id>) 
+      	+ ?parameterized-sort(<id>, _)
+      )
+
+	is-lexical-sort = where(?lex(sort(_)))
+	
+	mark-as-lexical-syntax-block =	with(	rules (IsInsideLexicalSyntaxBlock :_) )			
 		
+		
+		
+			
 rules 
 	
 	//Stores operation name and operation declarations 
@@ -56,7 +71,23 @@ rules
   where 
   		<debug-declaration> $[Operation Name :  [opname]]
 	
-	store-operation-declaration
+	
+	store-operation-declaration: 
+		p@prod(_,rhs-sort, _) ->  <id>
+		with 
+			 	if is-lexical-sort then
+			 		if not (IsInsideLexicalSyntaxBlock ) then
+			 			// Karnel Syntax and not marked as Lexical Syntax Block.
+			 			// Hence, marking it as a lexical syntax 
+			 			{| IsInsideLexicalSyntaxBlock:
+			 						mark-as-lexical-syntax-block;
+			 						<store-operation-declaration-internal>p	
+			 			|}
+			 		end
+			 	end 
+			 	
+	
+	store-operation-declaration-internal
   	=  ?p@prod(lhs , rhs-sort, attrs(attribute-list))
   		;rhs-sort-name := <get-rhs-sort-name>rhs-sort	
   		;{|lhs-sort, get-op-name:
@@ -67,7 +98,7 @@ rules
   					;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p) 
   		  |}
 			  
-	store-operation-declaration 
+	store-operation-declaration-internal 
   	= 	?p@prod(lhs , rhs-sort, no-attrs()) 
   		;rhs-sort-name := <get-rhs-sort-name>rhs-sort	
   	  ; {|lhs-sort :

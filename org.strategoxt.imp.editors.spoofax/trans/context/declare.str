@@ -11,13 +11,47 @@ imports
 	lib/editor-common.generated
 imports
 	utils/annotations
-	utils/debug	
+	utils/debug
+	config	
 	common
 
 rules		
-	declare-all = declare-sdf-all;declare-esv-all ; declare-str-all; update-modified-module-declaration   
+	declare-all = declare-sdf-all; declare-esv-all ; declare-str-all; update-modified-module-declaration   
 
-	init-declaration = init-record-signatures 
+	init-declaration = init-record-signatures
+
+
+rules 
+	
+	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
+	where 
+		<has-extension(|"sdf") + has-extension(|"def")>resolved-path; 
+		<alltd(declare-sdf-definition-main)>legacy-content
+		
+	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
+	where 
+		<has-extension(|"str") + has-extension(|"rtree")>resolved-path; 
+		<alltd(declare-str-definition-main)>legacy-content
+	
+rules
+
+	// Declaring current scope for further analyze 
+	declare-current-scope(| package-typed-qname , module-typed-qname)=
+		with(
+			<declare-current-package-scope>package-typed-qname;
+			<declare-current-module-scope>module-typed-qname
+		) 
+	
+	declare-current-package-scope : 
+		package-typed-qname -> <id> 
+		with 
+			rules ( GetEnclosingPackageName      := package-typed-qname)
+		
+	declare-current-module-scope:
+			module-typed-qname -> <id> 
+			with 
+				rules ( GetEnclosingModuleName      := module-typed-qname)
+	 
 rules	
 	declare-sdf-all = declare-spxmodules-all(declare-sdf-section) 
 	declare-str-all = declare-spxmodules-all(declare-str-section)
@@ -42,12 +76,18 @@ rules
 		where 
 			declared-definition* := <alltd(declare-sdf-definition-main)>definition*
 	
+	declare-sdf-section: 
+		SDFSectionEH(_,definition*) -><declare-sdf-section>SDFSection(definition*) 
+		
+	
 	declare-sdf-section: STRSection(def*) -> <id>
  
 	declare-sdf-section: ESVSection(def*) -> <id>  
 
 rules	
 	declare-str-section: SDFSection(def*) -> <id>
+	
+	declare-str-section: SDFSectionEH(_,def*) -> <id>
 	
 	declare-str-section: s@STRSection(def*) -> STRSection(m-definition*)
 	where 
@@ -57,7 +97,10 @@ rules
 	declare-str-section: ESVSection(def*) -> <id>   
 
 rules	
+	
 	declare-esv-section: SDFSection(def*) -> <id>
+	
+	declare-esv-section: SDFSectionEH(_, def*) -> <id>
 	
 	declare-esv-section: STRSection(def*) -> <id>
  
