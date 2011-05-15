@@ -15,7 +15,6 @@ imports
 	lib/editor-common.generated
 	include/SpoofaxLang
 imports	
-	
 	context/-
 	normalize/signatures
 imports 	
@@ -31,7 +30,21 @@ rules
 	
 	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
 	
+
+//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
+//TODO: OPTIMIZE : DR can be used to construct this imports  
+rules 
 	
+	init-code-generation = where(<emit-default-signatures>()) 
+	
+	generate-all = emit-sdf;emit-signatures ; emit-str <+ debug(!" Failed in Generate-all. "); fail
+
+	generate-main = 
+			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
+		<+ 
+			debug(!" Failed in Main Generation. "); fail    
+			
+		
 strategies 
 	build-all = 
 		?current-term
@@ -39,15 +52,15 @@ strategies
 		;new-compile-session(
 			list-of-package-qname* := <get-package-list> 
 			;<compile-internal>list-of-package-qname*
-			;<debug>$[......................Getting list of errors......................]
+			;<debug>$[-------------------Getting list of errors-------------------]
 			;<get-all-analyzed-problems>() => problems  
 			;if <fail-if-has-errors>problems then
-			 	 <debug>$[......................Generating artifacts......................]
+			 	 <debug>$[-------------------Generating artifacts-------------------]
 			 	;init-code-generation  
 				;<list-loop(generate-spx-package)>list-of-package-qname*
-				;<debug>$[......................Generating Build Scipt......................]
+				;<debug>$[-------------------------Generating Build Scipt---------------------]
 				;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
-				;<debug>$[......................Code Generation is done......................] 		
+				;<debug>$[-------------------------Code Generation is done-------------------------] 		
 			else
 				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
 			end		 
@@ -76,6 +89,7 @@ rules
 					 	rules (GetEnclosingPackageName := package-typed-qname);
 						// Generates artifacts from all the modules 	
 						<list-loop(generate-spx-module)>enclosed-module-typed-qnames;
+						<emit-internal-signatures>package-typed-qname;
 						if (language-name  := <get-language-name> package-typed-qname) then
 							// Since, the language-name is defined for this language 
 							// generate all the main artifacts  for this package
@@ -83,8 +97,6 @@ rules
 							// as a language , rather will be treated as a langauge library to be reused by other 
 							// languages.
 							
-							//language-name := <get-language-name> package-typed-qname;
-							//<debug(!"Language name : ")>language-name ;
 							{| GetLanguageName : 
 										rules( GetLanguageName  := language-name);
 										<emit-package-signature-main>();
@@ -98,11 +110,6 @@ rules
 				;fail
 			end
 	
-	
-	get-main-file-name : () ->lang-name 
-	with 
-		lang-name := <GetLanguageName> <+ debug(!"GetLanguageName encountered error. Please verify it is called within the scope defined for the DR")
-
 	// generates artifacts fro spx module
 	generate-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
@@ -130,20 +137,12 @@ rules
 				<debug-compiler> $[Generate| generate-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
 			end		
 			
+	get-main-file-name : () ->lang-name 
+	with 
+		lang-name := <GetLanguageName> <+ debug(!"GetLanguageName encountered error. Please verify it is called within the scope defined for the DR")
 
-//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
-//TODO: OPTIMIZE : DR can be used to construct this imports  
-rules 
-	init-code-generation = where(<emit-default-signatures>()) 
+	
 		
-	generate-all = emit-sdf;emit-signatures;emit-str <+ debug(!" Failed in Generate-all. "); fail
-
-	generate-main = 
-			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
-		<+ 
-			debug(!" Failed in Main Generation. "); fail    
-			
-			
 rules
 	
 	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 

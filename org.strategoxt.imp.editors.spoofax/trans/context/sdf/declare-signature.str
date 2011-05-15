@@ -73,7 +73,7 @@ rules
 	
 	
 	store-operation-declaration: 
-		p@prod(_,rhs-sort, _) ->  <id>
+		p@prod(_,rhs-sort, _) ->  <store-operation-declaration-internal>p
 		with 
 			 	if is-lexical-sort then
 			 		if not (IsInsideLexicalSyntaxBlock ) then
@@ -240,7 +240,6 @@ strategies
 	*/		  
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
 		where (<debug-declaration> $[DeclareSDF | Storing Signature for following production: [<pp-aterm> production]])
-		//;enable-declaration-debugging
 		;available-opdecl*     := <getOperationSignatures>operation-name
 		;scoped-operation-name := <to-scoped-symbol>operation-name   
 		;if(
@@ -257,7 +256,6 @@ strategies
  		 				DeclareSignature | Debug-info: scoped-op-name [<pp-aterm>scoped-operation-name]. 
  		 			 ]
 		end
-		//;disable-declaration-debugging
 			
 	
 	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort  
