@@ -1,4 +1,4 @@
-module analyze/parse-adapter
+module context/parse-adapter
 
 imports
 	include/SpoofaxLang
@@ -7,8 +7,8 @@ imports
 	lib/Configuration/SpoofaxConfiguration  
 	lib/editor-common.generated
 imports 
-	analyze/sdf/parse
-	analyze/str/parse
+	context/sdf/parse
+	context/str/parse
 	codegen/-
 imports
 	utils/path

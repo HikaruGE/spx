@@ -1,4 +1,4 @@
-module analyze/str/parse 
+module context/str/parse 
 
 imports
   libstratego-lib

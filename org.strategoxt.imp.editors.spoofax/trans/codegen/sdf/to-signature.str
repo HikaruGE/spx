@@ -15,7 +15,7 @@ imports
 	include/SpoofaxLang
 imports
 	codegen/compile
-	analyze/str/parse
+	context/str/parse
 	codegen/main
 	codegen/generate
 	context/signatures
