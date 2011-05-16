@@ -135,6 +135,6 @@ rules
 	//Desugaring ESV Sections 
 	desugar-spx : ESVSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
 		with
-			<alltd(store-langauge-name(|<EnclosingParentNamespace>))>sectionDef 
-
+			<alltd(store-langauge-properties(|<EnclosingParentNamespace>))>sectionDef
+			
 			

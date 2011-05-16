@@ -23,6 +23,14 @@ imports
 	
 rules 
 	
+	get-language-id = 
+		contracts(
+			contract-requires(
+				?Package(QName(_))
+			)
+		); 
+		DeclaredLangaugeId
+		
 	get-language-name  = 
 		contracts(
 			contract-requires(
