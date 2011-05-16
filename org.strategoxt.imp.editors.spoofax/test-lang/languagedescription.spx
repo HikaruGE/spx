@@ -1,0 +1,17 @@
+package language.entitylang 
+
+module languagedescription
+	
+	language General properties
+                  
+	  name          : entitylang
+	  id            : entitylang
+	  extends       : Root
+	                  
+	  description   : "Spoofax/IMP-generated editor for the Test language"
+	  url           : http://strategoxt.org
+	                  
+	  extensions    : tent 
+	  start symbols : Start 
+   
+

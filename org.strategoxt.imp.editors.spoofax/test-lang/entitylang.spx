@@ -1,0 +1,56 @@
+package language.entitylang 
+
+module entitydefinition
+
+  context-free start-symbols
+    Start 
+
+  context-free syntax 
+  
+    "module" ID Definition*       -> Start {cons("Module")}
+    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
+    ID ":" Type                   -> Property {cons("Property")}
+    ID                            -> Type {cons("Type")} 
+
+	
+module languagebuilders 
+		builders
+	  	observer : editor-analyze         	                                                                          
+	    builder  : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
+	 	
+	 	references
+    	reference _ : editor-resolve
+  		hover _     : editor-hover
+	 	
+	 	rules
+	 		 
+  		// Prints the abstract syntax ATerm of a selection.
+  		generate-aterm:
+    		(selected, position, ast, path, project-path) -> (filename, result)
+    		with
+      		filename := <guarantee-extension(|"aterm")> path;
+      		result   := selected // we just return the input term
+      		
+	 		 editor-analyze:
+    		(ast, path, project-path) -> (ast, errors, warnings, notes)
+    		with
+     			errors   := []; 
+      	 	warnings := [];
+      		notes    := []
+      			 	  
+		  // Resolves a reference when the user control-clicks or presses F3 in the editor.
+	  	editor-resolve:
+	    	(node, position, ast, path, project-path) -> elem
+	    	where 
+	    		<id> node => elem
+	    		 
+      // Returns "hover help" information for a particular node in the editor.
+		  // For references, this rule is invoked using the resolved term.
+		  editor-hover:
+		    (target, position, ast, path, project-path) -> $[Hover help: [<write-to-string> target]]
+		
+		
+		  // Completes an identifier when the user presses control-space
+		  // (the completion identifier in the AST provides additional context information)
+		  editor-complete:
+		    (node, position, ast, path, project-path) ->[]
