@@ -46,6 +46,11 @@ rules
   signature-of:
     DynRuleScopeId(x) -> <remove-quote> x
   
+  
+  signature-of: x -> (<remove-quote> x, 0, 0)
+  where 
+  	is-string
+  
   remove-quote:
     COMPLETION(s) -> COMPLETION(<remove-quote> s)
   
