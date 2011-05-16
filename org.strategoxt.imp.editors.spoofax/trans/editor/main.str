@@ -10,15 +10,29 @@ imports
 	utils/cache	
 	utils/debug
 rules
-	//editor-resolve 
-	
-	
-rules
-	//editor-complete 
+	// Resolves a reference when the user control-clicks or presses F3 in the editor.
+  editor-resolve:
+    (node, position, ast, path, project-path) -> elem
+    where 
+    	<id> node => elem
+    		 
+    	
+  // Returns "hover help" information for a particular node in the editor.
+  // For references, this rule is invoked using the resolved term.
+  editor-hover:
+    (target, position, ast, path, project-path) -> $[Hover help: [<write-to-string> target]]
+
+
+  // Completes an identifier when the user presses control-space
+  // (the completion identifier in the AST provides additional context information)
+  editor-complete:
+    (node, position, ast, path, project-path) ->[]
+  
 
 rules
 	//editor-analyze	
- 	editor-analyze: (ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST 
+ 	editor-analyze: 
+ 		(ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST 
     with 
 			editor-init
 		with

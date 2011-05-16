@@ -535,7 +535,9 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
       <delete dir="${src-gen}/trans"/>
 		</target>
 	
-	  <target name="sdf2imp" depends="sdf2table,sdf2imp.eclipse,sdf2imp.standalone"/>
+	  <!-- <target name="sdf2imp" depends="sdf2table,sdf2imp.eclipse,sdf2imp.standalone"/> -->
+	  
+	  <target name="sdf2imp" depends="sdf2table,sdf2imp.eclipse"/>
 	        
 		<target name="sdf2imp.eclipse" if="eclipse.running" >
 			<copy file="${packages.root}/${package.main.esv.module}.esv" tofile="${include}/${package.name}.packed.esv" preservelastmodified="true"/>

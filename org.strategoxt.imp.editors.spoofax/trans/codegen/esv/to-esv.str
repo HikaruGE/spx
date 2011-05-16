@@ -49,7 +49,9 @@ rules
 						
  						<map(get-original-module-declaration;store-esv-defintions)>module-qname*
  						;sections := <conc>
- 						 					(<add-package-ctree><get-main-file-name>(),   // adding ctree import by default
+ 						 					(
+ 						 					 <inject-package-ctree><get-main-file-name>(),   // adding ctree import by default
+ 						 					 <inject-table-definition><get-main-file-name>(),   // default table definition
  						 					 <all-keys-Declared-Language-Description>, 
  			 								 <all-keys-Declared-Builders-Description> ,  
  			 								 <all-keys-Declared-Colorer-Description> , 
@@ -65,18 +67,21 @@ rules
 			<debug-compiler>$[ Codegen | ESV | Finished generation of packed esv for [<pp-aterm>package-qname].]
 		 		
 	
-	/*
-	* Adding package ctree as the default semantic provider0
-	* 
-	* @type packagename -> default semantic provider 
-	*/
-	add-package-ctree : lang-name -> [SemanticProvider(lang-output-ctree)] // TODO : get main package ctree
+	//Adding package ctree as the default semantic provider0
+	inject-package-ctree : 
+		lang-name -> [Builders("",[SemanticProvider(lang-output-ctree)])]  
 		where 
 				lang-output-ctree := $[include/[lang-name].ctree]
 	
-	/*
-	* Returns all the imports for the current namespace. 
-	*/
+	
+	// Injects the default table definition in ESV definition.
+	inject-table-definition : 
+		lang-name -> [Language("Default Table Specifiactio" , [default-table-def])]
+		where
+			default-table-def := Table($[include/[lang-name].tbl])
+			
+	
+	//Returns all the imports for the current namespace.
  	get-all-imports = 
  		?mod-qname*
  		;import-decl* := <map(to-esv-import) ; flatten-list ;	make-set> mod-qname*
@@ -106,12 +111,14 @@ rules
 		 with
 		 	<alltd(store-esv-def)> section* 
  
- 	/**
- 	* Storing Esv Definitions that specifies Langauge 
- 	*/
- 	store-esv-def : l@Language(_,_) -> l
+ 	
+ 	// Storing Esv Definitions that specifies Langauge 
+ 	store-esv-def : 
+ 		l@Language(_,properties*) -> l
  		with 
  			rules ( Declared-Language-Description :+ l -> l)
+ 		
+ 			 	 
  	
  	/**
  	* Storing Esv Definitions that specifies the builders for the 
