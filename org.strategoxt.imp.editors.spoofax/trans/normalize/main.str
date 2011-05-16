@@ -48,8 +48,8 @@ rules
 			rules(
 				PackageCommonImports:+ _ -> i
 			)
-	
-	
+			
+rules	
 	
 	desugar-spx-package:
 		Package(Name(package-name) , modules* ) -> normalized-package-definition
@@ -59,6 +59,7 @@ rules
 			!QName([package-name]) 																=> package-qname;
 			<desugar-spx-package>Package(package-qname, modules*) => normalized-package-definition 
 		
+	
 	desugar-spx-package:	
 		p@Package(package-qname , modules* ) -> modifiedPackageDescription
 		with
@@ -77,7 +78,7 @@ rules
 		where
 			<store-package-abspath>(package-qname ,package-abs-path)
 		
-		/* seems not needed at this moment. hence, commenting this code.
+		/* it seems not to be needed at this moment. hence, commenting this code.
 		where
 			if <get-package-declaration> package-qname => Package(package-qname, module-def*) then
 				modifiedPackageDescription' 						 := Package(package-qname, <conc>(module-def* , desugared-modules*))
@@ -86,7 +87,9 @@ rules
 			end;
 			<store-declaration(|Packages())>	(package-qname,  modifiedPackageDescription')
 		*/	
-	
+
+rules
+		
 	desugar-spx: 
 		m@Module(attrb* , modname , section*) -> modifiedModuleDescription
 		with 
@@ -114,16 +117,21 @@ rules
 			<store-module-abspath> (enclosing-module-qname, package-abs-path);
 			<store-declaration(|Modules())>(enclosing-module-qname,  modifiedModuleDescription);
 			<store-scope-reference>(Module(enclosing-module-qname),  package);
-			<store-original-declaration(|Modules())>(enclosing-module-qname,  m) // stored original ast 
-
+			<store-original-declaration(|Modules())>(enclosing-module-qname,  m) // also storing original AST. 
+rules
+	
 	//Desugaring SDF Sections 
 	desugar-spx : SDFSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
 	
+	desugar-spx : SDFSectionEH ( _, sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
+
+rules	
 	//Desugarting STR sections 
 	desugar-spx : STRSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> STRSection ( sectionDef' )
 		with 
 			<basic-stratego-desugar-top> sectionDef => sectionDef'  		
-	
+
+rules	
 	//Desugaring ESV Sections 
 	desugar-spx : ESVSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
 		with
