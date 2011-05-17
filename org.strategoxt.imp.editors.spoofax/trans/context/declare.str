@@ -23,7 +23,7 @@ rules
 				?Package(QName(_))
 			)
 		);
-		get-enclosed-modules;debug;
+		get-enclosed-modules;
 		map(get-module-declaration);
 		list-loop(declare-module(declare-global-symbol))
 	
