@@ -91,7 +91,7 @@ rules
 	
 	declare-str-section: s@STRSection(def*) -> STRSection(m-definition*)
 	where 
-		m-definition* := <alltd(declare-str-definition-main)>def*
+		m-definition* := <declare-str-definition-main>def*
 	
 		
 	declare-str-section: ESVSection(def*) -> <id>   
