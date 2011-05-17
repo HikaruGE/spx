@@ -1,7 +1,8 @@
-package test
+package M1
 	
-	module test-main 
-		imports entity-lang
+	module B 
+		imports M2
+		
 		
 		context-free start-symbols 
     	Start
@@ -10,19 +11,21 @@ package test
 	    "module" ID Definition*       -> Start {cons("Module")}
 	    "entity" ID "{" Property* "}" -> Definition {cons("Entity")}
 	    ID ":" Type                   -> Property {cons("Property")}
-	    ID                            -> Type {cons("Type")}
+	    ID                            -> Type {cons("Type")} 
 
-
-
-
+		
 	     
-package entity-lang 
-	
-	module module-main
+package M2       
+	 
+	module A
+		language General properties 
+    	name          : entity-lang    
+       	  
+    	
 		imports  
 			libstratego-lib 
-		
-		context-free start-symbols 
+		 
+		context-free start-symbols  
     	Start
  
   	context-free syntax
@@ -34,9 +37,23 @@ package entity-lang
 		rules
   	 generate-aterm:
     	(selected, position, ast, path, project-path) -> path
+		
+			
+  
+  	rules
+  		position-of-term1:
+    [t | t*] -> position
+    where
+      if id then
+        position := "test"
+      else
+        position := "test2"
+      end
 
+        
+	     
 		language General properties
-    	name          : entity-lang
+    	
     	id            : entity-lang 
   		extends       : Root
                   
