@@ -69,15 +69,17 @@ rules
           DeclareCookie:  scoped-sig  -> cookie
           STRDeclaration: scoped-cookie  -> def
         )
+        ;<debug-declaration>$[DeclareSTR | declare-definition | Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]]
+				;<debug-declaration>$[DeclareSTR | declare-definition | Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
       else
        	cookie := <getCookie> sig 
       end
-
+		
 
   redeclare-definition:
     def -> cookie
     with
-    	sig := <signature-of>
+    	 sig := <signature-of>
       ;cookie := <newterm>
       ;scoped-cookie :=<to-scoped-symbol> cookie
       ;scoped-sig    :=<to-scoped-symbol> sig
@@ -85,14 +87,17 @@ rules
         DeclareCookie:  scoped-sig    -> cookie
         STRDeclaration: scoped-cookie -> def
       )
+		where
+			<debug-declaration>$[DeclareSTR | redeclare-definition | Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]];
+			<debug-declaration>$[DeclareSTR | redeclare-definition | Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
+  
   external SRTS-EXT-newint(|)
   
 rules 
 	
-	declare-str-definition-main =  
-		declare-stratego-globals-top;
-		declare-bodies-top
-	
+	declare-str-definition-main =  declare-bodies-top
+		
+		 
 	declare-stratego-globals-top =
     if not(NoAnalysis) then
     	where(<debug-declaration>$[DeclareSTR | Inside stratego-globals-top : [<pp-aterm>]]);
@@ -118,6 +123,8 @@ rules
       rules(
         DeclareCookie: scoped-sig' -> cookie
       )
+    where
+    	<debug-declaration>$[DeclareSTR | declare-str-definition [<pp-aterm>]| Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
   
    declare-str-definition:
     ExtSDef(x, s*, t*) -> <id>
@@ -142,6 +149,10 @@ rules
       rules(
         DeclareCookie: scoped-sig'   -> cookie
       )
+    where
+    	<debug-declaration>$[DeclareSTR | declare-str-definition [<pp-aterm>] | Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
+    
+    
   declare-dynrule:
     dec @ RDecT(x, s*, t*) -> RDecT(x', s*, t*)
     where
@@ -180,8 +191,9 @@ rules
     ?prefix;
     sig := ($[[prefix]-[x]], s, t);
     scoped-sig := <to-scoped-symbol> sig;
-    rules(DeclareCookie: scoped-sig -> cookie)
-
+    rules(DeclareCookie: scoped-sig -> cookie);
+		where(<debug-declaration>$[DeclareSTR | declare-dr-rule [<pp-aterm>prefix]| Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]])  
+  
 
   dr-scope-declare-cookies(defs, s):
     t -> t'
@@ -398,8 +410,6 @@ rules // Uses inside definition bodies
       x' := x{<declare-cookie-of>}
     with
       t'* := <declare-bodies-top> t*
-
-
 rules 
 
 	// TODO IMPLEMENT IMPORT handling => needs to be moved to the compile-legacy-artifacts

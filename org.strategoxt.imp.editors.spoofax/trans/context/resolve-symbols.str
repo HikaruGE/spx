@@ -33,13 +33,13 @@ rules
 	where 
 			result := <DeclaredModule>qname 
 			<+
-			debug(!"SymbolTable| Failed to retrieve module's abs file path.");fail
+			<debug-symboltable>$[SymbolTable| Failed to retrieve module's abs file path.];fail
 			 
 	get-package-abs-filepath : Module(qname) -> result
 	where 
 			result := <DeclaredPackage>qname 
 			<+
-			debug(!"SymbolTable| Failed to retrieve package's abs file path.");fail
+			<debug-symboltable>$[SymbolTable| Failed to retrieve package's abs file path.];fail
 	
 rules	
 	// Add scopes for the symbol 

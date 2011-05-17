@@ -12,15 +12,30 @@ imports
 imports
 	utils/annotations
 	utils/debug
+	utils/contract
 	config	
 	common
 
 rules		
+	declare-package = 
+		contracts(
+			contract-requires(
+				?Package(QName(_))
+			)
+		);
+		get-enclosed-modules;debug;
+		map(get-module-declaration);
+		list-loop(declare-module(declare-global-symbol))
+	
+	declare-module(s) = origin-track-forced(s)
+		
 	declare-all = declare-sdf-all; declare-esv-all ; declare-str-all; update-modified-module-declaration   
+	
+	declare-global-symbol = declare-str-global ;  update-modified-module-declaration
+		
+	init-declaration = init-record-signatures 
 
-	init-declaration = init-record-signatures
-
-
+	
 rules 
 	
 	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
@@ -32,32 +47,17 @@ rules
 	where 
 		<has-extension(|"str") + has-extension(|"rtree")>resolved-path; 
 		<alltd(declare-str-definition-main)>legacy-content
-	
-rules
 
-	// Declaring current scope for further analyze 
-	declare-current-scope(| package-typed-qname , module-typed-qname)=
-		with(
-			<declare-current-package-scope>package-typed-qname;
-			<declare-current-module-scope>module-typed-qname
-		) 
-	
-	declare-current-package-scope : 
-		package-typed-qname -> <id> 
-		with 
-			rules ( GetEnclosingPackageName      := package-typed-qname)
-		
-	declare-current-module-scope:
-			module-typed-qname -> <id> 
-			with 
-				rules ( GetEnclosingModuleName      := module-typed-qname)
-	 
 rules	
+	
 	declare-sdf-all = declare-spxmodules-all(declare-sdf-section) 
 	declare-str-all = declare-spxmodules-all(declare-str-section)
 	declare-esv-all = declare-spxmodules-all(declare-esv-section)
-
+	declare-str-global = declare-spxmodules-all(declare-str-global-section)
+	
+	
 rules
+	
 	declare-spxmodules-all(s): 
 		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*) 
 		where
@@ -96,6 +96,19 @@ rules
 		
 	declare-str-section: ESVSection(def*) -> <id>   
 
+rules
+	
+	declare-str-global-section: SDFSection(def*) -> <id>
+	
+	declare-str-global-section: SDFSectionEH(_,def*) -> <id>
+	
+	declare-str-global-section: s@STRSection(def*) -> STRSection(m-definition*)
+	where 
+		m-definition* := <declare-stratego-globals-top>def*
+	
+		
+	declare-str-section: ESVSection(def*) -> <id>   
+
 rules	
 	
 	declare-esv-section: SDFSection(def*) -> <id>
@@ -108,4 +121,23 @@ rules
 	
 	
 	
-	   
+	
+rules
+
+	// Declaring current scope for further analyze 
+	declare-current-scope(| package-typed-qname , module-typed-qname)=
+		with(
+			<declare-current-package-scope>package-typed-qname;
+			<declare-current-module-scope>module-typed-qname
+		) 
+
+	declare-current-package-scope : 
+		package-typed-qname -> <id> 
+		with 
+			rules ( GetEnclosingPackageName      := package-typed-qname)
+		
+	declare-current-module-scope:
+			module-typed-qname -> <id> 
+			with 
+				rules ( GetEnclosingModuleName      := module-typed-qname)
+	 	   

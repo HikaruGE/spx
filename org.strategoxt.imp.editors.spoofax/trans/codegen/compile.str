@@ -182,7 +182,9 @@ rules
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
+						<declare-package>package-typed-qname;
 						<list-loop(compile-spx-module)><get-enclosed-modules>package-typed-qname
+						
 				|};
 			
 				// Making this package as compiled.
@@ -213,7 +215,7 @@ rules
 						// symbols that consist in this particular module are marked/realized
 						// as private symbols. 
 						enclosing-package-typed-qname := <GetEnclosingScope>typed-qname;
-						<compile-spx-package>enclosing-package-typed-qname 				 
+						<compile-spx-package>enclosing-package-typed-qname
 				else
 					<debug-compiler> $[compile-depending-spx | Illegenal depending spx artifact: [<pp-aterm> typed-qname]];
 					fail
@@ -229,14 +231,10 @@ rules
 		where 
 			if not(<CompiledModule>module-typed-qname) then
 				<debug-compiler>$[compile-spx-module| Currently Compiling : [<pp-aterm>]]; //this package is not compiled before
-				module-decl* := <get-module-declarations>module-typed-qname;
+				module-decl := <get-module-declaration>module-typed-qname;
 				{|GetEnclosingModuleName:
 						<declare-current-module-scope> module-typed-qname; 
-						<list-loop(
-								origin-track-forced(declare-all)
-								//declare-all
-						 	)
-						 >module-decl*
+						<declare-module(declare-all)>module-decl
 				|};
 				where(rules(CompiledModule: module-typed-qname -> module-typed-qname))
 			else
