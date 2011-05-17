@@ -35,11 +35,7 @@ imports
 imports
 	 editor/main
 	 codegen/main
-	
-rules 
-	get-project-path = (ProjectPath <+ project-path)
- 
-	
+
 rules  
    
   editor-complete:

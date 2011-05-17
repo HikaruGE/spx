@@ -13,8 +13,16 @@ imports
 	context/sdf/declare-signature
 	context/str/declare
 	context/str/signature-generator
-	 
-	
+
+rules
+  analyze-section: 
+		STRSection(ast) -> ( errors, warnings, [])
+		where
+  		<debug-analysis>$[ErrorChecking | STR Section : [<pp-aterm>]]
+		with
+    	errors   := <collect-all(global-constraint-error + constraint-error, conc)> ast;
+      warnings := <collect-all(constraint-warning, conc)> ast
+      
 rules 
 	//TODO : Use new Is-declared in other cases where needed. 		
   is-declared( |actual-no-of-arguments)=

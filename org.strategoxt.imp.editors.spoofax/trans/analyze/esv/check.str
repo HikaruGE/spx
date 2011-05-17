@@ -14,8 +14,18 @@ imports
 // TODO: check if provider/imported/etc. files exist
 // TODO: check if there is _any_ provider for observer etc.
  
+rules
+  
+  analyze-section: 
+		ESVSection(ast) -> (error-esv*, warning-esv* , [])
+  	where
+  		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
+		where
+  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
+  		warning-esv* := <collect-all(constraint-esv-warning, conc)> ast
 
-//TODO : check whether language description is there . Otherwise raise warning as build will fail anyway if the information is not provided.
+
+	
 
 rules 
 	resolve-sdf-sort-declaration = 

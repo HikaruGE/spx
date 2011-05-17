@@ -17,6 +17,12 @@ imports
 	utils/debug
 	utils/path
 	config
+	editor/main
+
+	
+rules 
+	get-project-path = (ProjectPath <+ project-path)
+
 
 strategies 
 	//pretty printing aterm 

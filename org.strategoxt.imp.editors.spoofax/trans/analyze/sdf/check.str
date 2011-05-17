@@ -7,6 +7,30 @@ imports
   context/-
   include/SpoofaxLang
 	
+rules
+	analyze-section: SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
+		
+	analyze-section: 
+		SDFSection(ast) -> <analyze-sdf-errors>ast 
+		where
+			<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+   
+	analyze-sdf-errors : 
+		ast -> (error'*, warning'*, [])
+		where
+			<debug-analysis>$[ErrorChecking | SDF  : [<pp-aterm>]]
+		with
+	    // We only collect-om since we don't want inner warning dupes
+	    error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>), conc)> ast;
+	    warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>), conc)> ast;
+	    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
+	      serror* := []
+	    else
+	      serror* := <collect-om(context-free-syntax-sort-error, conc)> ast
+	    end;
+	    error'*   := <conc;flatten-list> (serror*, error*);
+	    warning'* := <flatten-list> warning*
+
 
 strategies 
   /**

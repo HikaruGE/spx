@@ -25,14 +25,14 @@ rules
 	
 	getStrDeclaration = 
  		?cookie; 
- 		<resolve-symbol-unique-declaration(all-keys-STRDeclaration, bagof-STRDeclaration)><to-scoped-symbol>cookie 
+ 		<to-scoped-symbol;resolve-symbol-declarations(all-keys-STRDeclaration, bagof-STRDeclaration);last>cookie 
  	<+
  		<debug-declaration> $[DeclareSTR | Failed to retrive STRDeclaration for cookie [<pp-aterm-forced><to-scoped-symbol>]];
  		fail
 	
 	getCookie =
 			?sig; 
- 			<resolve-symbol-unique-declaration(all-keys-DeclareCookie, bagof-DeclareCookie)><to-scoped-symbol>sig
+ 			<to-scoped-symbol;resolve-symbol-declarations(all-keys-DeclareCookie, bagof-DeclareCookie);last>sig
  		<+
  			<debug-declaration> $[DeclareSTR | Failed to retrive DeclareCookie for signature [<pp-aterm>]];
  			fail
