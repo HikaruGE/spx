@@ -1,15 +1,45 @@
 module Lawoco
-	imports M2
+	imports M2 
 
+context-free syntax
+  
+    "module" Module@=ID Definition*     -> Start {"Module", scope(Entity, Module)}
+    "entity" Entity@=ID "{" Member* "}" -> Definition {"Entity", scope(Property, Function)}
+    Entity@ID Property@=ID              -> Member {"Property"}
+		    Function@=ID "(" { Param "," }* ")" Stm -> Member {"Function", scope(Var)}
+    Var@=ID ":" Entity@ID           -> Param {"Param"}
+    
+    Function@ID "(" {Exp ","}* ")"      -> Exp {"Call"}        %% or, could be an Entity 
+    "var" Var@=ID ":" Entity@ID         -> Stm {"VarDecl"}
+    "var" Var@=ID ":" Entity@ID "=" Exp -> Stm {"VarDeclInit"}
+    Var@ID "=" Exp                      -> Stm {"Assign"}
+    Var@ID                              -> Exp {"Var"}         %% or, could be a Property!
+    Exp "." Property@ID                 -> Exp {"PropAccess"}
+    "{" Stm* "}"                        -> Stm {"Block", scope(Var)}   
+    
 
 rules  	
+	
+	// Stratego Rules supporting code contracts 
+	
+	remove-quote: 
+    s as String -> s' as String 
+    with
+      if explode-string => ['\'' | s_tail] then 
+        s' := <implode-string> s_tail
+      else
+        s' := s
+      end
+	
 	position-of-term1:
-    [t | t*] -> position 
+    [t | t* as List] -> position as List 
+    where
+    	is-list
     where
       if id then
         position := MARKER()
       else
-        position := "test2" 
+        position := "test2"   
       end 
 signature 
 	constructors
@@ -29,4 +59,5 @@ signature
 	  Property : ID * Type           -> Property
 	  Type     : ID                  -> Type   	  
  
+
 
