@@ -20,14 +20,27 @@ imports
 rules 
 	default_package_name = !"__default"
 	
+	default_src_directory= !"src"
+	
+	default_output_directory= !".shadowdir"
+	
 	internal_module_name_string = !"__internal"
 	
 	get-known-legacy-extensions = !["sdf" , "def" , "str" , "rtree"] 
 		
 rules 
+	
+	fallback-configuration = 
+		<file-exists <+ mkdir> $[[<get-project-path>]/[<default_src_directory>]];
+		!Configuration(
+		  [ Includes([Sources(AllDirectories(), [<default_src_directory>])])
+		  , CodeGeneration([OutputDirectory(<default_output_directory>)])
+		  ]
+		)	
+	
 	initialize-configuration = 
 		?current-term 
-		;<parse-spoofaxconfiguration-file>"spx.config" => config-aterms
+		;<parse-spoofaxconfiguration-file<+<debug>$[Failed to Load Configuration... Loading Default Configuration.]; fallback-configuration>"spx.config" => config-aterms
 		;init-output-directory
 		;init-source-directory    		
 		;<init-ignored-directories>[".svn"]
