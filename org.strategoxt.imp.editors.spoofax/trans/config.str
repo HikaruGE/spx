@@ -20,7 +20,9 @@ imports
 rules 
 	default_package_name = !"__default"
 	
-	default_src_directory= !"src"
+	default_src_directory = !"src"
+	
+	root_directory = !"."
 	
 	default_output_directory= !".shadowdir"
 	
@@ -31,9 +33,8 @@ rules
 rules 
 	
 	fallback-configuration = 
-		<file-exists <+ mkdir> $[[<get-project-path>]/[<default_src_directory>]];
 		!Configuration(
-		  [ Includes([Sources(AllDirectories(), [<default_src_directory>])])
+		  [ Includes([Sources(AllDirectories(), [<root_directory>])])
 		  , CodeGeneration([OutputDirectory(<default_output_directory>)])
 		  ]
 		)	
@@ -192,10 +193,18 @@ rules
  	;make-set
  
  
+	convert-abs-path(|project-path) : (s, o) -> (s' , o)
+	where
+		 if !s => <root_directory>  then 
+		 		s' := $[[project-path]] 
+		 else 
+		 		s' := $[[project-path]/[s]]
+		 end
+		 	
 	get-all-sources(|project-path) =
  		collect-all(?Sources(_, _));
  		get-local-sources;
- 		map(\(s,o)-> ($[[project-path]/[s]],o)\)
+ 		map(convert-abs-path(|project-path))
  	<+ 
   		debug(!"Failed to get list of source directory.") ; fail
  
