@@ -1,5 +1,4 @@
-module 
-	utils/contract 
+module 	utils/contract 
 imports 
 	common
 	utils/debug	
@@ -37,4 +36,9 @@ rules
 	with-verification (preconditions, s ) = with-verification (preconditions, s , id)
 	 
 	
-	with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail    
+	with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail
+	
+rules
+	String = is-string 
+	
+	List = is-list	    
