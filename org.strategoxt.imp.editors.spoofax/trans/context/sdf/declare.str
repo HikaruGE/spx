@@ -67,8 +67,8 @@ rules
       x:= <get-rhs-sort-name>sort;
       qualified-sort-name := <to-scoped-symbol> x 
    	with
-   //		enable-declaration-debugging;
-  		<store-operation-declaration>prod
+   	//	enable-declaration-debugging;
+   		<store-operation-declaration>prod
   	with
       <topdown(try(store-namespace-def))> lhs
     with

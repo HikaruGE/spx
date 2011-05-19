@@ -73,7 +73,7 @@ rules
 	
 	
 	store-operation-declaration: 
-		p@prod(_,rhs-sort, _) ->  <store-operation-declaration-internal>p
+		p@prod(_,rhs-sort, _) -> <id> 
 		with 
 			 	if is-lexical-sort then
 			 		if not (IsInsideLexicalSyntaxBlock ) then
@@ -84,18 +84,23 @@ rules
 			 						<store-operation-declaration-internal>p	
 			 			|}
 			 		end
-			 	end 
+			 	end
+		where
+			<store-operation-declaration-internal>p	 	 
 			 	
 	
 	store-operation-declaration-internal
   	=  ?p@prod(lhs , rhs-sort, attrs(attribute-list))
   		;rhs-sort-name := <get-rhs-sort-name>rhs-sort	
   		;{|lhs-sort, get-op-name:
-  					<find-sorts>lhs
-  					;<get-opration-name>attribute-list  
-  					;operation-name := <get-op-name>
-  					;lhs-operands-types := <reverse><bagof-lhs-sort>  
-  					;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p) 
+  		 			<find-sorts>lhs
+  					;<try(get-opration-name)>attribute-list
+  					;if operation-name := <get-op-name> then
+  						lhs-operands-types := <reverse><bagof-lhs-sort>  
+  						;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)
+  					else
+  						<debug-declaration> $[DeclareSignature | Failed to retrive Operation Name . Hence Ignoring : [<pp-aterm> p].]
+  					end	  
   		  |}
 			  
 	store-operation-declaration-internal 

@@ -195,9 +195,9 @@ rules
  
 	convert-abs-path(|project-path) : (s, o) -> (s' , o)
 	where
-		 if !s => <root_directory>  then 
+		 if root_directory => s  then
 		 		s' := $[[project-path]] 
-		 else 
+		 else
 		 		s' := $[[project-path]/[s]]
 		 end
 		 	
