@@ -149,7 +149,7 @@ rules
 	to-str-import: 
 		legacy-artifact@Name(name)  -> 	result 
  	where
- 			if(<UsedLegacyArtifacts>(<GetEnclosingPackageName> , name) => Unresolved()) then
+ 			if(<UsedLegacyArtifacts>(Globals() , name) => Unresolved()) then
  				result := [Import(name)]  // Probably lib legacy imports . SInce, it is unresolved, no signature is generated for this import
  			else 
  				result :=  [Import(name) , Import(<get-signature-file-name>name)] 

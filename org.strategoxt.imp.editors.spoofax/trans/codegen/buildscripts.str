@@ -49,12 +49,12 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
     <property name="dist" location="bin/dist"/>
     
 		<!-- Environment configuration for command-line builds -->
-    <property name="build.sdf.imports" value= "-I &quot;${packages.root}&quot;"/>
+    <property name="build.sdf.imports" value= "-I &quot;${basedir}&quot; -I &quot;${packages.root}&quot;"/>
     <property name="build.stratego.args" value="
                     --library
                     -I &quot;${packages.root}&quot;
                     -I &quot;${basedir}&quot;
-                    -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm"/>
+                    -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm  -la strc -la stratego-sdf"/>
 
 		<condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}" else="">
         <isset property="eclipse.spoofaximp.nativeprefix"/>
