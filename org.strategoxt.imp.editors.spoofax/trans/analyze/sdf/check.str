@@ -51,7 +51,7 @@ rules  //global checks
   context-free-syntax-sort-error:
     sort(x) -> (x, $[No definition for [x]])
     where
-      not(<resolve-sdf-declaration> x) 
+      not(<resolve-sdf-declarations> x) 
   
   context-free-syntax-sort-error:
     parameterized-sort(_, _) -> [] // not supported

@@ -108,7 +108,7 @@ rules
  	
  	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
  	where 
- 			if(<UsedLegacyArtifacts>(Globals(), name) => Unresolved()) then
+ 			if(<UsedLegacyArtifacts>(<GetEnclosingPackageName>, name) => Unresolved()) then
  				result := [] 
  			else 
  				result :=  'module(unparameterized(name)) 

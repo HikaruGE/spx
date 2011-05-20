@@ -258,17 +258,19 @@ rules
 		<debug-compiler>$[compile-main | compile-legacy-artifacts | List:[<pp-aterm>upackages]]
 	where
 		{| Resolved-ExternalArtifact:
-					<compile-legacy-artifact>(Unresolved() , Module(Name("libstratego-lib")) ,Unresolved()); 
+					//TODO : Make it configurable which lib to include by default. Hence remove following hardcoding. 
+					<compile-legacy-artifact>(Globals() , Module(Name("libstratego-lib")) ,Unresolved());
 					<list-loop(compile-legacy-artifact-package)>upackages	
+					
 		|}
 
 	//Compile  a particular legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others 		
 	compile-legacy-artifact-package : p@Package(qname) ->p
-	where	
+	with	
 		 <debug-compiler>$[compile-main | compile-legacy-artifacts | Current Package:[<pp-aterm>]]
 		;<bagof-UsingLegacyArtifacts>qname=> legacy-artifact-details*
 		;<debug-compiler>$[compile-main | compile-legacy-artifacts | Artifact List:[<pp-aterm>legacy-artifact-details*]]
-	where
+	with
 			{|GetEnclosingPackageName:
 						<declare-current-package-scope> p;
 						<map(compile-legacy-artifact)>legacy-artifact-details*	
@@ -277,9 +279,9 @@ rules
 	compile-legacy-artifact: 
 		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
 		where
-			<debug-compiler>$[compile-main | compile-legacy-artifact > planning to compile following legacy artifact: [<pp-aterm>]] 
+			<debug-compiler>$[compile-main | compile-legacy-artifact | planning to compile following legacy artifact: [<pp-aterm>]] 
 		where
-			if not(<Resolved-ExternalArtifact>(modulename,resolving-path)) then // check to see if already taken care off.  	
+			if not(<Resolved-ExternalArtifact>(namespace, modulename,resolving-path)) then // check to see if already taken care off.  	
 				if (!resolving-path => Unresolved()) then 
 					  // we are only supporting legacy STR lib at this moment which are not located in the file system . 
 					  // Hence, it is unresolved , we are giving it a try to resolve it as a lib
@@ -287,7 +289,7 @@ rules
 					<+
 						<read-stratego-signatures;declare-stratego-globals-top> modulename	
 					<+ 
-						<debug-compiler>$[compile-main | compile-legacy-artifact > failed to resolve]
+						<debug-compiler>$[compile-main | compile-legacy-artifact | Error :  failed to resolve]
 				else
 					// Verify that the resource has a known extension.
 					<has-known-extensions>resolving-path ;
@@ -298,15 +300,12 @@ rules
 							// Known Extension found. Handling it.  
 							// Parsing the legacy content.
 							// Recoding the declarations for further analysis. 
-							<debug-compiler>$[compile-main | compile-legacy-artifact | Compiling following legacy artifacts : [<pp-aterm>resolving-path]];
+							<debug-compiler>$[compile-main | compile-legacy-artifact | Compiling following legacy artifacts : [<pp-aterm>resolving-path] for package : [<GetEnclosingPackageName;pp-aterm>]];
 							<declare-legacy-artifact(|resolving-path)><parse-legacy-artifact>resolving-path
 					|}
 				<+ 
 					<debug-compiler>$[compile-main | compile-legacy-artifact > Error occured in handling [<pp-aterm>resolving-path]. Hence, it is ignored.]  
-					
-					
-					//read + normalize and then sent to declare
 				end 	 
 			end
 		where
-			rules ( Resolved-ExternalArtifact : (modulename,resolving-path) ->resolving-path) 
+			rules ( Resolved-ExternalArtifact : (namespace, modulename,resolving-path) ->resolving-path) 

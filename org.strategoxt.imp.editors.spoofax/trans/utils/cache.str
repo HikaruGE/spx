@@ -53,13 +53,13 @@ rules
 			<spx-lib-cache-path> name => cache-path
 		where
 			if not(invalidate-lib-cache) then
-			 	<debug-compiler>$[Caching | Cache is invalidated. read it.];
+			 	<debug-compiler>$[Caching | Cache is invalidated for [name]. read it.];
 	     	fail	 
 	     else
 				if <file-exists> cache-path then
-				 	<debug-compiler>$[Caching | lib Cache is still valid  :[<pp-aterm>]]
+				 	<debug-compiler>$[Caching | lib Cache is still valid  for [name]]
 				 	;<ReadFromFile> cache-path => ast
-				 	;<debug-compiler>$[Caching | Found ast:[<pp-aterm>ast]]
+				 	;<debug-compiler>$[Caching | Found ast [name].]
 				else
 					<read-lib>name => ast
 					;<cache-lib-ast>( name , ast) 		 

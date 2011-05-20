@@ -100,8 +100,7 @@ rules
 		 
 	declare-stratego-globals-top =
     if not(NoAnalysis) then
-    	where(<debug-declaration>$[DeclareSTR | Inside stratego-globals-top : [<pp-aterm>]]);
-     		alltd(declare-str-definition)
+    		alltd(declare-str-definition)
     end
 
   declare-str-definition:

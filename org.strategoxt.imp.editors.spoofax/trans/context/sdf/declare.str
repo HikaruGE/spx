@@ -20,7 +20,14 @@ imports
 	include/SpoofaxLang
  
 rules 
-	resolve-sdf-declaration = 
+	resolve-sdf-declarations =
+		?symbol; 
+ 		<resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol 
+ 	<+
+ 		<debug-analysis> $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<pp-aterm>]];
+ 		fail
+ 		 
+	resolve-unique-sdf-declaration = 
  		?symbol; 
  		<resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol 
  	<+

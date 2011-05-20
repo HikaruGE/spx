@@ -76,7 +76,7 @@ rules
 		where 
 			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing module reference : [<pp-aterm>]]
 		with
-			module-qname := <get-module-untyped-qname> (package-qname-parts , modname)//TODO: construct modules qualified name
+			module-qname := <get-module-untyped-qname> (package-qname-parts , modname)			//TODO: construct modules qualified name
 		where 
 			if <DeclaredModule>module-qname then
 					<store-spx-import-declaration(|enclosing-namespace-qname)> Module(module-qname)
@@ -88,7 +88,7 @@ rules
 		 
 		// Store import references in the 2nd pass of the traversals
 	store-import-declaration(|enclosing-namespace-qname):
-		i@ImportPackage(Name(package-name)) -> annotated-import-decl 
+		i@ImportPackage(Name(package-name)) -> annotated-import-decl
 		where 
 			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing reference : [<pp-aterm>]]
 		where 
@@ -119,13 +119,15 @@ rules
 			;if (!resolved-path => Unresolved()) then 
 				<debug-symboltable>$[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<pp-aterm>i]]
 				;annotated-import-decl :=  <add-annotation(|Unresolved())>i
+				;ns := Globals() // TODO :  Make it consistent. currently some DR is using Typed QName , others using UnTyped 
 			else
+				ns := Package(enclosing-namespace); // TODO :  Make it consistent. currently some DR is using Typed QName , others using UnTyped
 				annotated-import-decl :=  i
 			end	
 		with
 			rules(
-					UsedLegacyArtifacts:   (Globals(), modulename) -> resolved-path
-					UsingLegacyArtifacts:+ enclosing-namespace	   -> (Globals(), Module(Name(modulename)), resolved-path)    
+					UsedLegacyArtifacts:   (ns , modulename) -> resolved-path
+					UsingLegacyArtifacts:+  enclosing-namespace	   -> (ns, Module(Name(modulename)), resolved-path)    
 				)
 			;<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <UsingLegacyArtifacts>: [<pp-aterm>enclosing-namespace]-> [<pp-aterm>(Globals(), Module(Name(modulename)), resolved-path)]]
 			
