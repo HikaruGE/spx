@@ -15,7 +15,7 @@ rules
 	has-known-extensions  =
 		?file-path ;
 		get-known-legacy-extensions;
-		filter(?ext; <has-extension(|ext)>file-path);
+		filter({ext : ?ext; <has-extension(|ext)>file-path});
 		is-not-empty-list;
 		!file-path
 	<+

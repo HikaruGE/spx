@@ -1,9 +1,11 @@
 module Naming
 
-imports Common
+imports SPXCommon
 
 exports
 
+	
+	 
 context-free syntax
   
   Namespace "@=" Symbol[[SDF]] -> Symbol[[SDF]] {cons("namespacedef")}

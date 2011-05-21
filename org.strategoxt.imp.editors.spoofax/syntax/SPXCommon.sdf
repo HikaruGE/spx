@@ -13,7 +13,7 @@ exports
     BackSlashChar         -> StringChar
     "\\"                  -> BackSlashChar
     
-    [\ \t\n\r] -> LAYOUT
+    [\ \t\n\r] -> LAYOUT 
     
     [\*]                             -> CommentChar
     "/*" (~[\*] | CommentChar)* "*/" -> LAYOUT
@@ -50,11 +50,13 @@ exports
 		"main"
 		"module" 
 		"package" 
-		"imports"	-/- [A-Za-z0-9\_]
+		"imports"	
+		"language" -/- [A-Za-z0-9\_]
 		 
 
 	lexical syntax     
     
+    "language"          -> Reserved
     "project"           -> Reserved
     "retain"            -> Reserved
     "with"              -> Reserved
