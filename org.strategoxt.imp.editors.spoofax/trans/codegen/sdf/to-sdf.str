@@ -107,12 +107,13 @@ rules
  		<is-string>name
  	
  	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
-	where 
- 			if(<UsedLegacyArtifacts>(Globals(), name) => Unresolved()) then
- 				result := [] 
- 			else 
- 				result :=  'module(unparameterized(name)) 
-			end 
+ 	where 
+ 		//Importing Legacy artifact only if it is a SDF or DEF file 	
+		if <has-extension(|"sdf") + has-extension(|"def")><UsedLegacyArtifacts>(Globals(), name) then  
+				result :=  'module(unparameterized(name))
+		else
+				result :=  [] 	
+		end 
 			
 
 rules
