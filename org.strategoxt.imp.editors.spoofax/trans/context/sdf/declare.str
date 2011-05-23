@@ -54,7 +54,7 @@ rules
 
 
 	declare-sdf-definition:
-    renamed-module(x, renamings(y)) -> <id>
+    renamings(y) -> <id>
     where
       <all(try(?symbol(_, <id>); declare-sdf-simple-definition))> y
 

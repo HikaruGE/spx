@@ -14,7 +14,7 @@ rules
 		SDFSection(ast) -> <analyze-sdf-errors>ast 
 		where
 			<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
-   
+     
 	analyze-sdf-errors : 
 		ast -> (error'*, warning'*, [])
 		where
@@ -48,7 +48,7 @@ strategies
 // Limited exisiting sort checking  
 rules  //global checks
  
-  context-free-syntax-sort-error:
+  context-free-syntax-warning:
     sort(x) -> (x, $[No definition for [x]])
     where
       not(<resolve-sdf-declarations> x) 

@@ -107,9 +107,11 @@ rules
  		<is-string>name
  	
  	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
+ 	where debug
  	where 
- 		//Importing Legacy artifact only if it is a SDF or DEF file 	
-		if <has-extension(|"sdf") + has-extension(|"def")><UsedLegacyArtifacts>(Globals(), name) then  
+ 		if <has-extension(|"sdf")+has-extension(|"def")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)then  
+				// Importing Legacy artifact only if it is a SDF or DEF file
+				// Assumption : unresolved imports refers to stratego lib and declared in global scope. 
 				result :=  'module(unparameterized(name))
 		else
 				result :=  [] 	

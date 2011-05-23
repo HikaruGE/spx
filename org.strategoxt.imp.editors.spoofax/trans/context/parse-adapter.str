@@ -13,21 +13,24 @@ imports
 imports
 	utils/path
 	utils/debug
-	utils/cache	
+	utils/cache
+	utils/contract	
 	config
 	common
+	
 rules
 
 	parse-spx-sources : 
 		(sourcedir , searchOption) -> <id>
 		where
 			{| current-working-root-dir :  
-				rules(
-					current-working-root-dir  := <getcwd>
-				);
-				<chdir>sourcedir;
-				<parse-spx-compilationUnits(|searchOption)> <getcwd>;
-				<chdir> <current-working-root-dir>
+					rules(
+						current-working-root-dir  := <get-project-path>
+					);
+					if run-strategy( <chdir>sourcedir , fail | $[Warning | Failed to change current directory to : [<pp-aterm>sourcedir]]) then 
+						<parse-spx-compilationUnits(|searchOption)> <getcwd>;
+						run-strategy( <chdir> <current-working-root-dir> , fail | $[Warning | Failed  to change current directory to : [<pp-aterm><current-working-root-dir>]])
+					end
 			|}
 		
 	parse-spx-compilationUnits(|search-option) = 

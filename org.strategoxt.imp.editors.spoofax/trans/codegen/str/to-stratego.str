@@ -151,17 +151,15 @@ rules
  		where
 			if(<UsedLegacyArtifacts>(Globals() , name) => Unresolved()) 
 						<+ 
-					<has-extension(|"str")+has-extension(|"str")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name
-				)   then
+					<has-extension(|"str")+has-extension(|"str")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)
+			then
 				// Importing legacy artifact. Please note that , for legacy artifact, signatrue is not included
-				//	as it is taken care of during signature generation of _Internal module for every package. 
+				// as it is taken care of during signature generation of _Internal module for every package. 
 				result :=  [Import(name)] 
 			else
 				result :=  []
 			end
-				
 		
- 		
 	to-str-import: 
 		Module(q@QName(qnameparts*))->[Import(str-import),Import(sig-import)]
 		where 

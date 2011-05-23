@@ -37,7 +37,12 @@ rules
 	 
 	
 	with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail
+
+
+rules
 	
+	run-strategy(  s  , on-fail | msg) = s <+  <debug> msg ; on-fail
+	 
 rules
 	String = is-string 
 	
