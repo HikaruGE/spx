@@ -101,22 +101,40 @@ rules
 			sdf-import-block := []
 		end		
  
- 	
+ 	// Resolved Imports are alraedy filtered out in the previous step.
+ 	// Hence, native spx imports are added without any further 
+ 	// verifications. 
  	sdf-import-adapter : name  -> 	'module(unparameterized(name))
  	where 
  		<is-string>name
- 	
- 	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
+	
+	// Additional verification is done during importing legacy artifacts.
+	// Here, both Unresolved libraries and Stratego Libs are Ignored.
+	// Basically anything Unresolved is not added as a import statment in 
+	// generated SDF definition. 
+	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
  	where debug
  	where 
  		if <has-extension(|"sdf")+has-extension(|"def")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)then  
 				// Importing Legacy artifact only if it is a SDF or DEF file
 				// Assumption : unresolved imports refers to stratego lib and declared in global scope. 
-				result :=  'module(unparameterized(name))
+				result :=  'module(unparameterized(name)) ;
+				<record-def-import-reference>name			
 		else
 				result :=  [] 	
 		end 
-			
+	
+	// Recoding references of def file so that we can specify -Idef arguments in pack-sdf 
+	// It would have been much cleaner if Pack-SDF by defult supports it without specifying this extra arguments.  	
+	record-def-import-reference =
+		where( 
+			?def-import-path;	
+			// Verifying whether it is indeed a def file. 
+			if (<has-extension(|"def")><UsedLegacyArtifacts;debug(!"resolved path : ")>(<GetEnclosingPackageName> , def-import-path)) then
+				package-typed-qname := <GetEnclosingPackageName> ; 
+				rules(ImportedDef :+ package-typed-qname  ->  def-import-path)	
+			end		
+		)
 
 rules
 

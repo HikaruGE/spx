@@ -55,20 +55,20 @@ strategies
 			;<debug>$[-------------------Getting list of errors-------------------]
 			;<get-all-analyzed-problems>() => problems  
 			;if <fail-if-has-errors>problems then
-			 	 <debug>$[-------------------Generating artifacts-------------------]
-			 	;init-code-generation  
-				;<list-loop(generate-spx-package)>list-of-package-qname*
-				;<debug>$[-------------------------Generating Build Scipt---------------------]
-				;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
-				;<debug>$[-------------------------Code Generation is done-------------------------] 		
+			 	{| ImportedDef : 
+			 	 			<debug>$[-------------------Generating artifacts-------------------]
+			 				;init-code-generation  
+							;<list-loop(generate-spx-package)>list-of-package-qname*
+							;<debug>$[-------------------------Generating Build Scipt---------------------]
+							;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
+							;<debug>$[-------------------------Code Generation is done-------------------------]
+				|} 		
 			else
 				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
 			end		 
 		)
 		;disable-compiler-debugging
 		;!current-term //restoring current term to avoid side effects  
-	
-	has-language-name-configured = ?Package(QName(_)) ; where(get-language-name)
 		
 rules
 
@@ -144,7 +144,6 @@ rules
 	
 		
 rules
-	
 	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 
 	with contracts( 
 		contract-requires(is-list |list-stmt*)
@@ -153,19 +152,12 @@ rules
 		<adapter>list-stmt*  => adapted-result*; // results are  adapted using the specified adapter
 		<post-coversion-adapter>adapted-result*  => resultant-block*
 
-
-	// Verifies wheter a particular list is empty or not.
-	ensure-list-is-not-empty =  contracts(contract-requires (is-list| <id>)); is-not-empty-list
-	
-	
 rules
 	// generates the import declaration for the artifacts .  
 	// s is a artifact specific adapted strategy applied to all the import declaration 
 	// to get the artifact-specific import declaration. 
 	to-generated-artifacts-import-declarations(s) =
 		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set; 	where(<debug-compiler>$[Codegen | Imports | Resultant imports :  [<pp-aterm>]]) 
-		
-	
 		
 	to-import-declaration(s): 
 		i@ImportPackage(package-qname@QName(_)) -> results
@@ -230,6 +222,16 @@ rules
 	
 	save-artifact( | package-untyped-qname, root-directory,output-path) : 
 		content -> <save-artifact( save-to-file | package-untyped-qname, root-directory,output-path)>content 
+
+
+rules
+	
+	// Verifies wheter a particular list is empty or not.
+	ensure-list-is-not-empty =  contracts(contract-requires (is-list| <id>)); is-not-empty-list
+		
+	has-language-name-configured = ?Package(QName(_)) ; where(get-language-name)
+	
+	get-all-imported-defs = bagof-ImportedDef
 		
 		
 	

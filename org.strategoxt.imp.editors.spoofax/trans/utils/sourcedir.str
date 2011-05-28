@@ -3,7 +3,7 @@ module utils/sourcedir
 imports
   lib/editor-common.generated
   libstrc
-	spoofaxlang
+	common
 rules
   
   get-source-base-dir: mod@Module(x, _) -> mod
