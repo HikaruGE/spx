@@ -149,9 +149,11 @@ rules
 	to-str-import: 
 		legacy-artifact@Name(name)  -> 	result 
  		where
-			if(<UsedLegacyArtifacts>(Globals() , name) => Unresolved()) 
-						<+ 
-					<has-extension(|"str")+has-extension(|"str")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)
+			if(
+				<UsedLegacyArtifacts>(Globals() , name) => Resolved() 
+			<+ 
+				<has-extension(|"str")+	has-extension(|"rtree")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)
+			)
 			then
 				// Importing legacy artifact. Please note that , for legacy artifact, signatrue is not included
 				// as it is taken care of during signature generation of _Internal module for every package. 

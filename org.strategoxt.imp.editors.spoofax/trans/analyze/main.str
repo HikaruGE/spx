@@ -81,24 +81,24 @@ rules	// Package specific semantic error checking
 			<debug-analysis> $[Analyze|  analyze-spx-module> Planning to analyze module for semantic problems: [<pp-aterm>]] 
 		where 
 			if not(<AnalyzedModule>module-typed-qname) then
-				<debug-analysis> $[Analyze| analyze-spx-module> Currently Analyzing : [<pp-aterm>]]; 
-				module-decl* := <get-module-declarations>module-typed-qname;
-				{|GetEnclosingModuleName:
-						rules( GetEnclosingModuleName := module-typed-qname);
-						<list-loop(
-								analyze
-						 )>module-decl*
-				|};
-				module-abs-path := <DeclaredModule>untyped-qname;
-				where(
-					rules(
-						AnalyzedModule:     module-typed-qname -> module-typed-qname 
-						AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
+					<debug-analysis> $[Analyze| analyze-spx-module> Currently Analyzing : [<pp-aterm>]]; 
+					module-decl* := <get-module-declarations>module-typed-qname;
+					{|GetEnclosingModuleName:
+							rules( GetEnclosingModuleName := module-typed-qname);
+							<list-loop(
+									analyze-module-definition
+							 )>module-decl* 
+					|};
+					module-abs-path := <DeclaredModule>untyped-qname;
+					where(
+						rules(
+							AnalyzedModule:     module-typed-qname -> module-typed-qname 
+							AnalyzedModulesDeclaredIn:+ module-abs-path -> module-typed-qname
+						)
 					)
-				)
-				<+
-				<debug-analysis> $[Analyze| analyze-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
-				;fail
+				<+ 
+					<debug-analysis> $[Analyze| analyze-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
+					;fail
 			else
 				<debug-analysis> $[Analyze| analyze-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
 			end		
@@ -171,9 +171,9 @@ rules
 	unzip-semantic-issuses:
 		list-of-semantic-issues -> unziped-list
 		where
-			<unzip-semantic-issuse(|[] , [], [])>list-of-semantic-issues => unziped-list
+				<unzip-semantic-issuse(|[] , [], [])>list-of-semantic-issues => unziped-list
 			<+
-			debug(!"unzip semantic issues failed : ");fail
+				debug(!"unzip semantic issues failed : ");fail
 	
 	//unziping list of semantic issues
 	unzip-semantic-issuse(|errors, warnings, infos) =

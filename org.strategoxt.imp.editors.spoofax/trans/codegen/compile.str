@@ -277,7 +277,7 @@ rules
 			|}
 			
 	compile-legacy-artifact: 
-		legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
+		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
 		where
 			<debug-compiler>$[compile-main | compile-legacy-artifact | planning to compile following legacy artifact: [<pp-aterm>]] 
 		where
@@ -285,10 +285,12 @@ rules
 				if (!resolving-path => Unresolved()) then 
 					  // we are only supporting legacy STR lib at this moment which are not located in the file system . 
 					  // Hence, it is unresolved , we are giving it a try to resolve it as a lib
-	  				<get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename
-					<+
-						<read-stratego-signatures;declare-stratego-globals-top> modulename	
-					<+ 
+						( <get-cached-lib-ast(read-stratego-signatures);declare-stratego-globals-top>modulename 
+						 <+ 
+						  <read-stratego-signatures;declare-stratego-globals-top> modulename
+						);
+						<record-legeacy-global-import-is-resolved>(namespace , modulename) 
+				  <+			
 						<debug-compiler>$[compile-main | compile-legacy-artifact | Error :  failed to resolve]
 				else
 					// Verify that the resource has a known extension.

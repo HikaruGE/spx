@@ -45,12 +45,12 @@ rules
 		
 rules
 	
-	analyze: 
+	analyze-module-definition: 
 		m@Module(attrb* , modname , section*) -> m
 		with
-				 package-typed-qname := <GetEnclosingPackageName> 
+				package-typed-qname := <GetEnclosingPackageName> 
 				;module-typed-qname  := <GetEnclosingModuleName>
-				<+ 
+			<+ 
 				 debug(!"ErrorChecking | Failed to create current scope.")
 				;fail
 		with
@@ -70,7 +70,7 @@ rules
 rules 
 			 
 	analyze-section = 
-		where(not(?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
+		where(not(?Imports(_)+?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
 		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
 		;!([], [], [])		
 

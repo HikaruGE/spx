@@ -24,8 +24,9 @@ signature constructors
 	STRSection								: Symbol
 	ESVSection								: Symbol
 	SDFSection								: Symbol
-	Unresolved								: Symbol
 	
+	Unresolved								: Symbol
+	Resolved									: Symbol
 	
 	ModuleType								: Type
 	PackageType								: Type

@@ -143,4 +143,13 @@ rules
 			)
 		where
 			<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <Using>: ([<pp-aterm>importedby-package] , [<pp-aterm>module-untyped-qname])-> [<pp-aterm>imported]]
-				
+		
+rules 
+	record-legeacy-global-import-is-resolved =
+		?(ns,  modulename);
+		if  <UsedLegacyArtifacts>(ns,  modulename) => Unresolved() then
+			with(
+				rules( UsedLegacyArtifacts:(ns, modulename) -> Resolved())
+			)				
+		end
+	

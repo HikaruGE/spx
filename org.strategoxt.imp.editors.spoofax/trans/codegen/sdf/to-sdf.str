@@ -117,7 +117,7 @@ rules
  	where 
  		if <has-extension(|"sdf")+has-extension(|"def")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)then  
 				// Importing Legacy artifact only if it is a SDF or DEF file
-				// Assumption : unresolved imports refers to stratego lib and declared in global scope. 
+				// Assumption : resolved global imports refers to stratego lib and declared in global scope. 
 				result :=  'module(unparameterized(name)) ;
 				<record-def-import-reference>name			
 		else
@@ -130,7 +130,7 @@ rules
 		where( 
 			?def-import-path;	
 			// Verifying whether it is indeed a def file. 
-			if (<has-extension(|"def")><UsedLegacyArtifacts;debug(!"resolved path : ")>(<GetEnclosingPackageName> , def-import-path)) then
+			if (<has-extension(|"def")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , def-import-path)) then
 				package-typed-qname := <GetEnclosingPackageName> ; 
 				rules(ImportedDef :+ package-typed-qname  ->  def-import-path)	
 			end		
