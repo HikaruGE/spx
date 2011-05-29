@@ -20,8 +20,10 @@ imports
 	
 //TODO FIX : 
 // Design issues : 
-//		Package Common Imports are only for the current spx file at this moment
-//		It could be kept as it is or make it common in the whole package. 
+//	1. Package Common Imports are only for the current spx file at this moment
+//		 It could be kept as it is or make it common in the whole package. 
+//	2. When done with fixing origin tracking , normalize Import Statements
+	
 strategies		
 	nomalize-all = desugar-compilationa-unit
 
