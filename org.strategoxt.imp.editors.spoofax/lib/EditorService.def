@@ -17,7 +17,7 @@ exports
   	
   	"pp-table" ":" StrategoCall -> SemanticRule {cons("PPTable")}
   	"pretty-print" ":" StrategoCall -> SemanticRule {cons("PrettyPrint")}
-    "refactoring"  ":" String "=" SemanticNode+ "->" StrategoCall BuilderOption* -> SemanticRule {cons("Refactoring")}
+    "refactoring"  SemanticNode* ":" String "="   StrategoCall BuilderOption* -> SemanticRule {cons("Refactoring")}
 
 module BuildersService
 
@@ -60,7 +60,7 @@ exports
     CompletionPart CompletionAnno
 
   syntax
-  
+
     "completions" <SectionName-LEX> <LAYOUT?-CF> <SemanticRule*-CF> -> <Section-CF> {cons("Completions")}
 
     "completions" -> <ReservedName-CF>
@@ -73,23 +73,28 @@ exports
 
     "identifier" "lexical" ":" PropertyValue -> SemanticRule {cons("IdentifierLexical")}
 
-    "completion" "keyword" ":" PropertyValue CompletionAnno -> SemanticRule {cons("CompletionKeyword")}
-    
-    "completion" "template" ":" CompletionPart CompletionPart* CompletionAnno -> SemanticRule {cons("CompletionTemplate")}
-    
-    %% Deprecated: conflicts with content completion
-    "completion" "template" ":" Id CompletionPart+ CompletionAnno -> SemanticRule {cons("CompletionTemplate"), avoid, deprecated("Add quotes to the starting literal")}
-    
-    "completion" "template" ":" Sort "=" CompletionPart CompletionPart* CompletionAnno -> SemanticRule {cons("CompletionTemplateWithSort")}
-    
-    %% Used as content completion triggers
-    "completion" "template" ":" PropertyValue CompletionPart* CompletionAnno -> SemanticRule {cons("CompletionTemplate"), recover, avoid}
-    "completion" "template" ":" Sort "=" PropertyValue CompletionPart* CompletionAnno -> SemanticRule {cons("CompletionTemplateWithSort"), recover, avoid}
+    "completion" "keyword" ":" PropertyValue OptCompletionAnno -> SemanticRule {cons("CompletionKeyword")}
 
-    "completion" "trigger" ":" PropertyValue CompletionAnno -> SemanticRule {cons("CompletionTrigger")}
-  
+    %% Deprecated: conflicts with content completion
+    "completion" "template" ":" Id CompletionPart+ OptCompletionAnno -> SemanticRule {cons("CompletionTemplate"), avoid, deprecated("Add quotes to the starting literal")}
+
+    %% Deprecated: replaced by CompletionTemplateEx
+    "completion" "template" ":" Sort "=" CompletionPart CompletionPart* OptCompletionAnno -> SemanticRule {cons("CompletionTemplateWithSort"), avoid, deprecated("Move the sort before ':' and remove '='")}
+
+    %% Used as content completion triggers
+    %% "completion" "template" PropertyValue CompletionPart* OptCompletionAnno -> SemanticRule {cons("CompletionTemplate"), recover, avoid}
+    "completion" "template" Sort* ":" PropertyValue CompletionPart* CompletionAnno* -> SemanticRule {cons("CompletionTemplateEx"), recover, avoid}
+
+    "completion" "trigger" ":" PropertyValue OptCompletionAnno -> SemanticRule {cons("CompletionTrigger")}
+
+    %% New completion template
+    "completion" "template" Sort* ":" CompletionPrefix CompletionPart+ CompletionAnno* -> SemanticRule {cons("CompletionTemplateEx")}
+
+               -> CompletionPrefix {cons("NoCompletionPrefix")}
+    String "=" -> CompletionPrefix {cons("CompletionPrefix")}
+
   context-free syntax
-  
+
     "completions" -> StrategoCall {reject}
     "completion"  -> StrategoCall {reject}
     "identifier"  -> StrategoCall {reject}
@@ -97,26 +102,32 @@ exports
     "builder"     -> StrategoCall {reject}
     "occurrence"  -> StrategoCall {reject}
     ReservedName  -> StrategoCall {reject}
-    
+
     String      -> CompletionPart
     Placeholder -> CompletionPart {cons("Placeholder")}
+    "(cursor)"  -> CompletionPart {cons("Cursor")}
+    PlaceholderWithSortPrefix Id ">" -> CompletionPart {cons("PlaceholderWithSort")}
 
-                 -> CompletionAnno {cons("None")}
+                   -> OptCompletionAnno {cons("None")}
+    CompletionAnno -> OptCompletionAnno
+
     "(disabled)" -> CompletionAnno {cons("Disable")}
     "(disable)"  -> CompletionAnno {cons("Disable"), deprecated("Use (disabled) instead")}
     "(blank)"    -> CompletionAnno {cons("Blank")}
+    "(linked)"   -> CompletionAnno {cons("Linked")}
     "(blank)"    -> PropertyValue {reject}
     "(disable)"  -> PropertyValue {reject}
+    "(linked)"   -> PropertyValue {reject}
     "completion" -> PropertyValue {reject}
     "template"   -> PropertyValue {reject}
     "trigger"    -> PropertyValue {reject}
     "identifier" -> PropertyValue {reject}
 
   lexical syntax
-    
+
+    "<" PlaceholderChar* ":" -> PlaceholderWithSortPrefix
     "<" PlaceholderChar* ">" -> Placeholder
-    ~[\>\n]                  -> PlaceholderChar
-    
+    ~[\:\>\n]                -> PlaceholderChar
 
 
 module ReferencesService
