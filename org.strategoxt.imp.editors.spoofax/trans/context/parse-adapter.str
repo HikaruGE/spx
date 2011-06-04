@@ -4,9 +4,9 @@ imports
 	include/SpoofaxLang
 	context/signatures
 	normalize/signatures
-	lib/Configuration/SpoofaxConfiguration  
+	lib/Configuration/SpoofaxConfiguration
 	lib/editor-common.generated
-imports 
+imports
 	context/sdf/parse
 	context/str/parse
 	codegen/-
@@ -14,26 +14,26 @@ imports
 	utils/path
 	utils/debug
 	utils/cache
-	utils/contract	
+	utils/contract
 	config
 	common
-	
+
 rules
 
-	parse-spx-sources : 
+	parse-spx-sources :
 		(sourcedir , searchOption) -> <id>
 		where
-			{| current-working-root-dir :  
+			{| current-working-root-dir :
 					rules(
 						current-working-root-dir  := <get-project-path>
 					);
-					if run-strategy( <chdir>sourcedir , fail | $[Warning | Failed to change current directory to : [<pp-aterm>sourcedir]]) then 
+					if run-strategy( <chdir>sourcedir , fail | $[Warning | Failed to change current directory to : [<pp-aterm>sourcedir]]) then
 						<parse-spx-compilationUnits(|searchOption)> <getcwd>;
 						run-strategy( <chdir> <current-working-root-dir> , fail | $[Warning | Failed  to change current directory to : [<pp-aterm><current-working-root-dir>]])
 					end
 			|}
-		
-	parse-spx-compilationUnits(|search-option) = 
+
+	parse-spx-compilationUnits(|search-option) =
 		readdir;
 		list-loop(
     	if <isdir> <filemode> then  //FIXME : filemode / isdir contains bug. Common folder is not considered as directory which is a bug
@@ -43,45 +43,44 @@ rules
            <chdir> ".."
         end
       else
-        where(parse-spx-compilationUnit) <+ throw-unable-read-file 
+        where(parse-spx-compilationUnit) <+ throw-unable-read-file
       end
     )
-    
+
  	parse-spx-compilationUnit: filename -> <id>
  		where
- 			if has-extension(|"spx") then 
-	 			where (<debug-compiler>$[Pre-Compiling| Parsing following file : [<pp-aterm>]]); 
+ 			if has-extension(|"spx") then
+	 			where (<debug-compiler>$[Pre-Compiling| Parsing following file : [<pp-aterm>]]);
 	 			open-spx-compilation-unit(
-					spx-compilation-unit-path, 
-					spx-precompiled-cache-path, 
+					spx-compilation-unit-path,
+					spx-precompiled-cache-path,
 					parse-spoofaxlang-file ,
-					pre-complile-compilation-unit
+					pre-compile-compilation-unit
 				)
-			end 
+			end
 
-	
+
 rules
-	
-	parse-legacy-artifact: 
+
+	parse-legacy-artifact:
 		resolved-path-> parsed-string
-		where 
+		where
 			has-extension(|"sdf") + has-extension(|"def")
-		where 
+		where
 			parsed-string:= <parse-sdf-file>resolved-path
-	
-	
-	parse-legacy-artifact: 
+
+
+	parse-legacy-artifact:
 		resolved-path -> parsed-string
-		where 
+		where
 			has-extension(|"str")
-		where 
+		where
 			parsed-string:= <parse-stratego>resolved-path
-	
-	
-	parse-legacy-artifact: 
+
+
+	parse-legacy-artifact:
 		resolved-path -> parsed-string
-		where 
-			has-extension(|"rtree") 
-		where 
+		where
+			has-extension(|"rtree")
+		where
 			parsed-string:= <ReadFromFile>resolved-path
-	    

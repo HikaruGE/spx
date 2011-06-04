@@ -1,23 +1,24 @@
 module context/declare
 
-imports 
+imports
 	context/sdf/declare
 	context/sdf/declare-signature
 	context/str/declare
+	context/template/declare
 	context/-
-	normalize/signatures 
-imports 
+	normalize/signatures
+imports
 	include/SpoofaxLang
 	lib/editor-common.generated
 imports
 	utils/annotations
 	utils/debug
 	utils/contract
-	config	
+	config
 	common
 
-rules		
-	declare-package = 
+rules
+	declare-package =
 		contracts(
 			contract-requires(
 				?Package(QName(_))
@@ -26,118 +27,107 @@ rules
 		get-enclosed-modules;
 		map(get-module-declaration);
 		list-loop(declare-module(declare-global-symbol))
-	
-	declare-module(s) = origin-track-forced(s)
-		
-	declare-all = declare-sdf-all; declare-esv-all ; declare-str-all; update-modified-module-declaration   
-	
-	declare-global-symbol = declare-str-global ;  update-modified-module-declaration
-		
-	init-declaration = init-record-signatures 
 
-	
-rules 
-	
+	declare-module(s) = origin-track-forced(s)
+
+	declare-all = declare-spxmodules-all(declare-section); update-modified-module-declaration
+
+	declare-global-symbol = declare-global ;  update-modified-module-declaration
+
+	init-declaration = init-record-signatures ; init-template-options
+
+
+rules
+
 	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
-	where 
-		<has-extension(|"sdf") + has-extension(|"def")>resolved-path; 
+	where
+		<has-extension(|"sdf") + has-extension(|"def")>resolved-path;
 		<alltd(declare-sdf-definition-main)>legacy-content
-		
+
 	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
-	where 
-		<has-extension(|"str") + has-extension(|"rtree")>resolved-path; 
+	where
+		<has-extension(|"str") + has-extension(|"rtree")>resolved-path;
 		<alltd(declare-str-definition-main)>legacy-content
 
-rules	
-	
-	declare-sdf-all = declare-spxmodules-all(declare-sdf-section) 
-	declare-str-all = declare-spxmodules-all(declare-str-section)
-	declare-esv-all = declare-spxmodules-all(declare-esv-section)
-	declare-str-global = declare-spxmodules-all(declare-str-global-section)
-	
-	
 rules
-	
-	declare-spxmodules-all(s): 
-		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*) 
+
+	declare-global = declare-spxmodules-all(declare-global-section)
+
+
+rules
+
+	declare-spxmodules-all(s):
+		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*)
 		where
 			<alltd(s)>section* => m-sections*
-			
+
 	update-modified-module-declaration:
 		m@Module(attrb* , modname , section*) -> m
 		with
 				Package( package-qname) := <get-annotation(get-package-annotation)>modname
-		with 
-			<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  m) 
-	
-rules 
-	declare-sdf-section: 
-		SDFSection(definition*) ->SDFSection(declared-definition*) 
-		where 
-			declared-definition* := <alltd(declare-sdf-definition-main)>definition*
-	
-	declare-sdf-section: 
-		SDFSectionEH(_,definition*) -><declare-sdf-section>SDFSection(definition*) 
-		
-	
-	declare-sdf-section: STRSection(def*) -> <id>
- 
-	declare-sdf-section: ESVSection(def*) -> <id>  
-
-rules	
-	declare-str-section: SDFSection(def*) -> <id>
-	
-	declare-str-section: SDFSectionEH(_,def*) -> <id>
-	
-	declare-str-section: s@STRSection(def*) -> STRSection(m-definition*)
-	where 
-		m-definition* := <declare-str-definition-main>def*
-	
-		
-	declare-str-section: ESVSection(def*) -> <id>   
+		with
+			<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  m)
 
 rules
-	
-	declare-str-global-section: SDFSection(def*) -> <id>
-	
-	declare-str-global-section: SDFSectionEH(_,def*) -> <id>
-	
-	declare-str-global-section: s@STRSection(def*) -> STRSection(m-definition*)
-	where 
+	declare-section:
+		SDFSection(definition*) ->SDFSection(declared-definition*)
+		where
+			declared-definition* := <declare-sdf-definition-main>definition*
+
+	declare-section:
+		SDFSectionEH(_,definition*) -><declare-section>SDFSection(definition*)
+
+	declare-section:
+	  STRSection(def*) -> STRSection(m-definition*)
+    where
+      m-definition* := <declare-str-definition-main>def*
+
+  declare-section: ESVSection(def*) -> <id>
+
+  // TemplateLang
+  declare-section:
+    TemplateSection(definition*) -> TemplateSection(declared-definition*)
+    with
+      declared-definition* := <declare-template-definition-main> definition*
+
+  // TemplateLang
+  // FIXME: move to spoofax.configuration?
+  declare-section:
+  	TemplateOptions(option*) -> TemplateOptions(declared-option*)
+  	with
+  	  declared-option* := <declare-template-options-main> option*
+
+rules
+
+	declare-global-section: SDFSection(def*) -> <id>
+
+	declare-global-section: SDFSectionEH(_,def*) -> <id>
+
+	declare-global-section: s@STRSection(def*) -> STRSection(m-definition*)
+	where
 		m-definition* := <declare-stratego-globals-top>def*
-	
-		
-	declare-str-section: ESVSection(def*) -> <id>   
 
-rules	
-	
-	declare-esv-section: SDFSection(def*) -> <id>
-	
-	declare-esv-section: SDFSectionEH(_, def*) -> <id>
-	
-	declare-esv-section: STRSection(def*) -> <id>
- 
-	declare-esv-section: ESVSection(def*) -> <id> 
-	
-	
-	
-	
+  // TemplateLang
+  declare-global-section: TemplateSection(def*) -> <id>
+
+  // TemplateLang
+  declare-global-section: TemplateOptions(opt*) -> <id>
+
 rules
 
-	// Declaring current scope for further analyze 
+	// Declaring current scope for further analyze
 	declare-current-scope(| package-typed-qname , module-typed-qname)=
 		with(
 			<declare-current-package-scope>package-typed-qname;
 			<declare-current-module-scope>module-typed-qname
-		) 
+		)
 
-	declare-current-package-scope : 
-		package-typed-qname -> <id> 
-		with 
+	declare-current-package-scope :
+		package-typed-qname -> <id>
+		with
 			rules ( GetEnclosingPackageName      := package-typed-qname)
-		
+
 	declare-current-module-scope:
-			module-typed-qname -> <id> 
-			with 
+			module-typed-qname -> <id>
+			with
 				rules ( GetEnclosingModuleName      := module-typed-qname)
-	 	   

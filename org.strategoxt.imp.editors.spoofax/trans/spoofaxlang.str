@@ -12,7 +12,7 @@ imports
   lib/editor-common.generated
 imports
   codegen/str/to-stratego
-imports  
+imports
   analyze/sdf/check
   context/sdf/declare
   context/str/declare
@@ -22,51 +22,58 @@ imports
 	codegen/esv/to-esv
 	codegen/sdf/to-sdf
   codegen/sdf/to-signature
-imports 
+imports
 	normalize/main
-	normalize/signatures   
-imports 
+	normalize/signatures
+imports
 	context/-
-imports	 
+imports
 	utils/cache
 	common
   config
 	unit-tests/-
+	unit-tests/templatelang/-
 imports
 	 editor/main
 	 codegen/main
 
-rules  
-   
+rules
+
   editor-complete:
     (node, position, ast, path, project-path) -> proposals
     where
       proposals := <propose-completion <+ ![]> node
- 
+
   editor-resolve:
     (sort(x), position, ast, path, project-path) -> target
     where
       target := <Declaration> x
- 
- /*  TODO : Fix Editor Resolve 
+
+ /*  TODO : Fix Editor Resolve
   editor-resolve:
     (unparameterized(x), position, ast, path, project-path) -> target
     where
       target := <parse-spoofaxlang-file> <resolve-import> x
  */
- 
+
 rules
-	
+
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm")> path;
       result   := ast // we just return the input term
-	
+
 	generate-desugar:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm.sugar")> path;
-      result   := <nomalize-all>ast // we just return the input term
+      result   := <normalize-all>ast // we just return the input term
 
-	 
+  run-templatelang-tests:
+    (selected, position, ast, path, project-path) -> None()
+    with
+      test-templatelang-to-sdf;
+      test-templatelang-to-esv;
+      test-templatelang-to-stratego;
+      test-templatelang-desugar

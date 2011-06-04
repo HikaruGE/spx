@@ -1,0 +1,223 @@
+module to-str
+
+imports
+  libstratego-lib
+  libstrc
+  include/SpoofaxLang
+imports
+  context/str/parse
+	context/template/declare
+	normalize/templatelang
+  utils/sdf2conflicts
+  utils/templatelang
+
+strategies
+
+  template-sections-to-stratego =
+    template-sections-to-stratego-string;
+    parse-stratego-string;
+    alltd(try(un-double-quote); unescape)
+
+  template-sections-to-stratego-string:
+    section* ->
+    $[module prettyprinter
+      imports
+        libstratego-lib
+
+      strategies
+
+        pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
+        pp-list(s|t) = map(s); separate-by(|t); concat-strings
+
+        [ih]
+
+      [section''*]
+
+      strategies // all other sorts used in placeholders
+
+        [strategy*]]
+    with
+      section'*  := <templatelang-desugar-top> section*;
+      section''* := <filter(template-section-to-stratego-string);
+                     separate-by(|"\n\n")> section'*
+    with
+      // All sorts used in pp minus all sorts for which a pp strategy has been
+      // created will get a `prettyprint-sort = is-string' default strategy.
+      sorts-used-in-pp := <collect-om(sort-used-in-prettyprinting); nub> section'*;
+      sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*;
+      sorts-without-pp := <diff> (sorts-used-in-pp, sorts-decl-in-pp);
+      strategy* := <map(sort-to-prettyprint-strategy); separate-by(|"\n\n")> sorts-without-pp
+    with
+      ih := <newlines-switch(
+        // No newlines: need to prepend a newline+indent if the string is non-empty.
+        !$[// ih = indent helper, t = indent string (including "\n")
+           pp-ih(|t) = ?"" <+ string-replace(|"\n", t); <conc-strings> (t, <id>)],
+        // Leading newlines: easy, since indent is (per definition) also leading.
+        !$[// ih = indent helper, t = indent string (including "\n")
+           pp-ih(|t) = ?"" <+
+             string-replace(|"\n", t);
+             if not(string-starts-with(|t)) then
+               <conc-strings> (t, <id>)
+             end],
+        // Trailing newlines: harder, since indent and newline are separated.
+        !$[// ih = indent helper, t = indent string (excluding "\n")
+           pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>))]
+      )>
+
+  template-section-to-stratego-string:
+    TemplateSection(prod*) ->
+    $[strategies
+
+        [strategy*]]
+    with
+      strategy* := <declare-template-definition-main;
+                    map(template-to-prettyprint-strategy);
+                    separate-by(|"\n\n")> prod*
+
+/*internal*/ strategies
+
+  sort-to-prettyprint-strategy:
+    sort -> $[prettyprint-[sort] = is-string]
+
+  sort-decl-in-prettyprinting:
+    TemplateProduction(sort, Template(_), _) -> sort
+
+  sort-used-in-prettyprinting:
+    Placeholder(_, sort(sort), _, _) -> sort
+
+  // Optimization for single-string-element templates
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, Template([String(t)]), attr*) ->
+    $[prettyprint-[sort]:
+        [cons]() -> "[result]"]
+    where
+      cons   := <collect-one(?sdf-cons(<un-double-quote>))> attr*
+    with
+      result := <templatelang-escape> t
+
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, Template(elem*), attr*) ->
+    <trim-chars(' ' + '\t' + '\r' + '\n')> // Workaround Stratego/856
+    $[prettyprint-[sort]:
+        [cons]([arg'*]) -> zz
+        with
+          [let'*]]
+    where
+      not(!elem* => [String(_)])
+    where
+      cons    := <collect-one(?sdf-cons(<un-double-quote>))> attr*
+    with
+      elem'*  := <try-re-indent;
+                  !(<id>, 0);
+                  thread-map(try(rename-template-element));
+                  ?(<id>, _)> elem*;
+      arg*    := <filter(template-element-to-cons-arg)> elem'*;
+      arg'*   := <separate-by(|", ")> arg*;
+      part*   := <newlines-switch(trim-layout, trim-trailing-layout,
+                                  trim-leading-layout ; trim-trailing-indent);
+                  listtd(template-element-to-stratego);
+                  concatenate-consecutive-strings;
+                  map(try(?String(<templatelang-escape; double-quote>)));
+                  separate-by(|", ")> elem'*;
+      result  := <concat-strings>["zz := <concat-strings> [", part*, "]"];
+      confl*  := <bagof-SubtermConflicts> Symbol(cons, <length> arg*);
+      if !confl* => [] then
+        let*  := <filter(template-element-to-prettyprint)> elem'*
+      else
+        let*  := <filter(?Placeholder(_, _, _, _));
+                  add-indices; map((dec, id));
+                  filter(template-element-to-parenthesize(|confl*))> elem'*
+      end;
+      let'*   := <separate-by(|";\n")> [let*, result]
+
+  // Production without cons but with bracket annotation
+  // (cons + bracket -> no need to parenthesize)
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, Template(elem*), attr*) ->
+    ${parenthesize-{sort}(not-allowed) =
+        if not-allowed then
+          <concat-strings> ["{open}", <prettyprint-{sort}>, "{close}"]
+        else
+          prettyprint-{sort}
+        end}
+    where
+      not(<collect-one(?sdf-cons(<un-double-quote>))> attr*);
+      <collect-one(?bracket())> attr*
+    where
+      <length> <filter(?Placeholder(_, _, _, _))> elem* => 1
+      <+ debug(!"Bracket production must have exactly one placeholder: "); fail
+    with
+      (before, placeholder, after) := <split-fetch-keep(?Placeholder(_, _, _, _))> elem*
+    where
+      [String(open)]  := <map(template-element-to-stratego'); concatenate-consecutive-strings> before;
+      [String(close)] := <map(template-element-to-stratego'); concatenate-consecutive-strings> after
+      <+ debug(!"Bracket production must have text before and after the placeholder: "); fail
+
+  rename-template-element:
+    (Placeholder(a, b@ sort(x), c, d){a*}, index) -> (Placeholder(a, b{newname}, c, d){a*}, newindex)
+    with
+      newname  := <implode-string> [<addi> ('a', index)];
+      newindex := <inc> index
+
+  template-element-to-cons-arg:
+    Placeholder(_, sort(_){name}, _, _) -> name
+
+  template-element-to-stratego =
+    newlines-switch(
+      // No newlines
+      \[Newline(_), Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()} | tail] ->
+        [$[<pp-ih(|"\n[indent]")> [name]'] | tail]\,
+      // Leading newlines
+      \[Newline(_), Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()} | tail] ->
+        [$[<pp-ih(|"\n[indent]")> [name]'] | tail]\,
+      // Trailing newlines
+      \[Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()}, Newline(_) | tail] ->
+        [$[<pp-ih(|"[indent]")> [name]'] | tail]\
+    )
+    // Anything else.
+    <+
+      [template-element-to-stratego' | id]
+    <+
+      []
+
+  template-element-to-stratego' =
+      \Placeholder(_, sort(_){name}, _, _) -> $[[name]']\
+    + \String(t) -> String(t)\
+    + \Layout(t) -> String(t)\
+    + \Indent(t) -> String(t)\
+    + \Newline(t) -> String(t)\
+
+  template-element-to-prettyprint:
+    Placeholder(_, sort(x){name}, None(), _) -> $[[name]' := <prettyprint-[x]> [name]]
+
+  template-element-to-prettyprint:
+    Placeholder(_, sort(x){name}, <Star() + Plus()>, Options(opt*)) -> t
+    with
+      if sep := <collect-one(?Separator(<id>))> opt* then
+        t := $[[name]' := <pp-list(prettyprint-[x]|"[<escape> sep]")> [name]]
+      else
+        t := $[[name]' := <pp-list(prettyprint-[x]|" ")> [name]]
+      end
+
+  template-element-to-prettyprint:
+    Placeholder(_, sort(x){name}, Option(), _) -> $[[name]' := <pp-option(prettyprint-[x])> [name]]
+
+  template-element-to-parenthesize(|conflicts):
+    (i0, Placeholder(_, sort(x){name}, None(), _)) -> $[[name]' := <parenthesize-[x]([na])> [name]]
+    where
+      not(<filter(?(i0, <id>))> conflicts => conflicts' => [])
+    with
+      let to-match =
+            {a*: \ Symbol(x, n) -> <concat-strings> ["?", x, "(", a*, ")"]
+                   with a* := <range; map(!"_"); separate-by(|", ")> (0, n) \}
+      in
+        na := <filter(to-match); separate-by(|" + ")> conflicts'
+      end
+
+  template-element-to-parenthesize(|conflicts):
+    (i0, p@ Placeholder(_, sort(x){name}, None(), _)) -> <template-element-to-prettyprint> p
+    where
+      <filter(?(i0, _))> conflicts => []
+
+  template-element-to-parenthesize(|conflicts):
+    (i0, p@ Placeholder(_, sort(x){name}, <not(?None())>, _)) -> <template-element-to-prettyprint> p

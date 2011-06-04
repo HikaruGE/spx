@@ -1,0 +1,106 @@
+module to-esv
+
+imports
+  libstratego-lib
+  lib/editor-common.generated
+  include/SpoofaxLang
+imports
+  codegen/template/to-esv
+  context/template/declare
+  normalize/signatures
+
+strategies
+
+  test-templatelang-to-esv =
+    let err(|msg) = debug(!msg); fail
+
+        // Parse a string containing some template productions.
+        prepare-input = {x:
+          (<parse-spoofaxlang-string> <conc-strings> ("module x templates ", <id>)
+            <+ err(|"parse failed : "));
+          (?CompilationUnit([Module(_, _, x)])
+            <+ err(|"project failed : "));
+          !x
+        }
+
+        prepare-output = ![<id>]
+
+        // Run a test on a tuple (input, expected-output).
+        // Input is a string containing template productions.
+        // Output is an ESV AST for one completion template.
+        test' = {input, expected-output, actual-output:
+        	where(?(<id>, _); all-lines(<conc-strings> ("  ", <id>)); debug);
+          (prepare-input, prepare-output) => (input, expected-output);
+          (<template-sections-to-esv> input => actual-output
+            <+ err(|"template-sections-to-esv failed : "));
+          (<equal(|expected-output)> actual-output
+            <+ <debug> "actual output of template-sections-to-esv does not match expected output!";
+               <debug(!"actual   : ")> actual-output;
+               <debug(!"expected : ")> expected-output;
+               fail)
+        }
+
+        test-placeholders =
+          <test'> ($[X.Y = <<<Z>>>],
+            |[ completion template X: "Y" = <Z:Z> (blank) ]|);
+          <test'> ($[X.Y = <<< display text : Z>>>],
+            |[ completion template X: "Y" = < display text :Z> (blank) ]|);
+          <test'> ($[X.Y = <<<Z?>>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+          <test'> ($[X.Y = <<<Z+>>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+          <test'> ($[X.Y = <<<Z*>>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+          <test'> ($[X.Y = <<<Z+; separator=", ">>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+          <test'> ($[X.Y = <<<Z*; separator=" + ">>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+
+          // Text around it
+          <test'> ($[X.Y = <<foo <Z> bar>>],
+            |[ completion template X: "Y" = "foo " <Z:Z> " bar" (blank) ]|);
+          <test'> ($[X.Y = <<foo <Z?> bar>>],
+            |[ completion template X: "Y" = "foo " (cursor) " bar" (blank) ]|);
+
+          // Multiple placeholders => only one "(cursor)" directive
+          <test'> ($[X.Y = <<<A?> <B?>>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|);
+          <test'> ($[X.Y = <<<A?> <B?> <C?>>>],
+            |[ completion template X: "Y" = (cursor) (blank) ]|)
+
+        with-newlines(s) = {|Options: {x:
+          ?x; rules( Options :+ Newlines() -> x ); s
+        }|}
+
+    in with({|DeclaredModule, GetEnclosingModuleName, Options:
+    	<debug> "test suite: TemplateLang->ESV";
+
+      // Default
+      rules(
+        DeclaredModule :+ "__test" -> "__test"
+        GetEnclosingModuleName := Module("__test")
+        Options :+ Newlines() -> None()
+      );
+      newlines := [None(), Leading(), Trailing()];
+
+      // Test placeholders.
+      <list-loop(with-newlines(test-placeholders))> newlines;
+
+      // Test a complete statement.
+      statement := $[
+        Statement.IfThen = <<
+          if <Exp> then
+            <Statement*; separator="\n">
+          end
+        >>];
+
+      statement-output := |[
+        completion template Statement: "IfThen" =
+          "if " <Exp:Exp> " then\\n\\t" (cursor) "\\nend" (blank)
+      ]|;
+
+      <list-loop(with-newlines(<test'> (statement, statement-output)))> newlines;
+
+      <debug> "TemplateLang->ESV tests finished."
+    |})
+    end

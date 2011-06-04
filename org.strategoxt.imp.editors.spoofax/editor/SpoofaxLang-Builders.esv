@@ -4,49 +4,52 @@ module SpoofaxLang-Builders
 imports SpoofaxLang-Builders.generated
 
 builders
-                                                                      
-  // This file can be used for custom analysis and builder rules.     
-  //                                                                  
-  // See the imported file for a brief introduction and examples.     
+
+  // This file can be used for custom analysis and builder rules.
+  //
+  // See the imported file for a brief introduction and examples.
 
 builders
-                                                                                                                               
-  provider                  : include/spoofaxlang.jar                                                                          
-                                                                                                                               
-	observer                  : editor-analyze                                                                                   
-                                                                                                                               
+
+  provider                  : include/spoofaxlang.jar
+
+	observer                  : editor-analyze
+
   builder : "Show abstract syntax (for selection)" =
-    generate-aterm (openeditor) (realtime) (meta) (source)                                                                       
-                                                                                                                               
+    generate-aterm (openeditor) (realtime) (meta) (source)
+
   builder : "Show name analysis (for selection)" =
-    generate-name-analysis (openeditor) (realtime) (meta) (source) 
-    
+    generate-name-analysis (openeditor) (realtime) (meta) (source)
+
   //builder : "Show SDF (for selection)" =
-  //  generate-sdf (openeditor) (realtime)           
-    
+  //  generate-sdf (openeditor) (realtime)
+
   //builder : "Show Stratego (for selection)" =
-  //  generate-str (openeditor) (realtime)      
-    
+  //  generate-str (openeditor) (realtime)
+
  // builder : "Show Editor Descriptor (for selection)" =
-  //  generate-esv (openeditor) (realtime)              
-  
-  //builder: "generate signatures" = 
+  //  generate-esv (openeditor) (realtime)
+
+  //builder: "generate signatures" =
 	//	generate-signatures-from-SDF (realtime) (openeditor) (meta)
-	
+
 	builder : "Build-All" =
     build-all (openeditor) (realtime) (meta)
-   
+
   //builder : "test desugar" =
   // generate-desugar (openeditor) (realtime) (meta)
-  
-  builder : "Compile-All" =  
+
+  builder : "Compile-All" =
     compile-spx(openeditor) (realtime) (meta)
-  
-  
-  builder : "Show Configuration" =  
+
+
+  builder : "Show Configuration" =
     show-configuration(openeditor) (realtime) (meta)
-  
-  /*  	                                                                                                                             
-  builder : "test-resolve" =  
+
+  /*
+  builder : "test-resolve" =
     test-resolving-symbol (openeditor) (realtime) (meta)
-  */                                                                                                   
+  */
+
+  builder : "Test TemplateLang" =
+    run-templatelang-tests (meta)

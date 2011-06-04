@@ -1,49 +1,51 @@
-module 	utils/contract 
-imports 
+module 	utils/contract
+imports
 	common
-	utils/debug	
+	utils/debug
 
 
-//Draft of code contracts for stratego 
-rules 
+//Draft of code contracts for stratego
+rules
 
 	contract-requires ( s , on-fail | arg , expected) =
 			contract-requires ( s | arg , expected)
 		<+
-			on-fail 
-		
-		
+			on-fail
+
+
 	contract-requires ( s | arg , expected) =
 			where(<s>arg)
 		<+
 			<debug> $[Contract | Requires Failed - actual :[<pp-aterm>arg] expected : [expected]]
-			;fail 	 
-	
-	
+			;fail
+
+
 	contract-requires ( s | arg ) = <contract-requires (s)> arg
-	
-	
+
+
 	contract-requires (s) =
 			where(s)
 		<+
 			<debug> $[Contract | Requires Failed - argument :[<pp-aterm>] ]
-			;fail 	 
-	
-	
+			;fail
+
+
 	contracts ( s ) =  where(s) <+ fail
-	
-	
+
+
 	with-verification (preconditions, s ) = with-verification (preconditions, s , id)
-	 
-	
+
+
 	with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail
 
 
 rules
-	
+
 	run-strategy(  s  , on-fail | msg) = s <+  <debug> msg ; on-fail
-	 
+
 rules
-	String = is-string 
-	
-	List = is-list	    
+	String = is-string
+
+	List = is-list
+
+	ListOf(s) = list-loop(s)

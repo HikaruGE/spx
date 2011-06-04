@@ -1,0 +1,150 @@
+module to-esv
+imports
+  libstratego-lib
+  lib/EditorService
+  include/SpoofaxLang
+imports
+  context/sdf/declare
+  context/template/declare
+  normalize/templatelang
+  utils/attributes
+  utils/contract
+  utils/templatelang
+
+strategies
+
+	/** @type Module -> List(Completions) */
+	template-module-to-esv:
+		Module(_, _, section*) -> <template-sections-to-esv> section*
+
+  /** @type List(TemplateSection) -> List(Completions) */
+  template-sections-to-esv:
+    section* -> completion*
+    with
+      contracts(
+        contract-requires(List | section*)
+      )
+    with
+      completion* := <filter(template-section-to-esv); concat> section*
+    with
+      contracts(
+        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
+      )
+
+  /** @type TemplateSection -> List(CompletionTemplate) */
+  template-section-to-esv:
+  	TemplateSection(prod*) -> completion*
+  	with
+  	  contracts(
+  	    // FIXME: remove TemplateProductionWithCons/3 when desugaring is performed before code generation.
+  	    contract-requires(ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _)) | prod*)
+  	  )
+  	with
+  	  // FIXME: desugaring should have been performed before the current strategy is invoked.
+  	  completion* := <templatelang-desugar-top; map(template-to-completion-template)> prod*
+  	with
+  	  contracts(
+  	    contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
+  	  )
+
+/*internal*/ strategies
+
+  template-to-completion-template:
+    TemplateProduction(sort, Template(e* @[_|_]), attr*) -> t
+    with
+      part* := <template-elements-to-completion-parts> e*;
+      anno  := <template-sort-to-anno> sort;
+      if prefix := String(<collect-one(?sdf-cons(<un-double-quote>))> attr*) then
+        t := |[ completion template ~sort : ~prefix = ~*part* ~anno:anno ]|
+      else
+        t := |[ completion template ~sort : ~*part* ~anno:anno ]|
+      end
+
+  template-elements-to-completion-parts =
+    map(try(placeholder-to-completion-part));
+    remove-cursor-except-first;
+    try-re-indent;
+    trim-layout;
+    map(try(text-to-completion-part));
+    concatenate-consecutive-strings;
+    map(try(String(templatelang-escape)))
+
+  template-sort-to-anno =
+    CanNotBeBlank < !None() + !Blank()
+
+  placeholder-to-completion-part:
+    Placeholder(Text(name), sort(sort), None(), _) -> PlaceholderWithSort($[<[name]:], sort)
+
+  placeholder-to-completion-part:
+    Placeholder(None(), sort(sort), None(), _) -> t with t :=
+      PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
+
+  // FIXME: does this make sense?
+  generate-placeholder =
+    bagof-Declaration;
+    map(\TemplateProduction(_, Template(e*), _) -> e*\);
+    filter(not([])); // is this desired?
+    qsort((percentage-string-elements, percentage-string-elements); gt);
+    Hd;
+    template-elements-to-string
+
+  percentage-string-elements =
+    ?e*;
+    <divr> (<length> <filter(?String(_))> e*, <length> e*)
+
+  template-elements-to-string =
+    trim-layout;
+    filter(
+         \Placeholder(Text(x), _, _, _) -> x\
+      <+ \Placeholder(None(), sort(x), _, _) -> x\
+      <+ \String(x) -> x\
+      <+ \Layout(x) -> <string-replace(|"\t", " ")> x\
+    );
+    concat-strings
+
+  placeholder-to-completion-part:
+    Placeholder(_, _, Option(), _) -> Cursor()
+
+  placeholder-to-completion-part:
+    Placeholder(_, _, Plus(), _) -> Cursor()
+
+  placeholder-to-completion-part:
+    Placeholder(_, _, Star(), _) -> Cursor()
+
+  text-to-completion-part:
+    Newline(_) -> String("\n")
+
+  text-to-completion-part:
+    Layout(t) -> String(t)
+
+  text-to-completion-part:
+    Indent(t) -> String(<string-replace(|"  ", "\t")> t)
+
+// removing cursors (including layout before and newline after, if present)
+
+  remove-cursor-except-first =
+       [Layout(id) + Indent(id), Cursor(), Newline(id) | remove-cursor]
+    <+ [Cursor(), Newline(id) | remove-cursor]
+    <+ [Layout(id) + Indent(id), Cursor() | remove-cursor]
+    <+ [Cursor() | remove-cursor]
+    <+ [id | remove-cursor-except-first]
+    <+ []
+
+  remove-cursor =
+       \[<?Layout(_) + ?Indent(_)>, Cursor(), Newline(_) | tail] -> <remove-cursor> tail\
+    <+ \[Cursor(), Newline(_) | tail] -> <remove-cursor> tail\
+    <+ \[<?Layout(_) + ?Indent(_)>, Cursor() | tail] -> <remove-cursor> tail\
+    <+ \[Cursor() | tail] -> <remove-cursor> tail\
+    <+ [id | remove-cursor]
+    <+ []
+
+strategies
+
+  nonempty-substring-from-last-occurence-of(|t) =
+    substring-after-last-occurence-of(|t);
+    not("");
+    <conc-strings> (t, <id>)
+
+  substring-after-last-occurence-of(|t) =
+    where(is-substring(!t));
+    repeat(is-substring(!t); implode-string)

@@ -1,0 +1,80 @@
+module templatelang
+imports
+  libstratego-lib
+  include/SpoofaxLang
+  utils/attributes
+
+strategies
+
+  templatelang-desugar-sdf-top = alltd(templatelang-desugar-sdf)
+
+  templatelang-desugar-top = innermost(templatelang-desugar)
+
+rules
+
+  templatelang-desugar-sdf:
+    SdfProduction(sort, symbol*, attr*) -> prod(symbol*, sort(sort), attr*)
+
+  templatelang-desugar-sdf:
+    SdfProductionWithCons(SortCons(sort, cons), symbol*, attrs(attr*)) ->
+      prod(symbol*, sort(sort), attrs(attr'*))
+    with
+      attr'* := [sdf-cons(<double-quote> cons) | attr*]
+
+  templatelang-desugar-sdf:
+    SdfProductionWithCons(SortCons(sort, cons), symbol*, no-attrs()) ->
+      prod(symbol*, sort(sort), attrs(attr'*))
+    with
+      attr'* := [sdf-cons(<double-quote> cons)]
+
+rules
+
+  templatelang-desugar:
+    NoOptions() -> Options([])
+
+  templatelang-desugar:
+    no-attrs() -> attrs([])
+
+  templatelang-desugar:
+    TemplateProductionWithCons(SortCons(sort, cons), tmpl, attrs(attr*)) ->
+      TemplateProduction(sort, tmpl, attrs(attr'*))
+    with
+      attr'* := [sdf-cons(<double-quote> cons) | attr*]
+
+  templatelang-desugar:
+    Separator(x) -> Separator(<un-double-quote; unescape> x)
+
+  templatelang-desugar:
+    Escape(t) -> String(t')
+    with
+      let parse-unicode = {before*, mid, after*:
+             split-fetch-keep(not(is-hexnum)) => (before*, mid, after*);
+             ![<hex-chars-to-int> before*, mid | after*]
+          <+ ![<hex-chars-to-int>]
+          }
+          unescape =
+            string-as-chars(rec x(
+               \['\', ' ' | tail] -> [' '  | <x> tail]\
+            <+ \['\', '"' | tail] -> ['"'  | <x> tail]\
+            <+ \['\', '\''| tail] -> ['\'' | <x> tail]\
+            <+ \['\', 't' | tail] -> ['\t' | <x> tail]\
+            <+ \['\', 'r' | tail] -> ['\r' | <x> tail]\
+            <+ \['\', 'n' | tail] -> ['\n' | <x> tail]\
+            <+ \['\', '<' | tail] -> ['<'  | <x> tail]\
+            <+ \['\', '>' | tail] -> ['>'  | <x> tail]\
+            <+ \['\', '[' | tail] -> ['['  | <x> tail]\
+            <+ \['\', ']' | tail] -> [']'  | <x> tail]\
+            <+ \['\', 'u' | tail] -> <parse-unicode; [id | x]> tail\
+            <+ \['<', '\', '\', '>' | tail] -> <x> tail\
+            <+ \['[', '\', '\', ']' | tail] -> <x> tail\
+            <+ \[_ | tail] -> <x> tail\
+            <+ []
+            ))
+      in
+        t' := <unescape> t
+      end
+
+  templatelang-desugar:
+    Layout(t) -> Layout(t')
+    where
+      t' := <string-replace(|"\t", "  "); not(equal(|t))> t

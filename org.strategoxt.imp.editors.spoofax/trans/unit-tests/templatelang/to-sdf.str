@@ -1,0 +1,129 @@
+/* unit tests for TemplateLang -> SDF generation */
+
+module to-sdf
+
+imports
+  libstratego-lib
+  libstratego-sglr
+  lib/editor-common.generated
+  include/SpoofaxLang
+imports
+  codegen/template/to-sdf
+  normalize/signatures
+  utils/attributes
+
+// FIXME: don't be lazy, get this from some import!
+signature
+  constructors
+    Newlines : Unknown
+
+strategies
+
+  test-templatelang-to-sdf =
+
+    let err(|msg) = debug(!msg); fail
+
+        // Parse a string containing some template productions.
+        prepare-input = {x:
+          (<parse-spoofaxlang-string> <conc-strings> ("module x templates ", <id>)
+            <+ err(|"parse failed : "));
+          (?CompilationUnit([Module(_, _, x)])
+            <+ err(|"project failed : "));
+          !x
+        }
+
+        // Put quotes around literals, get rid of conc-grammars.
+        prepare-output =
+          alltd(/*lit(double-quote) + ci-lit(single-quote) + */quoted(double-quote));
+          alltd(\conc-grammars(x, y) -> [x, y]\);
+          flatten-list
+
+        // Run a test on a tuple (input, expected-output).
+        // Input is a string containing template productions.
+        // Output is an SDF AST as build by G*|[ ]| CS embedding.
+        test' = {input, expected-output, actual-output:
+          where(?(<id>, _); all-lines(<conc-strings> ("  ", <id>)); debug);
+          (prepare-input, prepare-output) => (input, expected-output);
+          (<template-sections-to-sdf> input => actual-output
+            <+ err(|"template-sections-to-sdf failed : "));
+          (<equal(|expected-output)> actual-output
+            <+ <debug> "actual output of template-sections-to-sdf does not match expected output!";
+               <debug(!"actual   : ")> actual-output;
+               <debug(!"expected : ")> expected-output;
+               fail)
+        }
+
+        test-placeholders =
+          <test'> ($[X.Y = <<<Z>>>],
+            G*|[ context-free syntax Z -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<this text is ignored : Z>>>],
+            G*|[ context-free syntax Z -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<Z?>>>],
+            G*|[ context-free syntax Z? -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<Z+>>>],
+            G*|[ context-free syntax Z+ -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<Z*>>>],
+            G*|[ context-free syntax Z* -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<Z+; separator=", ">>>],
+            G*|[ context-free syntax {Z ","}+ -> X {cons("Y")} ]|);
+          <test'> ($[X.Y = <<<Z*; separator=" + ">>>],
+            G*|[ context-free syntax {Z "+"}* -> X {cons("Y")} ]|)
+
+        with-newlines(s) = {|Options: {x:
+          ?x; rules( Options :+ Newlines() -> x ); s
+        }|}
+
+    in with({|DeclaredModule, GetEnclosingModuleName, Options:
+      <debug> "test suite: TemplateLang->SDF";
+
+      // Default
+      rules(
+        DeclaredModule :+ "__test" -> "__test"
+        GetEnclosingModuleName := Module("__test")
+        Options :+ Newlines() -> None()
+      );
+      newlines := [None(), Leading(), Trailing()];
+
+      // Test placeholders.
+      <list-loop(with-newlines(test-placeholders))> newlines;
+
+      // Test a complete statement.
+      statement := $[
+        Statement.IfThen = <<
+          if <Exp> then
+            <Statement*; separator="\n">
+          end
+        >>];
+
+      statement-restrictions := G*|[
+        lexical restrictions
+          "end" "if" "then" -/- [A-Za-z0-9\_\-]
+      ]|;
+      statement-no-newlines-output := G*|[
+        context-free syntax
+          "if" Exp "then" Statement* "end" -> Statement {cons("IfThen")}
+      ]|;
+      statement-leading-newlines-output := G*|[
+        context-free syntax
+          "\\n" "if" Exp "then" Statement* "\\n" "end" -> Statement {cons("IfThen")}
+      ]|;
+      statement-trailing-newlines-output := G*|[
+        context-free syntax
+          "if" Exp "then" "\\n" Statement* "end" "\\n" -> Statement {cons("IfThen")}
+      ]|;
+
+      !None()    ; with-newlines(<test'> (statement, [statement-no-newlines-output      , statement-restrictions]));
+      !Leading() ; with-newlines(<test'> (statement, [statement-leading-newlines-output , statement-restrictions]));
+      !Trailing(); with-newlines(<test'> (statement, [statement-trailing-newlines-output, statement-restrictions]));
+
+      // Test splitting of literal text at identifier boundaries.
+      <test'> ($[X.Y = "f(x, y)"], G*|[
+        context-free syntax
+          "f" "(" "x" "," "y" ")" -> X {cons("Y")}
+        lexical restrictions
+          "f" "x" "y" -/- [A-Za-z0-9\_\-]
+      ]|);
+
+      <debug> "TemplateLang->SDF tests finished."
+    |})
+    end

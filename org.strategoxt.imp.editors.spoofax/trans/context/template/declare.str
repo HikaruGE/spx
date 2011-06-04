@@ -1,0 +1,85 @@
+module context/template/declare
+
+imports
+  context/sdf/declare
+  include/SpoofaxLang
+  utils/annotations
+
+signature
+  constructors
+    // Options
+    Newlines : X
+
+strategies
+
+  /** @type List(TemplateProduction) -> List(TemplateProduction) */
+  declare-template-definition-main = map(declare-template-definition)
+
+  /** @type List(TemplateOption) -> List(TemplateOption) */
+  declare-template-options-main = map(declare-template-option)
+
+  init-template-options =
+    // defaults
+    rules(
+      Options :+ Newlines() -> None()
+    )
+
+rules
+
+  // Declarations are shared with SDF (same DR)
+  // The sorts and cons declared using templates are in exactly the same
+  // namespace as if they would be declared using an equivalent piece of SDF.
+
+  declare-template-definition:
+    template@ TemplateProduction(sort, Template(part*), attrs) ->
+      TemplateProduction(sort, Template(part'*), attrs)
+    with
+      <declare-sdf-definition-internal> (template, part*, sort, attrs);
+      part'* := <declare-template-placeholders> part*
+
+  declare-template-placeholders =
+    ?[Newline(_), Layout(_), Placeholder(_, _, _, _){}, Newline(_) | _];
+    [add-annotation(|Leading()), id, add-annotation(|Blank()), add-annotation(|Trailing()) | id];
+    [id, id, id | declare-template-placeholders]
+  <+
+    ?[Newline(_), Placeholder(_, _, _, _){}, Newline(_) | _];
+    [add-annotation(|Leading()), add-annotation(|Blank()), add-annotation(|Trailing()) | id];
+    [id, id | declare-template-placeholders]
+  <+
+    ?[Placeholder(_, sort(x), _, _){} | _];
+    [id | declare-template-placeholders];
+    rules(CanNotBeBlank :+ x -> x)
+  <+
+    ?[_ | _];
+    [id | declare-template-placeholders]
+  <+
+    ?[]
+
+rules
+
+  // Invoked by declare-sdf-definition-internal
+  declare-sdf-usage:
+    Placeholder(_, sort(x), _, _) -> <id>
+    with
+      rules(Usage: x -> x)
+
+rules // Options
+  // FIXME: move to spoofax.configuration
+
+  declare-template-option:
+    Newlines(t) -> <id>
+    with
+      rules(Options :+ Newlines() -> t)
+
+strategies
+
+  use-no-newlines       = <Options> Newlines() => None()
+  use-leading-newlines  = <Options> Newlines() => Leading()
+  use-trailing-newlines = <Options> Newlines() => Trailing()
+
+  newlines-switch(none, leading, trailing) =
+    switch <Options> Newlines()
+      case ?None(): none
+      case ?Leading(): leading
+      case ?Trailing(): trailing
+    end

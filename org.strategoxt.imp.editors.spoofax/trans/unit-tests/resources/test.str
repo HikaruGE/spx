@@ -71,6 +71,6 @@ rules
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm.sugar")> path;
-      result   := <nomalize-all>ast // we just return the input term
+      result   := <normalize-all>ast // we just return the input term
 
 	 

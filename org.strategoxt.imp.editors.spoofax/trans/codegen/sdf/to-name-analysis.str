@@ -1,20 +1,21 @@
 module codegen/sdf/to-name-analysis
-imports 
+imports
   libstrc
   lib/editor-common.generated
   context/sdf/declare-signature
   context/sdf/declare
-  include/SpoofaxLang 
+  include/SpoofaxLang
   analyze/sdf/check
-  
+  utils/attributes
+
 rules
-  
+
   generate-name-analysis:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"name-analysis.str")> path;
       result   := <generate-name-analysis; pp-stratego-string> selected
-    
+
   generate-name-analysis:
     sdf ->
     Module("analysis-generated", [
@@ -23,7 +24,7 @@ rules
         scope-rules
       , get-def-rules
       , annotate-names-rules
-      ])  
+      ])
     ])
     with
       namespaces           := <collect-all(fetch-namespace); flatten-list> sdf;
@@ -33,21 +34,21 @@ rules
       annotate-names-rules := <collect-all(fetch-annotate-names-rule)> sdf
 
 rules
-  
+
   fetch-namespace:
     namespacedef(n, _) -> n
-  
+
   fetch-namespace:
     namespaceref(n) -> n
-  
+
   fetch-namespace:
     namespaceref2(n, _) -> n
-  
+
   namespace-to-signature:
     name -> OpDecl(name, ConstType(SortNoArgs("Namespace")))
 
 rules
-  
+
   fetch-scope-rule:
     prod(p*, _, attrs(a*)) ->
     RDefNoArgs(
@@ -65,7 +66,7 @@ rules
       scopes'     := <make-set> <flatten-list> scopes;
       p'*         := <filter(non-terminal-to-wld)> p*;
       scope-terms := <map(![NoAnnoList(Op(<id>, []))])> scopes'
-  
+
   fetch-get-def-rules:
     prod(p*, _, attrs(a*)) ->
     [ RDefNoArgs(
@@ -88,11 +89,11 @@ rules
     ]
     where
       p'*  := <filter(namespace-def-to-x(?namespace) <+ non-terminal-to-wld)> p*;
-      where(!namespace); 
+      where(!namespace);
       cons := <getfirst(fetch-cons-name)> a*
-  
+
   fetch-annotate-names-rule:
-    prod(p*, _, attrs(a*)) -> 
+    prod(p*, _, attrs(a*)) ->
     RDefT(
       "nam-annotate-names"
     , []
@@ -110,40 +111,34 @@ rules
       annotated-vars := <zip(add-namespace-anno-1 <+ add-namespace-anno-2)> (p'*, vars)
 
 rules
-  
+
   // TODO: what about productions with inner namespaces?
   //       e.g. Var@=ID?
-  
+
   namespace-def-to-x(set-namespace):
-    namespacedef(<set-namespace>, _) -> Var("x") 
-  
+    namespacedef(<set-namespace>, _) -> Var("x")
+
   non-terminal-to-wld:
     <is-non-terminal> -> Wld()
-  
+
   non-terminal-to-new-var:
     <is-non-terminal> -> Var(<new>)
-  
+
   add-namespace-anno-1:
     (namespaceref(n), Var(x)) -> <add-namespace-anno-1> (namespaceref2(n, "ID"), Var(x))
-  
+
   add-namespace-anno-1:
     (namespaceref2(n, _), Var(x)) ->
     App(
       CallT(SVar("nam-annotate-use"), [], [NoAnnoList(Op(n, []))])
     , Var(x)
     )
-  
+
   add-namespace-anno-1:
     (namespacedef(n, _), Var(x)) -> AnnoList(Var(x), [Var("def-path")])
-  
+
   add-namespace-anno-2:
     (_, Var(x)) -> Var(x)
-  
-  fetch-cons-name:
-    term(default(appl(unquoted("cons"), [fun(quoted(cons))]))) -> <un-double-quote> cons
-  
-  fetch-cons-name:
-    Constructor(cons) -> <un-double-quote> cons
-  
+
   fetch-scope-names:
     term(default(appl(unquoted("scope"), [fun(quoted(scopes))]))) -> scopes

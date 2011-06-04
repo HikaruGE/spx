@@ -6,6 +6,7 @@ imports
   SPXCommon
   Concepts
   Naming
+  TemplateLang
   EditorServiceMix[ESV]
   Stratego-AttributesMix[STR] [
     "imports" ImportModName* -> Decl {cons("Imports")}
@@ -28,81 +29,81 @@ exports
     Start
 
   lexical syntax
-    {ID "/"}+       -> QID 
+    {ID "/"}+       -> QID
     {ID ("/"|".")}+ -> QIDWithDots
-		
+
   context-free syntax
-  
+
 		ImportSection* PackageDefinition* 							-> Start{cons("CompilationUnit") }
 	  Module* 																				-> Start{cons("CompilationUnit") , prefer}
-    
+
     "package" QName Module*                         -> PackageDefinition {cons("Package")}
     MainID? "module" SPXModuleName Section*         				-> Module {cons("Module")}
-    
+
     Grammar[[SDF]] -> Section {cons("SDFSection")}
     Decl[[STR]]    -> Section {cons("STRSection")}
     Section[[ESV]] -> Section {cons("ESVSection")}
     ImportSection  -> Section
     ConceptSection -> Section
-    
-    ExportsOrHiddens Grammar[[SDF]] -> Section {cons("SDFSectionEH"), non-assoc}    
+
+    ExportsOrHiddens Grammar[[SDF]] -> Section {cons("SDFSectionEH"), non-assoc}
     "exports"                       -> ExportsOrHiddens {cons("Exports"), deprecated}
     "hiddens"                       -> ExportsOrHiddens {cons("Hiddens"), deprecated}
 
-    
+
     %% TODO: Support SDF .def "definitions"?
     %% TODO: Mark deprecated, ast, and maybe other attrs as keyword using a {prefer, ast} production
- 
+
   context-free syntax
     QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
-    QID		  				   -> LegacyImportName {cons("Name")}	
+    QID		  				   -> LegacyImportName {cons("Name")}
     {ID "." }+				   -> QName	 {cons("QName")}
 	ID	 					   -> QName	 {cons("Name"),prefer}
     ID  					   -> SPXModuleName	 {cons("SPXModuleName")}
-   	  
-	context-free syntax %% Imports   	
+
+	context-free syntax %% Imports
     %% TODO: SDF: "retains" clause eliminates need for "hiddens" section. except we need something to hide the start symbols
     %% Maybe a "with start symbols" clause, combined with a warning if the syntax has start symbols but the clause is not specified?
     "imports" Import*          -> ImportSection {cons("Imports"),prefer}
     "unimports" Import*        -> ImportSection {cons("Unimports")}
- 
-    ImportedModule 		                   -> Import 
+
+    ImportedModule 		                   -> Import
     ModuleName                           -> Import {cons("Import")}
     ModuleName "retain" Renamings[[SDF]] -> Import {cons("ImportRetain")}
     ModuleName          Renamings[[SDF]] -> Import {cons("ImportRename")}
     "namespace" QIDWithDots              -> Import {cons("NamespaceImport")}
     "(" Import ")"                       -> Import {bracket, deprecated}
 
-	context-free syntax    
+	context-free syntax
     LegacyImportName				 		-> ImportedModule{cons("ImportLegacyArtifact")}
-    QName "::" SPXModuleName 				-> ImportedModule{cons("ImportSpxModule"),prefer} 
+    QName "::" SPXModuleName 				-> ImportedModule{cons("ImportSpxModule"),prefer}
     QName		   					   		-> ImportedModule{cons("ImportPackage")  , prefer}
-    QName "as" ID					   		-> ImportedModule{cons("ImportPackageWithAlias"),prefer}	
+    QName "as" ID					   		-> ImportedModule{cons("ImportPackageWithAlias"),prefer}
 
 	context-free syntax
 		"[" {AttributeDef "," }+ "]"  	-> Attribute{cons("AttributeSection")}
-		
-		ID  -> AttributeDef 
+
+		ID  -> AttributeDef
 		ID Attribute-arguments-> AttributeDef{prefer}
-	  
-	  Target ":" Attribute -> AttributeDef{non-assoc} 
-	    
-	  EnclosingSymbol  -> Target{cons("Target")} 
-	    
+
+	  Target ":" Attribute -> AttributeDef{non-assoc}
+
+	  EnclosingSymbol  -> Target{cons("Target")}
+
 		ID-> Argument-name{cons("Argument-Name")}
-		ID -> Attribute-argument-expression	
-		
+		ID -> Attribute-argument-expression
+
 		Argument-name? Attribute-argument-expression -> Positional-argument{cons("Positional-argument")}
 		STRING -> Positional-argument{cons("Positional-argument")}
-		
+
 		ID "=" STRING -> Named-argument{cons("Named-argument")}
-	    
+
 		"(" {Named-argument ","}+ ")" -> Attribute-arguments
 	  "(" {Positional-argument ","}+ ")" -> Attribute-arguments
 	  "(" {Positional-argument ","}+  "," {Named-argument ","}*")" -> Attribute-arguments{prefer}
-	      
 
-  context-free syntax 
+
+  context-free syntax
     Reserved            -> ReservedName[[ESV]]
     ReservedName[[ESV]] -> ModuleName {reject}
 
@@ -113,12 +114,11 @@ exports
     "deprecated"                -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"deprecated\"))))")}
     "deprecated" "(" STRING ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"deprecated\"), [fun(quoted(<1>))])))")}
     "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
-    StrCon[[SDF]]               -> Constructor	  
-  
-  
-    
-  %% for testing only. playing with code-contracts in spoofax lang. 
+    StrCon[[SDF]]               -> Constructor
+
+
+
+  %% for testing only. playing with code-contracts in spoofax lang.
   context-free syntax
-		Var[[STR]] "as" ID -> Var[[STR]] {avoid, cons("VarWithType")} 
- 
-  	    
+		Var[[STR]] "as" ID -> Var[[STR]] {avoid, cons("VarWithType")}
+
