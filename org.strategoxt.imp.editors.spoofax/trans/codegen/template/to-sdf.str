@@ -64,6 +64,7 @@ strategies
         end
       end
 
+  // Used when rewriting `Sort.Cons' in priority sections to a production.
   template-production-to-sdf-no-attrs:
     TemplateProduction(S', t, _) -> p|[ A* -> S' ]|
     with

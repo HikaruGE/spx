@@ -28,6 +28,7 @@ imports
 	codegen/generate
 	codegen/template/to-sdf
 	utils/contract
+	utils/sdf2conflicts
 
 rules
 
@@ -47,7 +48,8 @@ rules
    		;output-path     := <get-output-path(|"sdf")>(root-directory , module-untyped-qname)
     	;<debug-compiler>$[ Codegen | SDF | Found Section + Imports for the following module [<pp-aterm> module-untyped-qname].]
     where
-    	sdf-string       := <pp-sdf-string'> 'module(<qname-to-path>module-untyped-qname, <to-sdf-imports-block>section* , <to-sdf-section-block>section* )
+      // sdf2conflicts here collects information for the parenthesation in the prettyprinter
+    	sdf-string       := <pp-sdf-string'> 'module(<qname-to-path>module-untyped-qname, <to-sdf-imports-block>section* , <to-sdf-section-block;sdf2conflicts>section* )
     	;<debug-compiler>$[ Codegen | SDF | Saving the artifacts of [<pp-aterm> module-untyped-qname].]
 		where
 			<save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string;
@@ -193,3 +195,24 @@ rules
 		where
 				result := $[[<qname-to-path >q]
 									 ]
+rules
+
+  // (from TemplateLang)
+
+  // Allows one to write `Sort.Cons' where a production is expected.
+  // (i.e. in priority sections)
+
+  desugar-sdf-redux:
+    simple-ref-group(ref) -> simple-group(<SortCons-to-prod> ref)
+
+  desugar-sdf-redux:
+    prods-ref-group(ref*) -> prods-group(<map(SortCons-to-prod)> ref*)
+
+  desugar-sdf-redux:
+    assoc-ref-group(a, ref*) -> assoc-group(a, <map(SortCons-to-prod)> ref*)
+
+  // FIXME: Declaration contains scoped names ((Package(QName(...)), Module(QName(...))), consOrSort)
+  SortCons-to-prod:
+    SortCons(sort, cons) -> t
+    with t := <( Declaration <+ debug(!"Undeclared SortCons"); <debug(!"all-keys-Declaration: ")> <all-keys-Declaration>; fail )
+               ; try(template-production-to-sdf-no-attrs)> (<to-scoped-symbol>sort, <to-scoped-symbol>cons)
