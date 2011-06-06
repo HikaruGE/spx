@@ -16,6 +16,7 @@ imports
 imports
   normalize/main
 	normalize/signatures
+	normalize/templatelang
 imports
 	common
 	config
@@ -216,3 +217,6 @@ rules
     SortCons(sort, cons) -> t
     with t := <( Declaration <+ debug(!"Undeclared SortCons"); <debug(!"all-keys-Declaration: ")> <all-keys-Declaration>; fail )
                ; try(template-production-to-sdf-no-attrs)> (<to-scoped-symbol>sort, <to-scoped-symbol>cons)
+
+  // Hook desugar-sdf-redux to templatelang-desugar-sdf
+  desugar-sdf-redux = templatelang-desugar-sdf
