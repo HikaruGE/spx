@@ -3,7 +3,8 @@ module analyze/sdf/check
 imports
  	common
  	utils/debug
-  context/sdf/declare
+ 	utils/attributes
+  context/sdf/-
   context/-
   include/SpoofaxLang
   utils/attributes
@@ -27,9 +28,9 @@ rules
 			<debug-analysis>$[ErrorChecking | SDF  : [<pp-aterm>]]
 		with
 	    // We only collect-om since we don't want inner warning dupes
-	    error*   := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-error)>)
+	    error*   := <collect-om( ?context-free-syntax(<collect-om(context-free-syntax-error)>)
 	                           + ?TemplateSection(<collect-om(context-free-templates-error)>), conc)> ast;
-	    warning* := <collect-om(?context-free-syntax(<collect-om(context-free-syntax-warning)>)
+	    warning* := <collect-om( ?context-free-syntax(<collect-om(context-free-syntax-warning)>)
 	                           + ?TemplateSection(<collect-om(context-free-templates-warning)>), conc)> ast;
 	    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
 	      serror* := []
@@ -39,11 +40,18 @@ rules
 	    error'*   := <conc;flatten-list> (serror*, error*);
 	    warning'* := <flatten-list> warning*
 
-
+	
 strategies
-  /**
-   * Tests if something is a non-terminal in terms of the AST produced.
-   */
+	
+	//checks whether constructor rhs-sort is marked for having declared multiple times 
+	has-duplicate-sdf-definitions(|constructor-name) =
+		?rhs-sort-name;
+		declarations := <resolve-symbol-declarations(all-keys-has-duplicate-opeartion-definition, bagof-has-duplicate-opeartion-definition)><to-scoped-symbol>rhs-sort-name;
+ 		filter(? (constructor-name,_ ,rhs-sort-name));
+ 		is-not-empty-list
+ 	
+ 
+  // Tests if something is a non-terminal in terms of the AST produced.
   is-non-terminal =
     ?sort(_) + ?opt(_) + is-iter
   + namespacedef(id, is-non-terminal) + namespaceref(is-non-terminal)
@@ -67,7 +75,18 @@ rules  //global checks
   context-free-syntax-sort-error:
     'sorts(_) -> [] // ignored
 
-
+	context-free-syntax-warning:
+    p@prod(p*, s, a*) -> (p, $[Possibly multiple definitions are encountered for "[x]" [msg-to-append].])
+    where
+    	x := <get-rhs-sort-name>s;
+    	if op-name := <!a*; ?attrs(<id>);getfirst(fetch-cons-name)> then 
+    		msg-to-append := $[with "[op-name]" constructor]
+    	else
+    		op-name := "";
+    		msg-to-append := ""
+    	end;
+    	<has-duplicate-sdf-definitions(|op-name)>x 	 
+	
 rules // Local checks
    context-free-syntax-warning:
     prod(p*, s, a*) -> (target, $[Missing {"Label"} attribute to label the abstract syntax])

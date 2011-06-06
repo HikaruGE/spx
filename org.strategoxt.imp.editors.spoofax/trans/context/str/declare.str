@@ -27,14 +27,14 @@ rules
  		?cookie; 
  		<to-scoped-symbol;resolve-symbol-declarations(all-keys-STRDeclaration, bagof-STRDeclaration);last>cookie 
  	<+
- 		<debug-declaration> $[DeclareSTR | Failed to retrive STRDeclaration for cookie [<pp-aterm-forced><to-scoped-symbol>]];
+ 		<debug-declaration(| "STR" , "Warning" )> $[Failed to retrive STRDeclaration for cookie [<pp-aterm-forced><to-scoped-symbol>]];
  		fail
 	
 	getCookie =
 			?sig; 
  			<to-scoped-symbol;resolve-symbol-declarations(all-keys-DeclareCookie, bagof-DeclareCookie);last>sig
  		<+
- 			<debug-declaration> $[DeclareSTR | Failed to retrive DeclareCookie for signature [<pp-aterm>]];
+ 			<debug-declaration(| "STR" , "Warning" )> $[Failed to retrive DeclareCookie for signature [<pp-aterm>]];
  			fail
 	 
 rules 
@@ -69,8 +69,8 @@ rules
           DeclareCookie:  scoped-sig  -> cookie
           STRDeclaration: scoped-cookie  -> def
         )
-        ;<debug-declaration>$[DeclareSTR | declare-definition | Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]]
-				;<debug-declaration>$[DeclareSTR | declare-definition | Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
+        ;<debug-declaration(| "STR|declare-definition" , "Info" )> $[Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]]
+				;<debug-declaration(| "STR|declare-definition" , "Info" )> $[Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
       else
        	cookie := <getCookie> sig 
       end
@@ -88,8 +88,8 @@ rules
         STRDeclaration: scoped-cookie -> def
       )
 		where
-			<debug-declaration>$[DeclareSTR | redeclare-definition | Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]];
-			<debug-declaration>$[DeclareSTR | redeclare-definition | Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
+			<debug-declaration(| "STR|redeclare-definition" , "Info" )> $[Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]]
+			;<debug-declaration(| "STR|redeclare-definition" , "Info" ) >$[Storing STRDeclaration : [<pp-aterm>scoped-cookie] -> [<pp-aterm>def]]      
   
   external SRTS-EXT-newint(|)
   
@@ -123,7 +123,7 @@ rules
         DeclareCookie: scoped-sig' -> cookie
       )
     where
-    	<debug-declaration>$[DeclareSTR | declare-str-definition [<pp-aterm>]| Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
+    	<debug-declaration(| "STR" , "Info" )>$[declare-str-definition [<pp-aterm>]| Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
   
    declare-str-definition:
     ExtSDef(x, s*, t*) -> <id>
@@ -149,7 +149,7 @@ rules
         DeclareCookie: scoped-sig'   -> cookie
       )
     where
-    	<debug-declaration>$[DeclareSTR | declare-str-definition [<pp-aterm>] | Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
+    	<debug-declaration(| "STR" , "Info" )>$[declare-str-definition [<pp-aterm>] | Storing DeclareCookie : [<pp-aterm>scoped-sig'] -> [<pp-aterm>cookie]]  
     
     
   declare-dynrule:
@@ -191,7 +191,7 @@ rules
     sig := ($[[prefix]-[x]], s, t);
     scoped-sig := <to-scoped-symbol> sig;
     rules(DeclareCookie: scoped-sig -> cookie);
-		where(<debug-declaration>$[DeclareSTR | declare-dr-rule [<pp-aterm>prefix]| Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]])  
+		where(<debug-declaration(| "STR" , "Info" )>$[declare-dr-rule [<pp-aterm>prefix]| Storing DeclareCookie : [<pp-aterm>scoped-sig] -> [<pp-aterm>cookie]])  
   
 
   dr-scope-declare-cookies(defs, s):

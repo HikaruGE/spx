@@ -27,7 +27,7 @@ strategies
 
 	disable-declaration-debugging = rules(DebugDeclaration:- _ )
 
-	debug-declaration = not(DebugDeclaration <+ DebugAll)  <+ debug(!"--- Declaration | ")
+	debug-declaration(| site, type) = not(DebugDeclaration <+ DebugAll)  <+ <debug>$[ $[$ Declaration | [site] | [type] $]$ [<id>]]
 
 
 
@@ -36,7 +36,7 @@ strategies
 
 	disable-symboltable-debugging = rules(DebugSymbolTable:- _ )
 
-	debug-symboltable = not(DebugSymbolTable <+ DebugAll)  <+ debug(!"--- SymbolTable | ")
+	debug-symboltable = not(DebugSymbolTable <+ DebugAll)  <+ debug(!"[ SymbolTable | ")
 
 
   // Debug switches for semantic analysis
@@ -44,7 +44,7 @@ strategies
 
 	disable-semantic-analysis-debugging = rules(DebugSemanticAnalysis:- _ )
 
-	debug-analysis = not(DebugSemanticAnalysis <+ DebugAll)  <+ debug(!"--- SemanticAnalysis | ")
+	debug-analysis = not(DebugSemanticAnalysis <+ DebugAll)  <+ debug(!"[ SemanticAnalysis | ")
 
 
  	// Debug switches for compile
@@ -52,11 +52,11 @@ strategies
 
 	disable-compiler-debugging = rules(DebugCompiler:- _ )
 
-	debug-compiler = not(DebugCompiler <+ DebugAll)  <+ debug(!"--- Compiler | ")
+	debug-compiler = not(DebugCompiler <+ DebugAll)  <+ debug(!"[ Compiler | ")
 
 
   // Debug switches for TemplateLang
-  debug-templatelang = debug(!"--- TemplateLang | ")
+  debug-templatelang = debug(!"[ TemplateLang | ")
 
  rules
 

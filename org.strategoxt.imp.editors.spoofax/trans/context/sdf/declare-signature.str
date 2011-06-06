@@ -15,22 +15,26 @@ imports
 
 
 // TODO : refactor common functionily in seperate rules/strategy
-// DON'T like several things about this implementation. Need to refactor/re-implement.
-
-
-//TODO : write a pretty printer to convert Get-Operation-Declaration to Signatures' Aterm
+// FIXME: DON'T like several things about this implementation. Need to refactor/re-implement.
+// TODO : write a pretty printer to convert Get-Operation-Declaration to Signatures' Aterm
 
 rules
 	getOperationSignatures =
 		?opname;
  		<resolve-symbol-declarations(all-keys-Get-Operation-Signature, bagof-Get-Operation-Signature)><to-scoped-symbol>opname
  	<+
- 		<debug-declaration> $[Waring | Failed to retrive OperationSignatures for opname[<pp-aterm>]. Returning  empty list . ];
+ 		<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive OperationSignatures for opname[<pp-aterm>]. Returning  empty list . ];
  		![]
-
+ 	
+ 	get-operation-declarations =
+		?opname;
+ 		<resolve-symbol-declarations(all-keys-Get-Operation-Declaration, bagof-Get-Operation-Declaration)><to-scoped-symbol>opname
+ 	<+
+ 		<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive OperationDeclarations for opname[<pp-aterm>]. Returning  empty list . ];
+ 		![]
+ 			
 strategies
-	// Returns right hand side of the production. In case of A -> B, it
-	// retunrs B.
+	// Returns right hand side of the production. In case of A -> B, it retunrs B.
 	get-rhs-sort-name =
 			try(
 					?cf(<id>)
@@ -49,28 +53,23 @@ strategies
 
 	mark-as-lexical-syntax-block =	with(	rules (IsInsideLexicalSyntaxBlock :_) )
 
-
-
-
 rules
 
 	//Stores operation name and operation declarations
-
-	/**
-  * Gets the operation name from the Production. It actually search all the attributes
-  * in the attribute list and create  a dynamic rule that stores operation name.
-  */
+	
+  // Gets the operation name from the Production. It actually searches all the attributes
+  // in the attribute list and creates a dynamic rule that stores operation name.
   get-opration-name = where(getfirst(fetch-cons-name) ; store-operation-name)
 
-  /**
-  *	Store operation name from the RHS of the Production, i.e. from fun constructors.
-  * It creates a dynamic rule to store the operation name.
-  */
-  store-operation-name : opname-> opname
-  with
-		rules (get-op-name: _ -> opname)
-  where
-  		<debug-declaration> $[Operation Name :  [opname]]
+  
+  // Stores operation name from RHS of the Production, i.e. from fun constructors.
+  // It creates a dynamic rule to store the operation name.
+  store-operation-name : 
+  	opname-> opname
+  	with
+			rules (get-op-name: _ -> opname)
+  	where
+  		<debug-declaration(|"Signature" , "Info")> $[Operation Name :  [opname]]
 
 
 	store-operation-declaration:
@@ -96,7 +95,7 @@ rules
       <store-operation-declaration-internal> (t, lhs, rhs-sort, attrs)
 
 	store-operation-declaration-internal
-  	=  ?(p, lhs , rhs-sort, attrs(attribute-list))
+  	= ?(p, lhs , rhs-sort, attrs(attribute-list))
   		;rhs-sort-name := <get-rhs-sort-name>rhs-sort
   		;{|lhs-sort, get-op-name:
   		 			<find-sorts>lhs
@@ -105,18 +104,18 @@ rules
   						lhs-operands-types := <reverse><bagof-lhs-sort>
   						;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)
   					else
-  						<debug-declaration> $[DeclareSignature | Failed to retrive Operation Name . Hence Ignoring : [<pp-aterm> p].]
+  						<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive Operation Name . Hence Ignoring : [<pp-aterm> p].]
   					end
   		  |}
 
 	store-operation-declaration-internal
-  	=  ?(p, lhs, rhs-sort, no-attrs())
+  	= ?(p, lhs, rhs-sort, no-attrs())
   		;rhs-sort-name := <get-rhs-sort-name>rhs-sort
   	  ; {|lhs-sort :
 	  				if (IsInsideLexicalSyntaxBlock<+ (!rhs-sort; ?lex(sort(rhs-sort-name))))then
 							 rules ( lhs-sort :+ _ -> $[String] )
 						else
-							<find-sorts>lhs //TODO : consider ignorig :ID->ID-Prime operation decl
+							<find-sorts>lhs //TODO : consider ignoring :ID->ID-Prime operation decl
 						end
 	  				;lhs-operands-types := <reverse><bagof-lhs-sort>
 	  				;operation-name := ""
@@ -149,6 +148,7 @@ rules
 					;	inner-sort* := <bagof-lhs-sort;reverse>
 					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort*
 			|}
+			// storing intermediate operation declarations    
 			; <map(create-opname2opdecl-mapping(|"", intermediate-resultant-sort-type, "[N/A]" ))>inner-sort*
 			; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
 
@@ -252,8 +252,8 @@ strategies
 				)
 
 	/**
-	* Create a dynamic rule that mapes operation name to the operation declaration.
-	*	Addinationally, Arity of Operation Decl. has also been stored.
+	* Creates a dynamic rule that mapes operation name to the operation declaration.
+	*	In addition, Arity of Operation Decl. has also been stored.
 	*
 	* @Param operation-name.
 	* @param Sort or Operand Types involve in the operation.
@@ -262,50 +262,60 @@ strategies
 	*
 	*/
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
-		where (<debug-declaration> $[DeclareSDF | Storing Signature for following production: [<pp-aterm> production]])
-		;available-opdecl*     := <getOperationSignatures>operation-name
+		where (<debug-declaration(|"DeclareSignature" , "Info")> $[Storing Signature for following production: [<pp-aterm> production]])
+		;available-opdecl* := <get-operation-declarations>operation-name
 		;scoped-operation-name := <to-scoped-symbol>operation-name
-		;if(
-		 		(!available-opdecl* => [])
-				<+
-				not (<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*)
-			)
-			then
-				record-operation-declaration(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort) // storing this operation declaration
+		;if( (!available-opdecl* => []) <+ not(<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*) )then
+			record-operation-definition(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort) 
  		else
- 		 		<debug-declaration>
+ 			//enable-declaration-debugging;
+ 		 	record-duplicate-operation-definition(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort); 
+ 		 	<debug-declaration(|"Signature" , "Warning")>
  		 			$[
- 		 				DeclareSignature | Waring | There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)]
- 		 				DeclareSignature | Debug-info: scoped-op-name [<pp-aterm>scoped-operation-name].
+ 		 				There is an existing operation declration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)]
+ 		 				--scoped-op-name [<pp-aterm>scoped-operation-name].
  		 			 ]
+ 		 	//;disable-declaration-debugging	 
 		end
-
+		
 
 	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort
 		where
 			  alt-srt-lst := [alt-sort]
 			  ;create-opname2opdecl-mapping(|operation-name, alt-srt-lst, resultant-sort , production)
 
-	record-operation-declaration ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
+	
+	record-operation-definition ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
 		where (
 			arg-length := <length>operand-sort*;
 			rules(
 					Get-Operation-Signature  :+  scoped-op-name   -> (opname  , arg-length )
 				 	Get-Operation-Declaration:+  scoped-op-name   -> (opname  , operand-sort* , resultant-sort)
 				)
-			; <debug-declaration> $[DeclareSignature | Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
-			; <debug-declaration> $[DeclareSignature | Stored operation signature  : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
+				
+			;<debug-declaration(|"Signature" , "Info")> $[Stored operation declration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
+			;<debug-declaration(|"Signature" , "Info")> $[Stored operation signature  : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
 	)
 
-	record-operation-declaration-at-global-scope ( | opname , operand-sort* ,  resultant-sort) =
+	record-operation-definition-at-global-scope ( | opname , operand-sort* ,  resultant-sort) =
 		where ( <to-global-symbol> opname => scoped-op-name);
-		record-operation-declaration( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort)
+		record-operation-definition( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort)
 
-
+	
+	record-duplicate-operation-definition( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
+		where(
+			scoped-rhs-sort := <to-scoped-symbol>resultant-sort;
+			arg-length := <length>operand-sort*;
+			rules(
+					has-duplicate-opeartion-definition:+ scoped-rhs-sort   -> (opname  , arg-length, resultant-sort)
+			)
+			;<debug-declaration(|"Signature" , "Info")> $[Stored duplicate  operation signature  : [<pp-aterm> scoped-op-name].]
+		)	
+		
 rules
 	init-record-signatures =
-			record-operation-declaration-at-global-scope ( |"None", [] 		,"Option(a)");
-			record-operation-declaration-at-global-scope ( |"Some", ["a"] ,"Option(a)");
-			record-operation-declaration-at-global-scope ( |"Cons", ["a","List(a)"] ,"List(a)");
-			record-operation-declaration-at-global-scope ( |"Nil", [] ,"List(a)");
-			record-operation-declaration-at-global-scope ( |"Conc", ["List(a)" , "List(a)"] ,"List(a)")
+			record-operation-definition-at-global-scope ( |"None", [] 		,"Option(a)");
+			record-operation-definition-at-global-scope ( |"Some", ["a"] ,"Option(a)");
+			record-operation-definition-at-global-scope ( |"Cons", ["a","List(a)"] ,"List(a)");
+			record-operation-definition-at-global-scope ( |"Nil", [] ,"List(a)");
+			record-operation-definition-at-global-scope ( |"Conc", ["List(a)" , "List(a)"] ,"List(a)")

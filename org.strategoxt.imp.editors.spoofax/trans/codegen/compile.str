@@ -188,7 +188,7 @@ rules
 				|};
 
 				// Making this package as compiled.
-				// TODO : consider keeping only 1 DR as a marker if compiled package.
+				// TODO : consider keeping only 1 DR as a marker for compiled package.
 				where(
 					rules(
 						CompiledPackage : package-typed-qname -> package-typed-qname

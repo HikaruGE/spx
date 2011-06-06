@@ -52,8 +52,6 @@ rules
     	alltd(declare-sdf-definition)
 
 rules
-
-
 	declare-sdf-definition:
     renamings(y) -> <id>
     where
@@ -103,7 +101,7 @@ rules
         	SortDeclaration  :  qualified-sort-name -> x
        		SortProductionLHS:+ qualified-sort-name -> lhs
       	);
-      	<debug-declaration> $[DeclareSDF | Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
+      	<debug-declaration(| "SDF" , "Info" )> $[Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
       )
     with
       <alltd(declare-sdf-usage)> lhs
@@ -157,7 +155,7 @@ rules
 	  	scoped-x:= <to-scoped-symbol>x;
 	  	rules(Declaration: scoped-x -> x)
 		where
-			<debug-declaration>$[DeclareSDF | Storing Declaration [<pp-aterm>scoped-x] -> [<pp-aterm>x]]
+			<debug-declaration(| "SDF" , "Info" )>$[Storing Declaration [<pp-aterm>scoped-x] -> [<pp-aterm>x]]
 
 rules
 
