@@ -22,7 +22,15 @@ imports
 	utils/contract
 	
 rules 
-	
+	get-start-symbols =
+		contracts(
+			contract-requires(
+				?Package(QName(_))
+			)
+		);
+		bagof-DeclaredContextFreeStartSymbols;
+		flatten-list 
+
 	get-language-id = 
 		contracts(
 			contract-requires(

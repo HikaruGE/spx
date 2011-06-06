@@ -76,7 +76,7 @@ rules  //global checks
     'sorts(_) -> [] // ignored
 
 	context-free-syntax-warning:
-    p@prod(p*, s, a*) -> (p, $[Possibly multiple definitions are encountered for "[x]" [msg-to-append].])
+    p@prod(p*, s, a*) -> (p, $[Possibly multiple definitions of "[x]" [msg-to-append].])
     where
     	x := <get-rhs-sort-name>s;
     	if op-name := <!a*; ?attrs(<id>);getfirst(fetch-cons-name)> then 

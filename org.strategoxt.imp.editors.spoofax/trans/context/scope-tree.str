@@ -82,6 +82,11 @@ rules
 		LanguageId(id-string) -> <id> 
 		with 
 			rules( DeclaredLangaugeId :+ package-typed-qname -> id-string)
-		where
-			<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language Id : [<pp-aterm>id-string]]
+			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language Id : [<pp-aterm>id-string]]
+	 
+	store-context-free-start-symbols(|package-typed-qname) : 
+	 	context-free-start-symbols(sorts*) -> <id>
+	 	with 
+			rules( DeclaredContextFreeStartSymbols :+ package-typed-qname -> sorts*)
+			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following start symbols : [<pp-aterm>sorts*]]
 	 		 		

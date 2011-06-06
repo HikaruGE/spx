@@ -21,11 +21,8 @@ rules
   	where
   		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
 		where
-  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
+  		error-esv*   := <flatten-list><collect-all(constraint-esv-error, conc)> ast;
   		warning-esv* := <collect-all(constraint-esv-warning, conc)> ast
-
-
-	
 
 rules 
 	resolve-sdf-sort-declaration = 
@@ -35,9 +32,8 @@ rules
  		<debug-analysis> $[ErrorChecking|Failed to retrive SDF Sort for symbol [<pp-aterm>]];
  		fail
 
-
-
 rules
+
 	constraint-esv-error:
     Sort(x) -> (x, $[Unknown sort [x]])
     where
@@ -49,12 +45,28 @@ rules
       not(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
    		
   constraint-esv-error: 
-   	LanguageName( name ) -> (name, $[ Duplicate declaration of language name. Declared in following packages : [<pp-aterm>packages*]])
+   	LanguageName( name ) -> (name, $[ Multiple declarations of language name. Declared in following packages : [<pp-aterm>packages*]])
    	where
    			<get-languagename-declaration-sites> name =>packages*;
    			is-not-empty-list;
    			make-set;
 				not(ensure-is-unique)
+	
+	constraint-esv-error: 
+		StartSymbols(sorts*) -> err-messages*
+		where
+			s* := <get-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
+			<filter(unknown-start-symbol-error(|s*))>sorts* => err-messages*;
+			if !err-messages* => [] then 
+				fail
+			end
+	
+	unknown-start-symbol-error(|start-symbols-found-in-sdf-def) : 
+		s@Sort(x) -> (s, $[Undefined Start Symbol :  "[x]".])
+		where 
+			<not(fetch-elem(?sort(x)))>start-symbols-found-in-sdf-def
+			
+					
 rules
 	   		
   constraint-esv-warning: 
