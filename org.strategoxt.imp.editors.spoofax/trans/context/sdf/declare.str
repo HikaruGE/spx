@@ -51,6 +51,14 @@ rules
  declare-sdf-definition-main=
     	alltd(declare-sdf-definition)
 
+rules 
+	declare-sdf-definition : 
+		context-free-start-symbols(s*) -> <id>
+		with 
+			<declare-sdf-definition-main>s*
+		with
+			store-context-free-start-symbols(|<GetEnclosingPackageName>) 	
+		 
 rules
 	declare-sdf-definition:
     renamings(y) -> <id>

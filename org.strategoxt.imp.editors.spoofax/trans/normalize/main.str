@@ -128,33 +128,26 @@ rules
 		SDFSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> SDFSection( sectionDef' )
 		with
 			<templatelang-desugar-sdf-top> sectionDef => sectionDef'
-		with 
-			<alltd(store-context-free-start-symbols(|<EnclosingParentNamespace>))>sectionDef
-		
+	
 		
   // TODO: Maybe SDFSectionEH can be desugared into SDFSection.
 	desugar-spx : 
 		SDFSectionEH ( eh, sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> SDFSectionEH( eh, sectionDef' )
 		with
     	<templatelang-desugar-sdf-top> sectionDef => sectionDef'
-  	with 
-			<alltd(store-context-free-start-symbols(|<EnclosingParentNamespace>))>sectionDef
-
+  
 rules
 	//Desugaring STR sections
 	desugar-spx : 
 		STRSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> STRSection ( sectionDef' )
 		with
 			<basic-stratego-desugar-top> sectionDef => sectionDef'
-			
 				
 rules
 	//Desugaring ESV Sections
 	desugar-spx : 
 		ESVSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
-		with
-			<alltd(store-langauge-properties(|<EnclosingParentNamespace>))>sectionDef
-
+		
 rules
 	//Desugaring template sections
   desugar-spx : 

@@ -234,7 +234,7 @@ rules
 				module-decl := <get-module-declaration>module-typed-qname;
 				{|GetEnclosingModuleName:
 						<declare-current-module-scope> module-typed-qname;
-						<declare-module(declare-all)>module-decl
+						<delcare-module>module-decl
 				|};
 				where(rules(CompiledModule: module-typed-qname -> module-typed-qname))
 			else

@@ -2,10 +2,9 @@ module analyze/esv/check
 
 imports
 	common
-	context/sdf/declare
-
+	context/esv/declare	
 imports 
-	utils/debug
+	utils/debug 
 	context/-
 imports
   include/SpoofaxLang
@@ -13,27 +12,18 @@ imports
 // TODO: warn about multi-char highlighted brackets
 // TODO: check if provider/imported/etc. files exist
 // TODO: check if there is _any_ provider for observer etc.
- 
+
 rules
-  
-  analyze-section: 
+	analyze-section: 
 		ESVSection(ast) -> (error-esv*, warning-esv* , [])
   	where
   		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
 		where
-  		error-esv*   := <flatten-list><collect-all(constraint-esv-error, conc)> ast;
-  		warning-esv* := <collect-all(constraint-esv-warning, conc)> ast
+  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
+  		warning-esv* := <flatten-list><collect-all(constraint-esv-warning, conc)> ast
 
-rules 
-	resolve-sdf-sort-declaration = 
- 		?symbol; 
- 		<resolve-symbol-unique-declaration(all-keys-SortDeclaration , bagof-SortDeclaration)><to-scoped-symbol>symbol 
- 	<+
- 		<debug-analysis> $[ErrorChecking|Failed to retrive SDF Sort for symbol [<pp-aterm>]];
- 		fail
 
 rules
-
 	constraint-esv-error:
     Sort(x) -> (x, $[Unknown sort [x]])
     where
@@ -51,8 +41,9 @@ rules
    			is-not-empty-list;
    			make-set;
 				not(ensure-is-unique)
-	
-	constraint-esv-error: 
+					
+rules
+	constraint-esv-warning: 
 		StartSymbols(sorts*) -> err-messages*
 		where
 			s* := <get-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
@@ -65,10 +56,7 @@ rules
 		s@Sort(x) -> (s, $[Undefined Start Symbol :  "[x]".])
 		where 
 			<not(fetch-elem(?sort(x)))>start-symbols-found-in-sdf-def
-			
-					
-rules
-	   		
+			   		
   constraint-esv-warning: 
    	LanguageName( name ) -> (name, $[Same Language name is declared multiple times in this package.])
    	where

@@ -1,0 +1,32 @@
+module context/esv/declare
+
+imports
+	include/SpoofaxLang
+	context/-
+	context/sdf/-
+	utils/debug
+	common
+
+rules 
+	resolve-sdf-sort-declaration = 
+ 		?symbol; 
+ 		<resolve-symbol-unique-declaration(all-keys-SortDeclaration , bagof-SortDeclaration)><to-scoped-symbol>symbol 
+ 	<+
+ 		<debug-analysis> $[ErrorChecking|Failed to retrive SDF Sort for symbol [<pp-aterm>]];
+ 		fail
+
+
+rules
+	declare-esv-globals-top = 
+		alltd(declare-esv-definition)
+		
+	declare-esv-definition : 
+		LanguageName(name)  -> <id>
+		with 
+			store-langauge-properties(|<GetEnclosingPackageName>)
+	 
+	 declare-esv-definition : 
+		LanguageId(id-string)  -> <id>
+		with 
+			store-langauge-properties(|<GetEnclosingPackageName>)
+	 	

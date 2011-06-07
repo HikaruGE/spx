@@ -69,7 +69,7 @@ rules
 	// extended dynamic rules are used to verify that language name is not declare multple times 
 	// in a package scope. Additional checks will be added to verify a language-name is unique 
 	// in a project scope. 
-	store-langauge-properties (| package-typed-qname ) : 
+	store-langauge-properties(|package-typed-qname) : 
 		LanguageName(name) -> <id>
 		with 
 			rules( DeclaredLangaugeName :+ package-typed-qname -> name);
@@ -78,7 +78,7 @@ rules
 			<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language name : [<pp-aterm>name]]
 	
 	// Stores Language ID. 
-	store-langauge-properties (| package-typed-qname ) : 
+	store-langauge-properties(|package-typed-qname) : 
 		LanguageId(id-string) -> <id> 
 		with 
 			rules( DeclaredLangaugeId :+ package-typed-qname -> id-string)
