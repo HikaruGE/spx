@@ -98,6 +98,8 @@ rules
 							// languages.
 							
 							{| GetLanguageName : 
+										<debug>$[-------------------------Generating Main Artifacts ---------------------];
+										<debug>$[------------------------------------------------------------------------];
 										rules( GetLanguageName  := language-name);
 										<emit-package-signature-main>();
 										<generate-main> enclosed-module-typed-qnames 

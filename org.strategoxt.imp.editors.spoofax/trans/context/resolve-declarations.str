@@ -20,15 +20,39 @@ imports
 	utils/path
 	utils/debug 
 	utils/contract
+
+
+rules 
+	get-sdf-start-symbols-to-sync = 
+		where ( 
+			<get-esv-start-symbols;debug><GetEnclosingPackageName> => esv-start-symbols; 
+			<get-sdf-start-symbols;debug><GetEnclosingPackageName> => sdf-start-symbols
+		)
+		;<diff(is-eq-sorts)>(esv-start-symbols,sdf-start-symbols)
+		; make-set
+		; map(\Sort(x) -> sort(x)\)  
+		
+	is-eq-sorts : (Sort(y),sort(x)) -> <eq>(x,y)
 	
 rules 
-	get-start-symbols =
+	
+	get-esv-start-symbols =
 		contracts(
 			contract-requires(
 				?Package(QName(_))
 			)
 		);
-		bagof-DeclaredContextFreeStartSymbols;
+		bagof-DeclaredESVStartSymbols;
+		flatten-list 
+
+
+	get-sdf-start-symbols =
+		contracts(
+			contract-requires(
+				?Package(QName(_))
+			)
+		); 
+		bagof-DeclaredSDFStartSymbols;
 		flatten-list 
 
 	get-language-id = 

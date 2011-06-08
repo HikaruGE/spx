@@ -25,8 +25,12 @@ rules
 		with 
 			store-langauge-properties(|<GetEnclosingPackageName>)
 	 
-	 declare-esv-definition : 
+	declare-esv-definition : 
 		LanguageId(id-string)  -> <id>
 		with 
 			store-langauge-properties(|<GetEnclosingPackageName>)
-	 	
+	 
+	declare-esv-definition : 
+		StartSymbols(sorts*)  -> <id>
+		with 
+			store-context-free-start-symbols(|<GetEnclosingPackageName>)

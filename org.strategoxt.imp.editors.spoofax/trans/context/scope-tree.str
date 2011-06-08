@@ -84,9 +84,17 @@ rules
 			rules( DeclaredLangaugeId :+ package-typed-qname -> id-string)
 			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language Id : [<pp-aterm>id-string]]
 	 
+	 
+	store-context-free-start-symbols(|package-typed-qname) : 
+	 	StartSymbols(sorts*) -> <id>
+	 	with 
+			rules( DeclaredESVStartSymbols :+ package-typed-qname -> sorts*)
+			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following start symbols found from ESV language description: [<pp-aterm>sorts*]]
+	 	
+	 	 
 	store-context-free-start-symbols(|package-typed-qname) : 
 	 	context-free-start-symbols(sorts*) -> <id>
 	 	with 
-			rules( DeclaredContextFreeStartSymbols :+ package-typed-qname -> sorts*)
+			rules( DeclaredSDFStartSymbols :+ package-typed-qname -> sorts*)
 			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following start symbols : [<pp-aterm>sorts*]]
 	 		 		

@@ -38,7 +38,7 @@ exports
 	  Module* 																				-> Start{cons("CompilationUnit") , prefer}
 
     "package" QName Module*                         -> PackageDefinition {cons("Package")}
-    MainID? "module" SPXModuleName Section*         				-> Module {cons("Module")}
+    MainID? "module" SPXModuleName Section*         -> Module {cons("Module")}
 
     Grammar[[SDF]] -> Section {cons("SDFSection")}
     Decl[[STR]]    -> Section {cons("STRSection")}
@@ -50,15 +50,22 @@ exports
     "exports"                       -> ExportsOrHiddens {cons("Exports"), deprecated}
     "hiddens"                       -> ExportsOrHiddens {cons("Hiddens"), deprecated}
 
+	 context-free syntax
+	 	
+%% 		TODO : Depreciate context-free start symbols after discussing with lennart   
+%%    "start-symbols" Symbols[[SDF]]                -> Grammar[[SDF]]  {cons("kernel-start-symbols"),deprecated} 
+%%    "lexical" "start-symbols" Symbols[[SDF]]      -> Grammar[[SDF]]  {cons("lexical-start-symbols"),deprecated}
+%%    "context-free" "start-symbols" Symbols[[SDF]] -> Grammar[[SDF]]  {cons("context-free-start-symbols"),deprecated}
+
 
     %% TODO: Support SDF .def "definitions"?
     %% TODO: Mark deprecated, ast, and maybe other attrs as keyword using a {prefer, ast} production
 
   context-free syntax
     QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
-    QID		  				   -> LegacyImportName {cons("Name")}
-    {ID "." }+				   -> QName	 {cons("QName")}
-	ID	 					   -> QName	 {cons("Name"),prefer}
+    QID		  				           -> LegacyImportName {cons("Name")}
+    {ID "." }+			 -> QName	 {cons("QName")}
+	  ID	 					   -> QName	 {cons("Name"),prefer}
     ID  					   -> SPXModuleName	 {cons("SPXModuleName")}
 
 	context-free syntax %% Imports

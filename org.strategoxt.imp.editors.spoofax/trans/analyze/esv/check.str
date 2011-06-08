@@ -15,12 +15,13 @@ imports
 
 rules
 	analyze-section: 
-		ESVSection(ast) -> (error-esv*, warning-esv* , [])
+		ESVSection(ast) -> (error-esv*, warning-esv* , info-esv*)
   	where
   		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
 		where
   		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
-  		warning-esv* := <flatten-list><collect-all(constraint-esv-warning, conc)> ast
+  		warning-esv* := <flatten-list><collect-all(constraint-esv-warning, conc)> ast;
+  		info-esv*    := []
 
 
 rules
@@ -43,10 +44,10 @@ rules
 				not(ensure-is-unique)
 					
 rules
-	constraint-esv-warning: 
+	constraint-esv-warning:  
 		StartSymbols(sorts*) -> err-messages*
 		where
-			s* := <get-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
+			s* := <get-sdf-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
 			<filter(unknown-start-symbol-error(|s*))>sorts* => err-messages*;
 			if !err-messages* => [] then 
 				fail

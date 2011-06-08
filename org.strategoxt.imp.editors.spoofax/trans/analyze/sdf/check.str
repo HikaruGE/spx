@@ -28,10 +28,15 @@ rules
 			<debug-analysis>$[ErrorChecking | SDF  : [<pp-aterm>]]
 		with
 	    // We only collect-om since we don't want inner warning dupes
-	    error*   := <collect-om( ?context-free-syntax(<collect-om(context-free-syntax-error)>)
-	                           + ?TemplateSection(<collect-om(context-free-templates-error)>), conc)> ast;
-	    warning* := <collect-om( ?context-free-syntax(<collect-om(context-free-syntax-warning)>)
-	                           + ?TemplateSection(<collect-om(context-free-templates-warning)>), conc)> ast;
+	    error*   := <flatten-list><collect-om( ?context-free-syntax       (<collect-om(context-free-syntax-error)>)
+	    																		 + ?context-free-start-symbols(<collect-om(context-free-start-symbols-error)>)
+	    																		 + ?kernel-start-symbols      (<collect-om(context-free-start-symbols-error)>)
+	    																		 + ?lexical-start-symbols     (<collect-om(context-free-start-symbols-error)>)		
+	                                         + ?TemplateSection           (<collect-om(context-free-templates-error)>), conc)
+	                              > ast;
+	    warning* := <collect-om( ?context-free-syntax (<collect-om(context-free-syntax-warning)>)
+	    											 + ?TemplateSection     (<collect-om(context-free-templates-warning)>), conc)
+	    						> ast;
 	    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
 	      serror* := []
 	    else
@@ -86,9 +91,24 @@ rules  //global checks
     		msg-to-append := ""
     	end;
     	<has-duplicate-sdf-definitions(|op-name)>x 	 
+
+	context-free-start-symbols-error:	
+   	sorts* -> err-messages*
+   	where
+  		s* := <get-esv-start-symbols> <GetEnclosingPackageName>; // getting all the esv start symbols defined in this package   	
+			<filter(unknown-start-symbol-error(|s*))>sorts* => err-messages*;
+			if !err-messages* => [] then 
+				fail
+			end
 	
+	unknown-start-symbol-error(|start-symbols-found-in-esv-def) : 
+		s@sort(x) -> (s, $[Unknown Start Symbol :  "[x]". Please specify it as a Start Symbol in Language Description(esv)])
+		where 
+			<not(fetch-elem(?Sort(x)))>start-symbols-found-in-esv-def 	
+   
 rules // Local checks
-   context-free-syntax-warning:
+	
+	 context-free-syntax-warning: 
     prod(p*, s, a*) -> (target, $[Missing {"Label"} attribute to label the abstract syntax])
     where
       (

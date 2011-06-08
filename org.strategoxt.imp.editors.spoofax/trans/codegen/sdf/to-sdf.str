@@ -66,17 +66,26 @@ rules
 			 main-sdf-module-name :=<get-main-file-name>();
 			 output-path := <get-main-output-path(|main-sdf-module-name, "sdf")>(root-directory, package-qname);
 			<debug-compiler>$[ Codegen | SDF | Generating main for the following package : [<pp-aterm> package-qname].]
+ 		with
+ 			resultant-sorts := <get-sdf-start-symbols-to-sync ; is-not-empty-list <+ ![]>;
+ 			if not(!resultant-sorts => []) then
+ 				start-symbol-syntax := [exports(context-free-start-symbols(resultant-sorts))]	 
+ 			else
+ 				start-symbol-syntax := [exports(resultant-sorts)]
+ 			end	  
  		where
-			sdf-string :=
-	    $[module [main-sdf-module-name]
-	         imports
-		      	[<map(pp-sdf-import)>module-qname*]
-	     ]
+ 			sdf-string := 
+				<pp-sdf-string'>
+				'module(
+  				unparameterized(main-sdf-module-name)
+					, [imports(<map(pp-sdf-import;!'module(unparameterized(<id>)))>module-qname*)]
+					, start-symbol-syntax
+					)
 	  where
-	  	<debug-compiler>$[ codegen | SDF | Content of the main SDF is generated for the package : [<pp-aterm> package-qname].]
+	  	<debug-compiler>$[Codegen | SDF | Content of the main SDF is generated for the package : [<pp-aterm> package-qname].]
 		where
 			<save-artifact(| package-qname , root-directory, output-path)>sdf-string;
-			<debug-compiler>$[ Codegen | SDF | Finishing generation of Main SDF Module of package : [<pp-aterm> package-qname].]
+			<debug-compiler>$[Codegen | SDF | Finishing generation of Main SDF Module of package : [<pp-aterm> package-qname].]
 
 rules
 
@@ -120,7 +129,6 @@ rules
 	// Basically anything Unresolved is not added as a import statment in
 	// generated SDF definition.
  	sdf-import-adapter : legacy-artifact@Name(name)  -> 	result
- 	where debug
  	where
  		if <has-extension(|"sdf")+has-extension(|"def")><UsedLegacyArtifacts>(<GetEnclosingPackageName> , name)then
 				// Importing Legacy artifact only if it is a SDF or DEF file
