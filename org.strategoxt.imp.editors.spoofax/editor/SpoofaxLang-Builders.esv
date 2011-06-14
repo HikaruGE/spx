@@ -18,6 +18,10 @@ builders
   builder : "Show abstract syntax (for selection)" =
     generate-aterm (openeditor) (realtime) (meta) (source)
 
+  builder : "Normalize-all" =
+  		normalize(openeditor) (realtime) (meta) (source)
+  
+  
   builder : "Show name analysis (for selection)" =
     generate-name-analysis (openeditor) (realtime) (meta) (source)
 
@@ -35,9 +39,6 @@ builders
 
 	builder : "Build-All" =
     build-all (openeditor) (realtime) (meta)
-
-  //builder : "test desugar" =
-  // generate-desugar (openeditor) (realtime) (meta)
 
   builder : "Compile-All" =
     compile-spx(openeditor) (realtime) (meta)

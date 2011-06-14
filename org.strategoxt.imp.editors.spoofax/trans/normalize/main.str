@@ -19,13 +19,29 @@ imports
 imports
 	context/-
 
+
+rules 
+
+	 normalize:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with 
+    {| currently-precompiling-spx-abspath :
+    			current-spx-file-path := <concat-strings> [project-path , "/" , path];
+    			rules( currently-precompiling-spx-abspath :=  current-spx-file-path );    		
+   				filename := <guarantee-extension(|"aterm.desugared")> path;
+    		  result   := <normalize-all> ast // returning desugared AST
+	  |}
+       
+
+	
+strategies
+
 //TODO FIX :
 // Design issues :
 //	1. Package Common Imports are only for the current spx file at this moment
 //		 It could be kept as it is or make it common in the whole package. 
 //	2. When done with fixing origin tracking , normalize Import Statements
-	
-strategies
+
 	normalize-all = desugar-compilation-unit
 
 rules
@@ -45,6 +61,8 @@ rules
 						<alltd(desugar-spx-package)> package* => modified-packages
 			|}
 
+	// desugaring package-wide imports
+	// TODO Consider : Deprecate 
 	desugar-imports:
 		i@Imports(import*) -> i
 		with
