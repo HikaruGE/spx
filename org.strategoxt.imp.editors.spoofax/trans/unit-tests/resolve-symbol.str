@@ -83,7 +83,8 @@ rules
 						<debug>$[ Resolve Successful. Test Successful . Resolved Symbol : [<pp-aterm>result]]
 					end	
 			 |}
-			 			
+	
+	
 	// Unit Test to check the resolve symbol is working as expected.	
 	test-resolving-symbol:
 		(selected, position, ast, path, project-path) -> None()

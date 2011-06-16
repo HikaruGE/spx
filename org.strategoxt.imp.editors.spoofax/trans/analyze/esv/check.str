@@ -2,11 +2,11 @@ module analyze/esv/check
 
 imports
 	common
-	context/esv/declare	
+	context/-
+	context/esv/-	
+	context/str/-
 imports 
 	utils/debug 
-	context/-
-imports
   include/SpoofaxLang
  
 // TODO: warn about multi-char highlighted brackets
@@ -26,14 +26,19 @@ rules
 
 rules
 	constraint-esv-error:
-    Sort(x) -> (x, $[Unknown sort [x]])
+    Sort(x) -> (x, $[Unknown sort "[x]"])
     where
-      not(<resolve-sdf-sort-declaration> x)
+      require(<resolve-sdf-sort-declaration> x)
   
+  constraint-esv-error:
+    Strategy(x) -> (x, $[Unknown strategy "[x]"])
+    where
+      require(<is-declared-stratego> x)
+      
   constraint-esv-error:
     SemanticProvider(x) -> (x, $[Must be a generated .ctree or .jar file])
     where
-      not(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
+      require(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
    		
   constraint-esv-error: 
    	LanguageName( name ) -> (name, $[ Multiple declarations of language name. Declared in following packages : [<pp-aterm>packages*]])

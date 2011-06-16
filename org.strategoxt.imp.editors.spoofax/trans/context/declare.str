@@ -26,8 +26,13 @@ rules
 			)
 		);
 		get-enclosed-modules;
-		map(get-module-declaration);
-		list-loop(declare-internal(declare-global-symbols-main))
+		list-loop(
+			{|GetEnclosingModuleName:
+					declare-current-module-scope;
+					get-module-declaration;
+					declare-internal(declare-global-symbols-main)
+			|}	
+		)
 
 	
 	delcare-module =  

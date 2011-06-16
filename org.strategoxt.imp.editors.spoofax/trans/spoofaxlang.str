@@ -64,12 +64,6 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := ast // we just return the input term
 
-	generate-desugar:
-    (selected, position, ast, path, project-path) -> (filename, result)
-    with
-      filename := <guarantee-extension(|"aterm.sugar")> path;
-      result   := <normalize-all>ast // we just return the input term
-
   run-templatelang-tests:
     (selected, position, ast, path, project-path) -> None()
     with
@@ -77,3 +71,4 @@ rules
       test-templatelang-to-esv;
       test-templatelang-to-stratego;
       test-templatelang-desugar
+	

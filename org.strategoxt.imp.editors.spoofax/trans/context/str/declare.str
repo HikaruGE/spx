@@ -8,21 +8,38 @@ imports
 imports
 	lib/editor-common.generated
 	include/SpoofaxLang
-imports  	
- 	normalize/stratego
 imports	
 	utils/sourcedir
  	utils/debug
  	common 
 	config 
 imports 
+	context/-
+	normalize/-
 	context/str/signature-generator
-	context/- 
 	spoofaxlang  
- 
+
+
 
 rules 
-	
+	is-declared-stratego: x -> <id>
+	where
+		is-string; 
+		(x-signature-name,  _ , _) := <signature-of> x;
+		package-qt-name := <GetEnclosingPackageName>
+	where
+		resolve-symbol-declarations-internal(all-keys-DeclareCookie, 
+																				 bagof-DeclareCookie,
+																				 (?( package-qt-name  , _ , _) ;?(_, _ , (x-signature-name,_,_)) + (?(Globals() ,  _) ; ?(_, (x-signature-name,_,_)))) 
+																				)
+	  ;is-not-empty-list
+	<+
+		GetEnclosingPackageName => Package(untyped-package-qname);
+		GetEnclosingModuleName  => Module(untyped-module-qname);
+		<get-all-usings>( untyped-package-qname , untyped-module-qname) => imported-typedqname*;		
+		<resolve-imported-symbol-declarations'(all-keys-DeclareCookie  , bagof-DeclareCookie, ?(_, _ , (x-signature-name,_,_)))>imported-typedqname*
+		
+rules 
 	getStrDeclaration = 
  		?cookie; 
  		<to-scoped-symbol;resolve-symbol-declarations(all-keys-STRDeclaration, bagof-STRDeclaration);last>cookie 

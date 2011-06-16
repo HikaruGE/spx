@@ -13,7 +13,7 @@ imports
 imports 	 
 	common
 	config 
-	utils/annotations 
+	utils/annotations  
 	utils/path
 	utils/debug
 
@@ -158,18 +158,40 @@ rules
 		)
 
 rules
-		
-	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
-		key-resolver;
-		filter(namespace-filter);
-		mapconcat(value-resolver)
-	  
-	<+     			 
-		<debug-symboltable>$[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<pp-aterm>]]
-		;fail
-		 
-rules
+	//TODO : refactor 
 	
+	resolve-imported-symbol-declarations'(key-resolver,value-resolver , eq): scopes* -> resolved*
+	where
+		if !scopes* => [] then
+			fail
+		else
+			!scopes* => [currentscope|rest*]
+		end
+	where 
+			if !currentscope => Package(_) then 
+				internal_module_qname := <get_internal_module_qtname>currentscope;
+				resolved* := <is-not-empty-list>
+												<resolve-symbol-declarations-internal(
+														key-resolver, 
+														value-resolver,
+														( 
+															//Filter scopes to search in the imported scopes.
+															//In addition, skipping package's intenral scope. 
+															?(currentscope, _ , _) ; not(?(currentscope, internal_module_qname , _));eq
+														)
+												)>
+			else
+				if !currentscope => Module(_) then 
+					resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(_ , currentscope , symbol))>symbol
+				end
+			end;
+			where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<pp-aterm>resolved*]. Found in :[<pp-aterm>currentscope] ])
+		<+
+			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> rest*
+
+							 	
+
+	// Resolving Symbol in the imported scopes
 	resolve-imported-symbol-declarations(key-resolver,value-resolver):
 		(symbol, scopes*) -> resolved*
 		where 
@@ -200,3 +222,15 @@ rules
 			where(<debug-symboltable>$[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<pp-aterm>resolved*]. Found in :[<pp-aterm>currentscope] ])
 		<+
 			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> ( symbol, rest*)
+
+rules
+	
+	// Internal strategy to resolve symbol using a matcher
+	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
+		key-resolver;
+		filter(namespace-filter);
+		mapconcat(value-resolver)
+	  
+	<+     			 
+		<debug-symboltable>$[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<pp-aterm>]]
+		;fail

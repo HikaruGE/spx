@@ -4,12 +4,8 @@ imports
 	include/SpoofaxLang 
 	lib/editor-common.generated
 imports 
-	context/signatures
-	context/scope-tree
-  context/resolve-symbols
-  context/store-imports
-  context/resolve-annotations
-  context/resolve-types
+	context/-
+	context/str/-
 imports  
   normalize/signatures
 	codegen/compile
@@ -123,4 +119,5 @@ rules
 	get-all-usings : (package-untyped-qname , module-untyped-qname) -> lstUsings*
 	where 
 		<bagof-Using>(package-untyped-qname , module-untyped-qname) => lstUsings* 			
+	
 	
