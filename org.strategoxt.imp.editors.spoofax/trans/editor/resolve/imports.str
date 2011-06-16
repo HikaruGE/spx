@@ -1,7 +1,29 @@
 module editor/resolve/imports
-	
-	
+
+imports
+	common	
+	context/-
+	normalize/-
+	editor/main
+	utils/path
+	include/SpoofaxLang
 rules 
 	
+	resolve : ImportLegacyArtifact(Name(m@modulename)) -> r
+	with 
+		resolved-path := <resolve-legacy-import-path(|<cwd>)>modulename;
+	  if !resolved-path => 	Unresolved() then 
+	 		fail
+	 	else
+	 		r := <parse-legacy-artifact>resolved-path	
+	 	end		
+	 	
 	// resolves imports 
-		
+	resolve = 
+		where(
+			not(?ImportLegacyArtifact(_))
+		);
+		debug(!"Todo : Editor resolve: "); 
+		fail
+	
+ 

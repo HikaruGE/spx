@@ -2,19 +2,25 @@ module editor/main
 
 imports
 	lib/editor-common.generated
-
-imports 
 	codegen/compile
 imports 
+	common
 	config
 	utils/cache	
 	utils/debug
+	editor/resolve/-
+
 rules
 	// Resolves a reference when the user control-clicks or presses F3 in the editor.
   editor-resolve:
     (node, position, ast, path, project-path) -> elem
-    where 
-    	<id> node => elem
+    where
+    	{| cwd : 
+    			 d := <dirname><concat-strings>[project-path , "/", path]
+    			;rules(cwd  := d)
+    			;<resolve> node => elem	
+    	|} 
+    	
     		 
     	
   // Returns "hover help" information for a particular node in the editor.
@@ -34,13 +40,11 @@ rules
  	editor-analyze: 
  		(ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST 
     with 
-			editor-init
-		with
-			rules(ProjectPath := project-path)
+			 editor-init
+			;rules(ProjectPath := project-path)
 			;initialize-configuration
-			 
-		with 
-			abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]  
+			;abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]
+			;<debug>$[Compiling abs-path : [<pp-aterm>abs-path]]    
 		with 
 			<cache-currently-analyzing-ast>(abs-path  , ast)	 
 		with 
