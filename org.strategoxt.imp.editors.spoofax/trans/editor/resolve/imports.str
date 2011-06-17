@@ -7,7 +7,20 @@ imports
 	editor/main
 	utils/path
 	include/SpoofaxLang
+	libstratego-lib
+	lib/editor-common.generated
+	
 rules 
+	
+	resolve : 
+		ImportPackage(qname@QName(package-qname-parts*)) -> <parse-file>x
+		with
+			[x|_] := <DeclaredPackage;debug>qname
+	
+	resolve : 
+		ImportPackage(Name(n)) -> <parse-file>x
+		with
+			[x|_] := <DeclaredPackage;debug>QName([n])
 	
 	resolve : ImportLegacyArtifact(Name(m@modulename)) -> r
 	with 
@@ -21,7 +34,10 @@ rules
 	// resolves imports 
 	resolve = 
 		where(
-			not(?ImportLegacyArtifact(_))
+			not(
+				?ImportLegacyArtifact(_)
+			+ ?ImportPackage(_) 
+			)
 		);
 		debug(!"Todo : Editor resolve: "); 
 		fail
