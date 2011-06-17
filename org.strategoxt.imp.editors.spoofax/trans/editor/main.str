@@ -15,11 +15,8 @@ rules
   editor-resolve:
     (node, position, ast, path, project-path) -> elem
     where
-    	{| cwd : 
-    			 d := <dirname><concat-strings>[project-path , "/", path]
-    			;rules(cwd  := d)
-    			;<resolve> node => elem	
-    	|} 
+    	<editor-resolve> node => elem	
+    	 
     	
     		 
     	
