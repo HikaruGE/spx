@@ -41,7 +41,7 @@ rules
 			+ ?ImportPackage(_) 
 			)
 		);
-		debug(!"Todo : Editor resolve: "); 
+		//debug(!"Todo : Editor resolve: "); 
 		fail
 	
  
