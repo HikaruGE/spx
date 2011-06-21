@@ -15,36 +15,24 @@ builders
 
 	observer                  : editor-analyze
 
-  builder : "Show abstract syntax (for selection)" =
-    generate-aterm (openeditor) (realtime) (meta) (source)
-
-  builder : "Normalize-all" =
-  		normalize(openeditor) (realtime) (meta) (source)
-  
-  
-  builder : "Show name analysis (for selection)" =
-    generate-name-analysis (openeditor) (realtime) (meta) (source)
-
-  //builder : "Show SDF (for selection)" =
-  //  generate-sdf (openeditor) (realtime)
-
-  //builder : "Show Stratego (for selection)" =
-  //  generate-str (openeditor) (realtime)
-
- // builder : "Show Editor Descriptor (for selection)" =
-  //  generate-esv (openeditor) (realtime)
-
-  //builder: "generate signatures" =
-	//	generate-signatures-from-SDF (realtime) (openeditor) (meta)
-
 	builder : "Build-All" =
     build-all (openeditor) (realtime) (meta)
 
+  builder : "Abstract Syntax" =
+    generate-aterm (openeditor) (realtime) (meta) (source)  
+
+  builder : "Normalize-All" =
+  		normalize(openeditor) (realtime) (meta) (source)
+  
+  
+  builder : "Name Analysis (for selection)" =
+    generate-name-analysis (openeditor) (realtime) (meta) (source)
+  
   builder : "Compile-All" =
     compile-spx(openeditor) (realtime) (meta)
 
 
-  builder : "Show Configuration" =
+  builder : "Show-Config" =
     show-configuration(openeditor) (realtime) (meta)
 
   /*

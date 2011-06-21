@@ -264,7 +264,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
             <arg value="${lib}"/>
             <arg line="${utils-include}"/>
             <arg line="${build.sdf.imports}"/>
-            <arg line="${language-sdf-specific-params}"/>
+            <arg line="${lang.sdf.specific.params}"/>
         </java>
     </target>
 	
@@ -544,7 +544,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
       <arg line="${externaljarflags}"/>
       <arg line="${externaldefimport}"/>
       <arg line="-I &quot;${lib}&quot; -I &quot;${include}&quot; --cache-dir &quot;${basedir}/.cache&quot;"/>
-      <arg line="${language-str-specific-params}"/>
+      <arg line="${lang.str.specific.params}"/>
   </java>
   <delete file="${include}/${package.name}.rtree" failonerror="false"/>
   <mkdir dir="${build}/trans"/>
