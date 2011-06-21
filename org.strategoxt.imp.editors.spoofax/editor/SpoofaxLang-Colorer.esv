@@ -67,10 +67,10 @@ colorer
   StrategyDef : 0 64 128 bold
   Overlay     : 0 64 128 bold
 
-  //strategies    = 0    0    0
+  //strategies  = 0    0    0
   strategycalls = 0   64  128
   terms         = 0    0    0
-  vars          = 24 170 222 242 242 242
+  vars          = 0    0    0 bold
   sdefault      = 0    0    0
 
   _.RootApp : strategycalls
