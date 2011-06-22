@@ -41,7 +41,7 @@ rules
 							);
 							compiler-init; // initializing compiler session
 							where(<debug-compiler>$[============Initialization is done  ==============]);
-							s;
+							(s <+ <debug-compiler>$[============Compile session FAILED ==============]; fail);
 				      ?x
 				    ); !x
 			|}
@@ -91,7 +91,7 @@ strategies
 
 	// compiles all the packages stored at the filepath specified
 	compile-packages-of: file-abs-path -> issues*
-	where 
+	where
 		<debug-compiler>$[Compiling packages of  [<pp-aterm-forced>file-abs-path]]
 	where
 			Enable-Caching;

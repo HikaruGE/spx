@@ -50,7 +50,7 @@ strategies
       let ends-with-identifier-char =
             where(
               explode-string;
-              /*un-double-quote-chars;*/
+              un-double-quote-chars;
               // Must end with idenfifier character, may not be preceded by backslash.
               reverse; ?[<is-alphanum + '_' + '-'> | <not(?['\' | _])>]
             )
@@ -87,16 +87,16 @@ strategies
     Template([]) -> []
 
   template-element-to-sdf:
-    Newline(_){ /* neither Leading() nor Trailing() */ } -> A|[ "\\n" ]|
+    Newline(_){ /* neither Leading() nor Trailing() */ } -> A|[ "\"\\n\"" ]|
     where not(use-no-newlines)
 
   template-element-to-sdf:
-    Newline(_) -> A|[ "\\n" ]|
+    Newline(_) -> A|[ "\"\\n\"" ]|
     where use-leading-newlines
     where not(has-annotation(|Leading()))
 
   template-element-to-sdf:
-    Newline(_) -> A|[ "\\n" ]|
+    Newline(_) -> A|[ "\"\\n\"" ]|
     where use-trailing-newlines
     where not(has-annotation(|Trailing()))
 
@@ -176,7 +176,7 @@ strategies
   remove-whitespace = string-as-chars(filter(not(xxx-is-whitespace)))
 
   separator-to-literal =
-    collect-one(?Separator(<remove-whitespace>)); escape//; double-quote
+    collect-one(?Separator(<remove-whitespace>)); escape; double-quote
 
   placeholder-to-sdf:
     Placeholder(_, sort(S'), Option(), _) -> A|[ S'? ]|
@@ -202,7 +202,7 @@ strategies
     string-identifier-tokenize;
     // FIXME: Case insensitive literals need ci-lit/single-quote.
     map({raw, sdf:
-      ?raw; escape; !lit(</*double-quote*/ id >); ?sdf;
+      ?raw; escape; !lit(<double-quote>); ?sdf;
       if <explode-string; last; (is-alphanum + '_')> raw then
         rules(Restrictions :+= sdf)
       end

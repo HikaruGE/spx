@@ -24,6 +24,7 @@ imports
 imports
 	normalize/signatures
 	utils/contract
+	utils/sdf2conflicts
 
 
 
@@ -96,7 +97,8 @@ rules
 			<debug-compiler>$[ Codegen | STR | Generation of Main STR Module for package : [<pp-aterm> package-qname] is done.]
 	  with
 	    <debug-compiler>$[ Codegen | STR | Generating prettyprinter from package-name: [<pp-aterm>package-qname]];
-	    {|DeclaredModule, GetEnclosingModuleName:
+	    {|DeclaredModule, GetEnclosingModuleName, SubtermConflicts:
+	      <sdf2conflicts> [];
 	      // HACK: this lacks any sanity wrt the original modules in which the SDF was placed ...
 	      rules(
 	        DeclaredModule :+ "__prettyprinter" -> "__prettyprinter"

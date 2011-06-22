@@ -34,7 +34,7 @@ strategies
 
         // Put quotes around literals, get rid of conc-grammars.
         prepare-output =
-          alltd(/*lit(double-quote) + ci-lit(single-quote) + */quoted(double-quote));
+          alltd(lit(double-quote) + ci-lit(single-quote) + quoted(double-quote));
           alltd(\conc-grammars(x, y) -> [x, y]\);
           flatten-list
 

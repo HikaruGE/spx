@@ -50,7 +50,7 @@ rules
     	;<debug-compiler>$[ Codegen | SDF | Found Section + Imports for the following module [<pp-aterm> module-untyped-qname].]
     where
       // sdf2conflicts here collects information for the parenthesation in the prettyprinter
-    	sdf-string       := <pp-sdf-string'> 'module(<qname-to-path>module-untyped-qname, <to-sdf-imports-block>section* , <to-sdf-section-block;sdf2conflicts>section* )
+    	sdf-string       := <pp-sdf-string'> 'module(<qname-to-path>module-untyped-qname, <to-sdf-imports-block>section* , <to-sdf-section-block;sdf2conflicts-store-sdf>section* )
     	;<debug-compiler>$[ Codegen | SDF | Saving the artifacts of [<pp-aterm> module-untyped-qname].]
 		where
 			<save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string;
@@ -69,12 +69,12 @@ rules
  		with
  			resultant-sorts := <get-sdf-start-symbols-to-sync ; is-not-empty-list <+ ![]>;
  			if not(!resultant-sorts => []) then
- 				start-symbol-syntax := [exports(context-free-start-symbols(resultant-sorts))]	 
+ 				start-symbol-syntax := [exports(context-free-start-symbols(resultant-sorts))]
  			else
  				start-symbol-syntax := [exports(resultant-sorts)]
- 			end	  
+ 			end
  		where
- 			sdf-string := 
+ 			sdf-string :=
 				<pp-sdf-string'>
 				'module(
   				unparameterized(main-sdf-module-name)

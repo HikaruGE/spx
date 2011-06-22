@@ -19,6 +19,13 @@ overlays
 
 strategies
 
+  sdf2conflicts-store-sdf:
+    ast -> ast
+    with
+    	rules(
+    		Sdf2Conflicts-SdfSection :+= ast
+    	)
+
   /*
    * sdf2conflicts: Calculate set of conflicts that are filtered out using
    * priorities, i.e. that need parenthesis when prettyprinting.
@@ -41,13 +48,13 @@ strategies
 
           // push the attributes of a production into prod-hash
           declare-prod =
-      	    \ p@ prod(sym*, sort, attrs(attr*)) -> p
-      	      with <hashtable-pushlist(|(sym*, sort), attr*)> prod-hash \
+            \ p@ prod(sym*, sort, attrs(attr*)) -> p
+              with <hashtable-pushlist(|(sym*, sort), attr*)> prod-hash \
 
           // add all attributes defined anywhere to a production
           lookup-prod = {attr*:
-          	\ p@ prod(sym*, sort, _) -> prod(sym*, sort, attrs(attr*))
-          	  with attr* := <hashtable-get(|(sym*, sort)) <+ ![]> prod-hash \
+            \ p@ prod(sym*, sort, _) -> prod(sym*, sort, attrs(attr*))
+              with attr* := <hashtable-get(|(sym*, sort)) <+ ![]> prod-hash \
           }
 
           priority-section =
@@ -159,12 +166,12 @@ strategies
           }
 
           add-group(match) = {first, second, indices, indices':
-          	?[]
+            ?[]
           + ?[_]
           + ?[first, second | _];
             if <match> first then
               if <?with-arguments(_, default(indices))> first then
-              	indices' := <map(string-to-int)> indices;
+                indices' := <map(string-to-int)> indices;
                 <for-each-prod-pair(add-arg-gtr-prio(|indices'))> (first, second)
               else
                 <for-each-prod-pair(add-gtr-prio)> (first, second)
@@ -245,7 +252,7 @@ strategies
             )
 
       in
-        !ast;
+      	![ast, <bagof-Sdf2Conflicts-SdfSection>];
         alltd(declare-prod);
         collect-om(priority-section); concat; // List(chain(_))
         alltd(normalize-group-and-add-attributes);

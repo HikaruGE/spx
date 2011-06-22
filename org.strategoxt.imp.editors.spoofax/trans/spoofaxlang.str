@@ -21,6 +21,7 @@ imports
 	codegen/compile
 	codegen/esv/to-esv
 	codegen/sdf/to-sdf
+	codegen/sdf/to-name-analysis
   codegen/sdf/to-signature
 imports
 	normalize/main
@@ -33,6 +34,7 @@ imports
   config
 	unit-tests/-
 	unit-tests/templatelang/-
+	unit-tests/utils/-
 imports
 	 editor/main
 	 codegen/main
@@ -70,5 +72,5 @@ rules
       test-templatelang-to-sdf;
       test-templatelang-to-esv;
       test-templatelang-to-stratego;
-      test-templatelang-desugar
-	
+      test-templatelang-desugar;
+      test-sdf2conflicts
