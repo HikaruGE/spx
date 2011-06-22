@@ -51,14 +51,14 @@ rules
  declare-sdf-definition-main=
     	alltd(declare-sdf-definition)
 
-rules 
-	declare-sdf-definition : 
+rules
+	declare-sdf-definition :
 		context-free-start-symbols(s*) -> <id>
-		with 
+		with
 			<declare-sdf-definition-main>s*
 		with
-			store-context-free-start-symbols(|<GetEnclosingPackageName>) 	
-		 
+			store-context-free-start-symbols(|<GetEnclosingPackageName>)
+
 rules
 	declare-sdf-definition:
     renamings(y) -> <id>
@@ -86,7 +86,10 @@ rules
       qualified-sort-name := <to-scoped-symbol> x
    	with
    		// enable-declaration-debugging;
-   		<store-operation-declaration>prod
+      // reject productions shouldn't generate signatures ever
+      if not(<attrs(fetch(?reject()))> attrs) then
+        <store-operation-declaration>prod
+      end
   	with
       <topdown(try(store-namespace-def))> lhs
     with

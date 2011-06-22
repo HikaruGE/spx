@@ -2,24 +2,24 @@ module SpoofaxLang-Syntax
 
 language Syntax properties for spoofax lang
 
-	 // Comment constructs:  
-  line comment  : "//"		
+	 // Comment constructs:
   line comment  : "%%"
+  line comment  : "//"
   block comment : "/*" * "*/"
   block comment: % % %
-  
-  // Regular expression for identifiers: 
+
+  // Regular expression for identifiers:
   identifier lexical : "[a-zA-Z\_][a-zA-Z0-9\'\-\_]*\*?"
-  
-  // Fences (used for matching,            
-  // inserting, indenting brackets): 
+
+  // Fences (used for matching,
+  // inserting, indenting brackets):
  	fences        : [ ]
                   ( )
                   { }
                   {| | // hack: interacts with { }
                   <% %>
                   |[ ]|
-                  (|[ "" // hack: interacts with |[ ]| 
+                  (|[ "" // hack: interacts with |[ ]|
                   $[ ]
                   ${ }
                   $< >
@@ -29,9 +29,9 @@ language Syntax properties for spoofax lang
                   //"=<" > // hack: interacts with ->
                   //"(<" > // hack: interacts with ->
                   //"|<" > // hack: interacts with ->
-  
-  // Automatic indent hints                
-  // (indent after these tokens):  
+
+  // Automatic indent hints
+  // (indent after these tokens):
   indent after:
     then
     in
@@ -53,5 +53,4 @@ language Syntax properties for spoofax lang
     restriction
     priorities
     hiddens
-    
-    
+
