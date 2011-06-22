@@ -71,7 +71,7 @@ rules
  			if not(!resultant-sorts => []) then
  				start-symbol-syntax := [exports(context-free-start-symbols(resultant-sorts))]
  			else
- 				start-symbol-syntax := [exports(resultant-sorts)]
+ 				start-symbol-syntax := []
  			end
  		where
  			sdf-string :=
