@@ -41,7 +41,7 @@ strategies
   	  )
   	with
   	  // FIXME: desugaring should have been performed before the current strategy is invoked.
-  	  completion* := <templatelang-desugar-top; map(template-to-completion-template)> prod*
+  	  completion* := <templatelang-desugar-top; filter(template-to-completion-template)> prod*
   	with
   	  contracts(
   	    contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
