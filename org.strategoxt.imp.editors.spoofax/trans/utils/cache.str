@@ -13,10 +13,8 @@ rules
     	full-path := <resolve-spx-path>path;
     	cache-path := <resolve-cache-path> full-path;
 			if not(<CachedCompilationUnit> full-path) then
-      	if <CachedParseAst> full-path then
-					spx-compilation-unit:= <CachedParseAst>full-path
-				else
-        	if <is-newer> (cache-path, path) then
+      	if not( spx-compilation-unit:=  <CachedParseAst> <string-replace(|"\\", "/")>full-path) then
+					if <is-newer> (cache-path, path) then
           	spx-compilation-unit := <ReadFromFile> cache-path
           else
           	spx-compilation-unit := <parse-file> full-path;
@@ -89,12 +87,14 @@ rules
 		
 	    
 rules
+	// caching currently analyzing AST so that we don't have to read it again from the file and to use it later on. 
 	cache-currently-analyzing-ast = 
 		(?(path, compilation-unit-ast) <+ throw-invalid-argument-exception(|"utils.cache.cache-currently-analyzing-ast")); 
 		path' := <string-replace(|"\\", "/")>path;
 		rules(
 	      CachedParseAst: path' -> compilation-unit-ast
-	  ) 
+	  );
+	  where ( <debug-compiler> $[Cache| storing currently analyzing AST in the cache with following key :  [<pp-aterm> path']] ) 
 
 
 	

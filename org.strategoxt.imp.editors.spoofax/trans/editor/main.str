@@ -41,7 +41,7 @@ rules
 			;rules(ProjectPath := project-path)
 			;initialize-configuration
 			;abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]
-			;<debug>$[Compiling abs-path : [<pp-aterm>abs-path]]    
+			;<debug>$[Compiling following SPX file: [<pp-aterm>abs-path]]    
 		with 
 			<cache-currently-analyzing-ast>(abs-path  , ast)	 
 		with 

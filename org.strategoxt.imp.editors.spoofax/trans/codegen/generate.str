@@ -29,7 +29,6 @@ imports
 rules 
 	
 	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
-	
 
 //TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
 //TODO: OPTIMIZE : DR can be used to construct this imports  
@@ -48,7 +47,6 @@ rules
 strategies 
 	build-all = 
 		?current-term
-		;enable-compiler-debugging
 		;new-compile-session(
 			list-of-package-qname* := <get-package-list> 
 			;<compile-internal>list-of-package-qname*
@@ -67,7 +65,6 @@ strategies
 				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
 			end		 
 		)
-		;disable-compiler-debugging
 		;!current-term //restoring current term to avoid side effects  
 		
 rules

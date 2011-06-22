@@ -77,7 +77,6 @@ strategies
 	// Main compilation events
 	compile-all =
 		?current-term ;
-		enable-compiler-debugging;
 		new-compile-session(
 			list-of-package-qname := <get-package-list>
 			;<compile-internal>list-of-package-qname
@@ -85,7 +84,6 @@ strategies
 			;<get-all-analyzed-problems>()
 			;debug(!"Errors : " ) // Get all errors
 		)
-		;disable-compiler-debugging
 		;!current-term //restoring current term to avoid side effects
 
 

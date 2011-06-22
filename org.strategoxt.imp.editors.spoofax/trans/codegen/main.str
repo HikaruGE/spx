@@ -15,6 +15,7 @@ imports
   normalize/signatures  
 	include/SpoofaxLang
 	utils/path
+	utils/debug
 imports 	
 	libstratego-gpp
 	libstratego-xtc 
@@ -52,25 +53,29 @@ rules
 	build-all:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			<debug>$[.................starting compile + build all ..........................]
-		with 
-			editor-init
+			 <debug>$[.................starting compile + build all ..........................]
+		with
+			editor-init	
 		 ;rules(ProjectPath := project-path)
 		 ;initialize-configuration
 		with
-	  	<build-all>()
+	  	 enable-compiler-debugging
+	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+	  	;<build-all>()
+	  	;disable-compiler-debugging
 		
 rules
 	//Intregation Test of the compile-all is working as expected 
 	compile-spx:
 		(selected, position, ast, path, project-path) -> None()
-		with 
-			editor-init;
-		  initialize-configuration
 		where
-			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-		with
-			rules(ProjectPath := project-path)
+			<debug>$[.................starting compile-all ..........................]
 		with 
-			<debug>$[.................starting compile-all ..........................];
-			<compile-all>()
+			 editor-init
+			;rules(ProjectPath := project-path)
+		  ;initialize-configuration
+		with 
+			 enable-compiler-debugging
+	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+			;<compile-all>()
+	  	;disable-compiler-debugging
