@@ -56,11 +56,11 @@ strategies
             )
       in
         A* := <collect-om(lit(ends-with-identifier-char)); nub; string-sort-ex> sdf-section*;
-        if !A* => [] then
+        r  := <get-keyword-follow-restriction>;
+        if (!A* => []) + (!r => None()) then
           restrictions* := []
         else
-          restrictions* := [|[ lexical restrictions
-                                 A* -/- [A-Za-z0-9\_\-] ]|]
+          restrictions* := [lexical-restrictions([follow(A*, r)])]
         end
       end
 

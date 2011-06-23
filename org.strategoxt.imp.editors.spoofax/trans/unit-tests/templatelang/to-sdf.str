@@ -9,13 +9,9 @@ imports
   include/SpoofaxLang
 imports
   codegen/template/to-sdf
+  context/template/declare
   normalize/signatures
   utils/attributes
-
-// FIXME: don't be lazy, get this from some import!
-signature
-  constructors
-    Newlines : Unknown
 
 strategies
 
@@ -81,6 +77,7 @@ strategies
         DeclaredModule :+ "__test" -> "__test"
         GetEnclosingModuleName := Module("__test")
         Options :+ Newlines() -> None()
+        Options :+ KeywordFollowRestriction() -> single(|[ [A-Za-z0-9\_\-] ]|)
       );
       newlines := [None(), Leading(), Trailing()];
 

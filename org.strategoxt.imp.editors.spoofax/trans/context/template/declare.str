@@ -9,6 +9,7 @@ signature
   constructors
     // Options
     Newlines : X
+    KeywordFollowRestriction : X
 
 strategies
 
@@ -22,6 +23,7 @@ strategies
     // defaults
     rules(
       Options :+ Newlines() -> None()
+      Options :+ KeywordFollowRestriction() -> None()
     )
 
 rules
@@ -71,6 +73,11 @@ rules // Options
     with
       rules(Options :+ Newlines() -> t)
 
+  declare-template-option:
+  	KeywordFollowRestriction(t) -> <id>
+  	with
+  		rules(Options :+ KeywordFollowRestriction() -> t)
+
 strategies
 
   use-no-newlines       = <Options> Newlines() => None()
@@ -83,3 +90,5 @@ strategies
       case ?Leading(): leading
       case ?Trailing(): trailing
     end
+
+  get-keyword-follow-restriction = <Options> KeywordFollowRestriction()
