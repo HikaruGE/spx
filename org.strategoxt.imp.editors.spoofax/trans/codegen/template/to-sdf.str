@@ -24,7 +24,7 @@ strategies
     with
       // FIXME: desugaring should have been performed before the current strategy is invoked.
       sdf-section*  := <templatelang-desugar-top; map(template-section-to-sdf)> section*;
-      sdf-section'* := <add-lexical-restrictions> sdf-section*
+      sdf-section'* := <add-contentcomplete; add-lexical-restrictions> sdf-section*
     with
       contracts(
         contract-requires(ListOf(?context-free-syntax(_) + ?lexical-restrictions(_)) | sdf-section'*)
@@ -42,6 +42,18 @@ strategies
       // main productions
       // FIXME: declaring should have been performed before the current strategy is invoked.
       p* := <declare-template-definition-main; map(template-production-to-sdf)> prod*
+
+  /** @type List(grammar) -> List(grammar) */
+  add-contentcomplete:
+    sdf-section* -> [sdf-section*, injections*]
+    with
+      A* := <collect-om(?sort(_)); nub; string-sort-ex> sdf-section*;
+      p* := <map(sort-to-contentcomplete)> A*;
+      if !p* => [] then
+        injections* := []
+      else
+        injections* := [context-free-syntax(p*)]
+      end
 
   /** @type List(grammar) -> List(grammar) */
   add-lexical-restrictions:
