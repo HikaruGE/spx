@@ -100,7 +100,7 @@ exports
     SymbolMetaVar -> MetaVar
 
   lexical restrictions
-    SymbolMetaVar -/- [A-Za-z0-9]
+    SymbolMetaVar -/- [A-Za-z0-9\']
 
 %%%
  %% Grammar: Section 7.2
@@ -135,7 +135,7 @@ exports
     SortMetaVar -> MetaVar
 
   lexical restrictions
-    SortMetaVar -/- [A-Za-z0-9]
+    SortMetaVar -/- [A-Za-z0-9\']
 
 %%%
  %% CharClass: Section 7.4.2
@@ -156,7 +156,7 @@ exports
     StrConMetaVar -> MetaVar
 
   lexical restrictions
-    StrConMetaVar -/- [A-Za-z0-9]
+    StrConMetaVar -/- [A-Za-z0-9\']
 
 %%%
  %% Groups and priorities
@@ -177,7 +177,7 @@ exports
     "as" [0-9\']* -> AssocMetaVar
 
   lexical restrictions
-    AssocMetaVar -/- [A-Za-z0-9]
+    AssocMetaVar -/- [A-Za-z0-9\']
 
   variables %% section 8.4.1
     "restr" [0-9\']*     -> Restriction
