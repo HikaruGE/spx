@@ -94,10 +94,11 @@ rules
       <topdown(try(store-namespace-def))> lhs
     with
       if <fetch-cons-name> attrs => cons then
-        qualified-cons-name := <to-scoped-symbol> cons;
+        package-qualified-sort-name := <to-package-scoped-symbol> x;
+        package-qualified-cons-name := <to-package-scoped-symbol> cons;
         rules(
         	// Needed for Sort.Cons references to the production.
-        	Declaration: (qualified-sort-name, qualified-cons-name) -> prod
+        	Declaration: (package-qualified-sort-name, package-qualified-cons-name) -> prod
         )
       end
     with
