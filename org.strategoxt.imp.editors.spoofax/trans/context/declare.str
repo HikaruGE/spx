@@ -19,7 +19,7 @@ imports
 	common
 
 rules
-	declare-package =
+	declare-spx-global-symbols =
 		contracts(
 			contract-requires(
 				?Package(QName(_))
@@ -35,7 +35,7 @@ rules
 		)
 
 	
-	delcare-module =  
+	delcare-spx-scoped-symbols =  
 		declare-internal(declare-local-symbols-main)
 	
 	declare-local-symbols-main = 

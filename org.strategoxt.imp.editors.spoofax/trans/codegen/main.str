@@ -5,8 +5,11 @@ imports
 	codegen/sdf/-
 	codegen/str/-
 	codegen/esv/-
+	
 imports
 	codegen/buildscripts
+	codegen/generate
+	
 imports 
 	config 
 	utils/cache
@@ -61,8 +64,23 @@ rules
 		with
 	  	 enable-compiler-debugging
 	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-	  	;<build-all>()
+	  	;<build-all(generate-artifacts-all)>()
 	  	;disable-compiler-debugging
+	
+	build-incrementally:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			 <debug>$[.................starting compile + build all ..........................]
+		with
+			editor-init	
+		 ;rules(ProjectPath := project-path)
+		 ;initialize-configuration
+		with
+	  	 enable-compiler-debugging
+	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+	  	;<build-all(generate-artifacts-incrementally)>()
+	  	;disable-compiler-debugging
+	
 		
 rules
 	//Intregation Test of the compile-all is working as expected 

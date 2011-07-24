@@ -25,7 +25,58 @@ imports
 	utils/cache
 	analyze/main
 	codegen/generate
+			
+		
+strategies 
+	build-all(gen-code) = 
+		?current-term
+		;new-compile-session(
+			list-of-package-qname* := <get-package-list> 
+			;<compile-internal>list-of-package-qname*
+			;<debug>$[-------------------Getting list of errors-------------------]
+			;<get-all-analyzed-problems>() => problems  
+			;if <fail-if-has-errors>problems then
+			 	{| ImportedDef : 
+							<gen-code>() 
+				|} 		
+			else
+				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
+			end		 
+		)
+		;!current-term //restoring current term to avoid side effects  
 
+	
+	generate-artifacts-all : () -> ()
+		where
+			<debug>$[-------------------Generating artifacts-------------------]
+			;init-code-generation
+		  ;list-of-package-qname* := <get-package-list>   
+			;<debug>$[-------------------Generating artifacts for following ALL spx -------------------]
+			;<list-loop(generate-spx-package)>list-of-package-qname*
+			;<debug>$[-------------------------Generating Build Scipt---------------------]
+			;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
+			;<debug>$[-------------------------Code Generation is done-------------------------] 
+
+
+	generate-artifacts-incrementally : () -> ()
+		where
+			<debug>$[-------------------Generating artefacts-------------------]
+			;init-code-generation
+		  ;seperate-compilable-spx-files := <get-all-modified-compilation-units>
+		  ;if !seperate-compilable-spx-files => [] then 
+		  	<debug>$[-------------------------No Changes found-------------------------] 
+		  else	 
+			  list-of-package-qname* := <get-packages-of-file>seperate-compilable-spx-files   
+				;<debug>$[-------------------Generating artifacts for following spx : [<pp-aterm>seperate-compilable-spx-files]-------------------]
+				;<list-loop(generate-spx-package)>list-of-package-qname*
+				;<debug>$[-------------------------Generating Build Scipt---------------------]
+				;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
+		 	end
+		 	;<debug>$[-------------------------Code Generation is done-------------------------] 
+
+		 			
+	get-packages-of-file = mapconcat(get-packages-of-file) ; make-set 
+				
 rules 
 	
 	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
@@ -42,31 +93,7 @@ rules
 			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
 		<+ 
 			debug(!" Failed in Main Generation. "); fail    
-			
-		
-strategies 
-	build-all = 
-		?current-term
-		;new-compile-session(
-			list-of-package-qname* := <get-package-list> 
-			;<compile-internal>list-of-package-qname*
-			;<debug>$[-------------------Getting list of errors-------------------]
-			;<get-all-analyzed-problems>() => problems  
-			;if <fail-if-has-errors>problems then
-			 	{| ImportedDef : 
-			 	 			<debug>$[-------------------Generating artifacts-------------------]
-			 				;init-code-generation  
-							;<list-loop(generate-spx-package)>list-of-package-qname*
-							;<debug>$[-------------------------Generating Build Scipt---------------------]
-							;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
-							;<debug>$[-------------------------Code Generation is done-------------------------]
-				|} 		
-			else
-				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
-			end		 
-		)
-		;!current-term //restoring current term to avoid side effects  
-		
+
 rules
 
 	should-generate-code-this-package = 
@@ -77,7 +104,7 @@ rules
 	generate-spx-package: 
 		package-typed-qname@Package(untyped-qname) -> <id>
 		where 
-			<debug-compiler> $[Generate| Generate code for spx-package| Planning to Generate Artifacts : [<pp-aterm>]] 
+			<debug-compiler> $[Generate| Generate code for spx-package| Generating Artifacts for following package: [<pp-aterm>]] 
 		with 
 			enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname
 		where

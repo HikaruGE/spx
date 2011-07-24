@@ -62,7 +62,7 @@ rules
 			|}
 
 	// desugaring package-wide imports
-	// TODO Consider : Deprecate 
+	// TODO  :  Consider as  Deprecate 
 	desugar-imports:
 		i@Imports(import*) -> i
 		with

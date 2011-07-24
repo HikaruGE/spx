@@ -162,14 +162,14 @@ rules
 		where
 			<debug-compiler>$[compile-spx-package| Planning to compile : [<pp-aterm>]]
 		where
-			if should-compile-this-package  then //FOR handling circular referneces
-				// Making this package as currently being compiled
+			if should-compile-this-package  then //For handling circular referneces of packages marking this package as currently being compiled
 				where(
 					rules(
 						currently-compiling-package : package-typed-qname -> package-typed-qname
 					)
 				);
 				// Getting List of Packages/Modules that this package is depending on.
+				// Idea is to analyze/compile the dependent package first.
 				<get-all-usings>untyped-qname => depending-typedqname*
 			  ;<debug-compiler>$[	compile-spx-package | List of dependending-on packages/modules : [<pp-aterm>depending-typedqname*]]
 				// Start Compiling the dependent Spx Artifacts
@@ -180,11 +180,10 @@ rules
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
-						<declare-package>package-typed-qname;
+						<declare-spx-global-symbols>package-typed-qname;
 						<list-loop(compile-spx-module)><get-enclosed-modules>package-typed-qname
 
 				|};
-
 				// Making this package as compiled.
 				// TODO : consider keeping only 1 DR as a marker for compiled package.
 				where(
@@ -232,7 +231,7 @@ rules
 				module-decl := <get-module-declaration>module-typed-qname;
 				{|GetEnclosingModuleName:
 						<declare-current-module-scope> module-typed-qname;
-						<delcare-module>module-decl
+						<delcare-spx-scoped-symbols>module-decl
 				|};
 				where(rules(CompiledModule: module-typed-qname -> module-typed-qname))
 			else

@@ -12,20 +12,28 @@ rules
     with
     	full-path := <resolve-spx-path>path;
     	cache-path := <resolve-cache-path> full-path;
-			if not(<CachedCompilationUnit> full-path) then
+    	path' := <get-normalized-path> full-path;
+    	if not(<CachedCompilationUnit> full-path) then
       	if not( spx-compilation-unit:=  <CachedParseAst> <string-replace(|"\\", "/")>full-path) then
 					if <is-newer> (cache-path, path) then
+          	// Cache is still valid. 
           	spx-compilation-unit := <ReadFromFile> cache-path
           else
+          	// Invalid cache. So reading it from actual source and parsing it. 
           	spx-compilation-unit := <parse-file> full-path;
             if <file-exists> full-path then
             	// Only cache if on filesystem (e.g., ignore libstratego-lib)
               <WriteToBinaryFile> (cache-path, spx-compilation-unit)
+              // Marking this compilation unit for 
+          		// seperate compilation.
+          		;rules ( 
+ 			  				modified-compilation-units: path'    
+ 			  			)
             end
           end
  				end;
- 				path' := <string-replace(|"\\", "/")>full-path;
- 			  rules (
+ 				//TODO : delete the following dynamic rules since it is no longer used
+ 				rules (
  			  	CachedCompilationUnit: path' -> (cache-path,spx-compilation-unit)
  			  );
  			  {| currently-precompiling-spx-abspath:
@@ -40,6 +48,8 @@ rules
   		<debug-compiler>$[Caching |Storing CompilationUnit: [<pp-aterm>full-path]]
 
 rules 
+	get-normalized-path = string-replace(|"\\", "/")
+	
 	cache-lib-ast : a@( name , ast) -> a
 	where
 		<spx-lib-cache-path> name => lib-cache-path
@@ -98,5 +108,7 @@ rules
 
 
 	
+rules 
 	
+	get-all-modified-compilation-units = 	all-keys-modified-compilation-units
 					
