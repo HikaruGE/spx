@@ -89,6 +89,14 @@ rules
 		end 
 		
 rules
+	ensure-exists =  
+		?(autogen-root-path, QName(qname-parts*))
+		;<ensure-directory-exists>autogen-root-path 
+		;if not(<eq>(<length>qname-parts*,0)) then 
+				<map(create-folder)>qname-parts*  //Creating sub-directories from the qname parts 
+		 end
+		;create-folder(|autogen-root-path)  // restoring current folder to the project-path 
+	
 	//ensures whether a particular directory exists. If it does not , then creates a new one with the same name. 	
 	ensure-directory-exists = ?dirpath ; ((file-exists ; filemode ; isdir) <+ mkdir); chdir	
 
@@ -100,15 +108,7 @@ rules
 				<map(create-folder)> dir*  //Creating sub-directories if they does not exists
 		 end
 		;create-folder(|project-path)  // restoring current folder to the project-path 
-		 
 	
-	ensure-exists =  
-		?(autogen-root-path, QName(qname-parts*))
-		;<ensure-directory-exists>autogen-root-path 
-		;if not(<eq>(<length>qname-parts*,0)) then 
-				<map(create-folder)>qname-parts*  //Creating sub-directories from the qname parts 
-		 end
-		;create-folder(|autogen-root-path)  // restoring current folder to the project-path 
 	
 	create-folder(|directory-to-create) = <file-exists<+mkdir(|"w")> directory-to-create;<chdir>directory-to-create  
 	

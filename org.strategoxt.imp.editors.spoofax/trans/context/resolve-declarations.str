@@ -114,6 +114,17 @@ rules
 	// Returns a list of package/modules that <id> is depeding on. 
 	// Requires the <ID> to be untyped QName to look it up in the symbol tree.
 	// Otherwise, it throws <illegal argument exception>
+	get-all-imported-modules = 
+		where(?Package(_)); 
+		debug(!"1 : ") ; 
+		get-all-usings ; 
+		debug(!"2 : ");  
+		filter( ?Package(_)) ; 
+		debug(!"3 : "); 
+		mapconcat( get-enclosed-modules )
+	  
+	get-all-usings =  ?Package(<id>); debug(!"4 : ") ; get-all-usings 
+	
 	get-all-usings =  where(?QName(_));	?package-untyped-qname; all-keys-Using;	filter(?(package-untyped-qname, _)); mapconcat(bagof-Using)	
 	
 	get-all-usings : (package-untyped-qname , module-untyped-qname) -> lstUsings*
