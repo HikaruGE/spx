@@ -1,0 +1,73 @@
+package languages.entitylang 
+	
+// This module acts as a facade and specify transformation rules for different types
+// of editor services. See editor-services-generated for a brief introduction on the 
+// available editor services.
+module Entitylang-Adapters
+		                                                                                                           
+ 	builders
+		observer : editor-analyze         	                                                                          
+	  
+	  builder  : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
+	 	builder  : "Generate Java code (for selection)"   = generate-java (openeditor) (realtime)
+	 	builder  : "Pretty-printing (for selection)"      = prettyprint-entitylang(openeditor) (realtime)
+
+	// Content completion proposer and trigger is specified in the following section.
+	completions
+	  completion proposer                  : editor-complete
+	  completion trigger                   : ":"
+	
+	// Reference resolving and hover help
+	references
+	  reference _ : editor-resolve
+	  hover _     : editor-hover
+
+
+module Builders  
+	 	
+	rules 
+		// Transforms a selection to Java
+		generate-java:
+			(selected, position, ast, path, project-path) -> (filename, result)
+  		with
+	  		filename := <guarantee-extension(|"java")> path;
+    		result   := <to-java> selected
+ 		
+ 		// Prints the abstract syntax ATerm of a selection.
+		generate-aterm:
+			(selected, position, ast, path, project-path) -> (filename, result)
+			with
+  			filename := <guarantee-extension(|"aterm")> path;
+  			result   := selected // we just return the input term
+
+		// Prints the abstract syntax ATerm of a selection.
+		prettyprint-entitylang:
+			(selected, position, ast, path, project-path) -> (filename, result)
+			with
+  			filename := <guarantee-extension(|"pp.spo")> path;
+  			result   := <pp-entitylang>selected // we just return the input term
+
+module Reference-Resolver  
+	
+	rules
+		  // Resolves a reference when the user control-clicks or presses F3 in the editor.
+  	editor-resolve:
+	  	(node, position, ast, path, project-path) -> elem
+     	where 
+	  		<id> node => elem
+	    		 
+    // Returns "hover help" information for a particular node in the editor.
+	  // For references, this rule is invoked using the resolved term.
+	  editor-hover:
+	    (target, position, ast, path, project-path) -> $[Hover help: [<write-to-string> target]]
+		
+		
+	 
+
+module Code-Completion-Proposer
+
+rules
+	 // Completes an identifier when the user presses control-space
+	  // (the completion identifier in the AST provides additional context information)
+	  editor-complete:
+	    (node, position, ast, path, project-path) ->[]

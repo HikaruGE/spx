@@ -1,8 +1,0 @@
-module Common 
-
-
-exports
-
-  lexical syntax
-  
-    [a-zA-Z][a-zA-Z0-9\_\-]* -> ID-Test
