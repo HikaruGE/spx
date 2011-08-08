@@ -24,7 +24,7 @@ imports
 	libstratego-xtc 
 rules 
 		
-	build-spoofax-main:
+	build-spoofax-console:
 		arg  -> "" // local directory path is specified 
 		where 
 			xtc-io-wrap(
@@ -39,21 +39,46 @@ rules
 				//<override-configured-source-directories><abspath>arg;
 				enable-command-line-mode;  
 				<show-configuration;debug>();     //show configuration for this spx project
-				<build-all>();                     //building all the spx files in the sources directory
+				<build-spoofaxlang>();                     //building all the spx files in the sources directory
 				<debug>$[".................Build-all succeeds................."];
 				!FILE($[[input]/.shadowdir/Globals/Signatures.str])	 //HACK : just to ensure this strategy is not failing ...
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 		)
-	
 		
-	test-build-spoofax-main:
-		(selected, position, ast, path, project-path) -> None()
-	where 
-		<build-spoofax-main> "test"		
+  build-spoofaxlang-jvm:
+    current-project-location -> <id>
+    with 
+    	<debug(!"current-project-directory : ")>current-project-location 
+    with	
+	  	editor-init; 						         // cleaning up and initializing editors
+			rules(NoDebugInfo: _);           // HACK: disable origin use for now
+			rules(
+				ProjectPath := current-project-location
+				previous-working-dir := <getcwd>
+			);
+			<chdir>current-project-location				// setting current directory to the project location
+		<+
+			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 	
+		with	
+			<debug>$[Activating Project Configuration];
+			initialize-configuration;        	// initializes configuration and setting up enviroment variables
+			enable-command-line-mode;  
+			<show-configuration;debug>()     //show configuration for this spx project
+		<+
+			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 
-	build-all:
+		with
+			<debug>$[Init Build];
+			<build-spoofaxlang>(); //building all the spx files in the sources directory
+			<chdir><previous-working-dir> ; 			// resetting working directory
+			<debug>$[Build Successful]
+		<+
+			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
+
+	  
+	build-all-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
 			 <debug>$[.................starting compile + build all ..........................]
@@ -64,10 +89,11 @@ rules
 		with
 	  	 enable-compiler-debugging
 	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-	  	;<build-all(generate-artifacts-all)>()
+	  	;<build-spoofaxlang>()
 	  	;disable-compiler-debugging
 	
-	build-incrementally:
+	
+	build-incrementally-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
 			 <debug>$[.................starting compile + build all ..........................]
@@ -78,9 +104,10 @@ rules
 		with
 	  	 enable-compiler-debugging
 	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-	  	;<build-all(generate-artifacts-incrementally)>()
+	  	;<build-spoofaxlang-incrementally>()
 	  	;disable-compiler-debugging
-	
+
+		
 		
 rules
 	//Intregation Test of the compile-all is working as expected 

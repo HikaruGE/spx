@@ -23,6 +23,8 @@ imports
 	codegen/sdf/to-sdf
 	codegen/sdf/to-name-analysis
   codegen/sdf/to-signature
+  codegen/main
+  
 imports
 	normalize/main
 	normalize/signatures

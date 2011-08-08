@@ -28,6 +28,10 @@ imports
 			
 		
 strategies 
+	build-spoofaxlang = build-all(generate-artifacts-all)
+	
+	build-spoofaxlang-incrementally = build-all(generate-artifacts-incrementally)
+		 
 	build-all(gen-code) = 
 		?current-term
 		;new-compile-session(
