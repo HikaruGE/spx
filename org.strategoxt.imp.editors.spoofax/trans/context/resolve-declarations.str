@@ -116,11 +116,8 @@ rules
 	// Otherwise, it throws <illegal argument exception>
 	get-all-imported-modules = 
 		where(?Package(_)); 
-		debug(!"1 : ") ; 
 		get-all-usings ; 
-		debug(!"2 : ");  
 		filter( ?Package(_)) ; 
-		debug(!"3 : "); 
 		mapconcat( get-enclosed-modules )
 	  
 	get-all-usings =  ?Package(<id>); debug(!"4 : ") ; get-all-usings 

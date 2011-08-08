@@ -12,7 +12,7 @@ imports
   lib/sdf-parenthesize
 imports 
 	include/SpoofaxLang
-
+	normalize/signatures
 imports 
 	utils/debug
 	utils/path
@@ -23,7 +23,8 @@ imports
 rules 
 	get-project-path = (ProjectPath <+ project-path)
 
-
+	package-qname-to-string : Package(untyped-qname) ->  <convert-qname(|".");string-replace(|"-", ".")> 	untyped-qname
+	
 strategies 
 	//pretty printing aterm 
 	pp-aterm = disable-pp-aterm < !"N/A" + pp-aterm-forced

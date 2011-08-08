@@ -56,6 +56,7 @@ rules
  						;sections := <conc>
  						 					(	 <inject-package-ctree><get-main-file-name>(),   // adding ctree import by default
 	 						 					 <inject-table-definition><get-main-file-name>(),   // default table definition
+	 						 					 //<inject-language-id><get-language-id> Package(package-qname),
 	 						 					 <all-keys-Declared-Language-Description>,
 	 			 								 <all-keys-Declared-Builders-Description> ,
 	 			 								 <all-keys-Declared-Colorer-Description> ,
@@ -65,11 +66,18 @@ rules
 	 			 								 <all-keys-Declared-Completions-Description>,
 	 			 								 <map(get-original-module-declaration; template-module-to-esv)> module-qname*
  			 							   )
- 			|}
- 			;esv-aterm := Module(package-esv-main-name, Import([]), sections)
+ 			|};
+ 			// Adding language Id if not already added with language description
+ 			if <oncetd(?LanguageId(langid))>sections then
+ 				sections' := <filter(not(?[]))>sections 
+ 			else
+ 				sections' := <conc;filter(not(?[]))>(sections , <inject-language-id><get-language-id> Package(package-qname))
+ 			end
+ 			;esv-aterm := Module(package-esv-main-name, Import([]), sections')
+ 			;<debug-compiler> $[$[$ Codegen | Packed ESV |$]$ [<pp-aterm>esv-aterm]]  
  			;<save-artifact(WriteToBinaryFile | package-qname , root-directory , <get-main-output-path(|$[[<get-main-file-name>()].main], "esv")>(root-directory , package-qname))>esv-aterm
 		where
-			<debug-compiler>$[ Codegen | ESV | Finished generation of packed esv for [<pp-aterm>package-qname].]
+			<debug-compiler>$[$[$Codegen | ESV |$]$ Finished generation of packed esv for [<pp-aterm>package-qname].]
 
 	store-module-esv-definition : Module(QName(untyped-module-qname)) -> <id>
 	where
@@ -78,7 +86,9 @@ rules
 		get-original-module-declaration;
  		store-esv-defintions
  		
-	
+	inject-language-id : 
+		lang-id -> [Language("Language Id Definition" , [LanguageId(lang-id)])]
+		
 	//Adding package ctree as the default semantic provider0
 	inject-package-ctree :
 		lang-name -> [Builders("",[SemanticProvider(lang-output-ctree)])]
@@ -88,7 +98,7 @@ rules
 
 	// Injects the default table definition in ESV definition.
 	inject-table-definition :
-		lang-name -> [Language("Default Table Specifiactio" , [default-table-def])]
+		lang-name -> [Language("Default Table Specifiaction" , [default-table-def])]
 		where
 			default-table-def := Table($[include/[lang-name].tbl])
 
@@ -126,7 +136,7 @@ rules
 
  	// Storing Esv Definitions that specifies Langauge
  	store-esv-def :
- 		l@Language(_,properties*) -> l
+ 		l@Language(_,_) -> l
  		with
  			rules ( Declared-Language-Description :+ l -> l)
 
@@ -136,7 +146,8 @@ rules
  	* Storing Esv Definitions that specifies the builders for the
  	* language definition.
  	*/
- 	store-esv-def : b@Builders(_,_) -> b
+ 	store-esv-def: 
+ 		b@Builders(_,_) -> b
  		with
  			rules ( Declared-Builders-Description :+ b -> b)
 
@@ -144,7 +155,7 @@ rules
  	* Storing Esv Definitions that specifies the colorer for the
  	* language definition.
  	*/
- 	store-esv-def : c@Colorer(_,_) -> c
+ 	store-esv-def : c@Colorer(_,[_|_]) -> c
  		with
  			rules ( Declared-Colorer-Description :+ c -> c)
 
@@ -152,7 +163,8 @@ rules
  	* Storing Esv Definitions that specifies the folding semantics for the
  	* language definition.
  	*/
- 	store-esv-def : f@Folding(_,_) -> f
+ 	store-esv-def: 
+ 		f@Folding(_,_) -> f
  		with
  			rules ( Declared-Folding-Description :+ f -> f)
 
@@ -160,14 +172,16 @@ rules
  	* Storing Esv Definitions that specifies the outliner for the
  	* language definition.
  	*/
- 	store-esv-def : o@Outliner(_,_) -> o
+ 	store-esv-def : 
+ 		o@Outliner(_,_) -> o
  		with
  			rules ( Declared-Outliner-Description :+ o -> o)
  	/**
  	* Storing Esv Definitions that specifies the code completion
  	* for the language definition.
  	*/
- 	store-esv-def : c@Completions(_,_) -> c
+ 	store-esv-def : 
+ 		c@Completions(_,_) -> c
  		with
  			rules ( Declared-Completions-Description:+ c -> c)
 
@@ -175,7 +189,8 @@ rules
  	* Storing Esv Definitions that specifies the refencen resolving constructs
  	* for the language definition.
  	*/
- 	store-esv-def : r@References(_,_) -> r
+ 	store-esv-def : 
+ 		r@References(_,_) -> r
  		with
  			rules ( Declared-References-Description :+ r -> r)
 

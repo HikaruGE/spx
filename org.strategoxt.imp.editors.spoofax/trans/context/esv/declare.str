@@ -5,6 +5,7 @@ imports
 	context/-
 	context/sdf/-
 	utils/debug
+	utils/path
 	common
 
 rules 
@@ -18,7 +19,11 @@ rules
 
 rules
 	declare-esv-globals-top = 
-		alltd(declare-esv-definition)
+		alltd(declare-esv-definition);
+		if <not(get-language-id)>  <GetEnclosingPackageName> then
+			<declare-esv-definition>LanguageId(<package-qname-to-string> <GetEnclosingPackageName>)   
+		end
+			 
 		
 	declare-esv-definition : 
 		LanguageName(name)  -> <id>
