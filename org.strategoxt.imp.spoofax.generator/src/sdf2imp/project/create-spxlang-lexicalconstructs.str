@@ -1,0 +1,96 @@
+module sdf2imp/project/create-spxlang-lexicalconstructs
+
+imports 
+	sdf2imp/options
+	sdf2imp/util/-
+rules 
+	
+	create-spxlang-lexicalconstructs =
+		where(
+			file-name 		:= <spx-file-name>"-LexicalConstructs";
+			file-extension  := ".spx";
+			package-name := <BasePackage <+ default-package-name>
+		);	
+		
+		if not(<file-exists> <conc-strings> ("src/", file-name  , file-extension)) then 
+		 	<output-text-file(|["src"] , $[[file-name][file-extension]])>
+$[package [package-name]   
+[<create-lang-idenditifiers>]
+[<create-lang-literals>]
+[<create-lang-keywords>]
+[<create-lang-layout>]
+]
+    end
+    	
+    create-lang-idenditifiers =
+!${
+module Identifier
+	lexical syntax
+		[a-zA-Z][a-zA-Z0-9]* -> ID
+}	
+
+    create-lang-literals =
+!${	
+module Literals
+	lexical syntax
+		"-"? [0-9]+          -> INT
+		"\"" StringChar* "\"" -> STRING
+		~[\"\n]               -> StringChar
+		"\\\""                -> StringChar
+		
+		BackSlashChar         -> StringChar
+		"\\"                  -> BackSlashChar
+	
+	lexical restrictions
+	
+		//Ensure greedy matching for lexicals
+		CommentChar   -/- [\/]
+		INT           -/- [0-9]
+		ID            -/- [a-zA-Z0-9\_]
+		
+		//Backslash chars in strings may not be followed by "
+		
+		BackSlashChar -/- [\"]
+}
+	
+	create-lang-keywords = 
+!${		
+module Keywords
+	
+	lexical syntax 
+		"Int"					  			-> RESERVED
+		"String"			  			-> RESERVED
+		RESERVED 						-> ID${$reject$}$
+
+	lexical restrictions
+		//Ensure greedy matching for lexicals
+		"Int" 
+		"String"  -/- [A-Za-z0-9\_]
+}
+
+
+	create-lang-layout =  
+	!${
+
+module Layout
+	lexical syntax
+		[\ \t\n\r] -> LAYOUT
+	    
+		[\*]                             -> CommentChar
+		"/*" (~[\*] | CommentChar)* "*/" -> LAYOUT
+		"//" ~[\n\r]* ([\n\r] | EOF)     -> LAYOUT   
+	    
+		-> EOF
+	  
+	lexical restrictions 
+		//Ensure greedy matching for lexicals
+		//EOF may not be followed by any char
+		EOF           -/- ~[]
+	
+	context-free restrictions 
+  
+		//Ensure greedy matching for comments
+		LAYOUT? -/- [\ \t\n\r]
+		LAYOUT? -/- [\/].[\/]
+		LAYOUT? -/- [\/].[\*]		
+}	

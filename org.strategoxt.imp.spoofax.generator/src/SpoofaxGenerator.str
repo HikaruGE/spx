@@ -1,0 +1,4 @@
+module SpoofaxGenerator
+
+imports sdf2imp/main
+ 

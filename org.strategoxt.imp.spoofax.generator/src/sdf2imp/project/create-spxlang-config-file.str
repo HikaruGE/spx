@@ -1,0 +1,19 @@
+module sdf2imp/project/create-spxlang-config-file
+    
+imports
+  sdf2imp/util/-
+
+strategies
+
+  create-spoofaxlang-config=
+    <file-exists> "spx.config" ;
+    verbose-msg(!"Skipping", "spx.config")
+  <+
+    <output-text-file(|[], "spx.config")>
+$[Configuration
+	Includes
+		RootDirectory			src
+					
+	CodeGeneration 
+		OutputDirectory		.shadowdir
+]

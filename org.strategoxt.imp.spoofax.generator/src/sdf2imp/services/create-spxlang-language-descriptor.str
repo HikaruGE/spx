@@ -1,0 +1,30 @@
+module sdf2imp/services/create-spxlang-language-descriptor
+
+imports 
+	sdf2imp/options
+	sdf2imp/util/-
+rules 
+	
+	create-spxlang-main-descriptor = 
+		where(
+			lang-name       := <get-sdf-main-module>;
+			file-name 		  := <spx-file-name> "-Descriptor";
+			file-extension  := ".spx";
+			package-name    := <BasePackage <+ default-package-name>;
+			spx-descriptor-module-name := $[[lang-name]-Descriptor]
+		);
+		if not(<file-exists> <conc-strings> ("src/", file-name  , file-extension)) then 
+		 	<output-text-file(|["src"] , $[[file-name][file-extension]])>
+		 $[package [package-name]
+	 		
+module [spx-descriptor-module-name]
+	 		
+imports [package-name].generated  
+	 		
+[<default-spx-main-descriptor;pp-descriptor-contents;debug(!"pp main descriptor : ")>]
+	 			
+]
+		else
+			verbose-msg(!"Skipping", <conc-strings> ("src/", file-name  , file-extension))
+		end
+		
