@@ -43,17 +43,19 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   </condition>
   
   <property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin"/>
-  <import file=".build/build.spx.main.generated.xml"/>
+  <import file=".build/build.spx.main.generated.xml" optional = "true"/>
   
   <!-- Compiles and Generates Artefacts. Internally it calls build-spoofaxlang-jvm strategy -->
  	<target name="buildinit">
-  	<java classname="org.strategoxt.imp.metatooling.building.AntSpxGenerateArtefacts" failonerror="false">
+  	<java classname="org.strategoxt.imp.metatooling.building.AntSpxGenerateArtefacts" failonerror="true">
 		 	<arg value="${basedir}"/>
 	  </java>
   </target>
 	
   <!-- Main target -->
-  <target name="all" depends="buildinit,build-spx-packages"/>
+  <target name="all" depends="buildinit">
+  	<antcall target = "build-spx-packages"/>
+  </target>
 </project>]
 	end
 
