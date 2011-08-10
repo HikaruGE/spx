@@ -64,8 +64,7 @@ strategies
         ~~
         name    :    ~name
       	extends : Root
-      	id      : ~ pkgname
-        ~~
+      	~~
         description: <conc-strings> ("\"Spoofax/IMP-generated(using spoofaxlang) editor for the ", name, " language \"")
         url: http://strategoxt.org
         ~~

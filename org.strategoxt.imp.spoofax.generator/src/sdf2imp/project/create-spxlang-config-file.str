@@ -12,7 +12,7 @@ strategies
     <output-text-file(|[], "spx.config")>
 $[Configuration
 	Includes
-		RootDirectory			src
+		AllDirectories			src
 					
 	CodeGeneration 
 		OutputDirectory		.shadowdir
