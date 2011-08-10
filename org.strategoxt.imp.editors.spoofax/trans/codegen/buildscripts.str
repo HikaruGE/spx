@@ -149,7 +149,7 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   <mkdir dir="${src-gen}"/>
   <mkdir dir="${dist}"/>
   <mkdir dir="${include}"/>
-  <mkdir dir="${lib}"/>
+  
   
   <target name="init" if="eclipse.running">
 	  <!-- refresh one file/dir in the project to trigger an Ant rebuild with the next build command -->
