@@ -9,7 +9,8 @@ strategies
     name          := <trans-module-name>;
     lang-name     := <get-sdf-main-module>;
     package-name  := <BasePackage <+ default-package-name>;
-	<output-text-file(|["src"], "editor-common.generated.spx")>
+    file-name 		:= <spx-file-name>"-editorcommon.generated.spx";
+	<output-text-file(|["src"], file-name)>
 ${package {package-name}.generated
 
 module CommonStrategies

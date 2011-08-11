@@ -11,7 +11,7 @@ rules
 	
 	output-spx-derived-editor-services = 
 		lang-name       := <get-sdf-main-module>;
-		file-name 		  := $[editor-services.generated] ;
+		file-name 		  := <spx-file-name>"-editorservices.generated" ;
 		file-extension  := ".spx";
 		package-name    := <BasePackage <+ default-package-name>;
 	  
@@ -41,7 +41,7 @@ $[package [package-name].generated
 	
 	output-spx-editor-services = 
 		lang-name       := <get-sdf-main-module>;
-		file-name 		  := <spx-file-name>"-editor-services" ;
+		file-name 		  := <spx-file-name>"-editorservices" ;
 		file-extension  := ".spx" ;
 		package-name    := <BasePackage <+ default-package-name>;
 		
