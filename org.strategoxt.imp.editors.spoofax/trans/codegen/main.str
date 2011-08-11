@@ -9,7 +9,7 @@ imports
 imports
 	codegen/buildscripts
 	codegen/generate
-	
+	analyze/main
 imports 
 	config 
 	utils/cache
@@ -45,7 +45,9 @@ rules
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 		)
-		
+	
+	
+	//TODO : Improve error reporting. 
   build-spoofaxlang-jvm:
     current-project-location -> <id>
     with 
@@ -62,7 +64,7 @@ rules
 			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 	
 		with	
-			<debug>$[Activating Project Configuration];
+			<debug>$[Activating Project Configuration : ];
 			initialize-configuration;        	// initializes configuration and setting up enviroment variables
 			enable-command-line-mode;  
 			<show-configuration;debug>()     //show configuration for this spx project
@@ -70,10 +72,10 @@ rules
 			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 
 		with
-			<debug>$[Init Build];
-			<build-spoofaxlang>(); //building all the spx files in the sources directory
-			<chdir><previous-working-dir> ; 			// resetting working directory
-			<debug>$[Build Successful]
+			<debug>$[SPXLang Build: ];
+			<build-spoofaxlang'>(); //building all the spx files in the sources directory
+			<chdir><previous-working-dir> 			// resetting working directory
+			<debug>$[Intermediate artefacts have been generated successfully.]
 		<+
 			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 
@@ -87,7 +89,7 @@ rules
 		 ;rules(ProjectPath := project-path)
 		 ;initialize-configuration
 		with
-	  	 enable-compiler-debugging
+			 enable-compiler-debugging
 	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
 	  	;<build-spoofaxlang>()
 	  	;disable-compiler-debugging

@@ -30,6 +30,8 @@ imports
 strategies 
 	build-spoofaxlang = build-all(generate-artifacts-all)
 	
+	build-spoofaxlang' = build-all'(generate-artifacts-all)  // for testing purpose. remove it when it is no longer needed. 
+	
 	build-spoofaxlang-incrementally = build-all(generate-artifacts-incrementally)
 		 
 	build-all(gen-code) = 
@@ -40,16 +42,40 @@ strategies
 			;<debug>$[-------------------Getting list of errors-------------------]
 			;<get-all-analyzed-problems>() => problems  
 			;if <fail-if-has-errors>problems then
+			 	<debug>$[Compilation succeeded.];
 			 	{| ImportedDef : 
 							<gen-code>() 
-				|} 		
+				|}
 			else
-				<debug>$[Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]]
+				error-msg := $[Compilation Failed.Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]];		
+				<debug>error-msg
 			end		 
 		)
 		;!current-term //restoring current term to avoid side effects  
 
 	
+	build-all'(gen-code) = 
+		?current-term
+		;new-compile-session(
+			list-of-package-qname* := <get-package-list> 
+			;<compile-internal>list-of-package-qname*
+			;<debug>$[-------------------Getting list of errors-------------------]
+			;<get-all-analyzed-problems>() => problems  
+			;if <fail-if-has-errors>problems then
+			 	<debug>$[Compilation succeeded.];
+			 	{| ImportedDef : 
+							<gen-code>() 
+				|}
+				
+			else
+				(errors, warnings , notes) := problems;
+				 error-msg := $[Compilation Failed.Please fix the following [<length>errors] error(s) before building the artifacts:  [<pp-aterm-forced>errors]];		
+			 	fatal-err-msg(|error-msg )
+			 	
+			end		 
+		)
+		;!current-term //restoring current term to avoid side effects
+		 
 	generate-artifacts-all : () -> ()
 		where
 			<debug>$[-------------------Generating artifacts-------------------]
