@@ -2,12 +2,15 @@ module SpoofaxConfiguration
 
 signature
   constructors
-    RootDirectory   : IncludeOption
-    AllDirectories  : IncludeOption
+    ThisOnly        : IncludeOption
+    All             : IncludeOption
+    Jar             : STROutputMode
+    CTree           : STROutputMode
+    STROutputMode   : STROutputMode -> CodeGenDefinition
     OutputDirectory : RelativePath -> CodeGenDefinition
-    SpxProjects     : List(AbsolutePath) -> IncludeDefinition
-    Sources         : IncludeOption * List(RelativePath) -> IncludeDefinition
+    Source          : RelativePath * IncludeOption -> IncludeDefinition
     CodeGeneration  : List(CodeGenDefinition) -> ConfigSection
+    SpxProjects     : List(AbsolutePath) -> ConfigSection
     Includes        : List(IncludeDefinition) -> ConfigSection
     Configuration   : List(ConfigSection) -> Start
                     : String -> AbsolutePath
