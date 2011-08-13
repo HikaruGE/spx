@@ -37,7 +37,7 @@ rules
 		readdir;
 		list-loop(
     	if <isdir> <filemode> then  //FIXME : filemode / isdir contains bug. Common folder is not considered as directory which is a bug
-    		if not(Ignored-Spx-Souce-Dir); !search-option => AllDirectories()  then
+    		if not(Ignored-Spx-Souce-Dir); !search-option => All()  then
        		 chdir;
         	 <parse-spx-compilationUnits(|search-option)<+ throw-unable-read-exception(|"Failed to read this directory : ")><getcwd>;
            <chdir> ".."
