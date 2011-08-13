@@ -13,7 +13,7 @@ rules
    SpxProjects(lst) -> <verify-project-references>lst
    
   constraint-error:
-   Sources(includeoption, list-local-dirs*) -> <verify-local-directories-exists>list-local-dirs*
+   Source(dir, includeoption) -> <verify-local-directories-exists>[dir]
 
 
   

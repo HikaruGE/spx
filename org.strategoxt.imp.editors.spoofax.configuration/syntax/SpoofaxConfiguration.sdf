@@ -11,18 +11,22 @@ exports
 
   	context-free syntax
   
-	    "Configuration"  ConfigSection*         -> Start {cons("Configuration")}
+	    "configuration"  ConfigSection*         -> Start {cons("Configuration")}
 	    
-	    "Includes" IncludeDefinition*    				-> ConfigSection{cons("Includes")}
-	     IncludeOption RelativePath*						-> IncludeDefinition {cons("Sources")}
-	    "SpxProjects" AbsolutePath* 						-> IncludeDefinition {cons("SpxProjects")}
+			"src" ":"  IncludeDefinition+    				-> ConfigSection{cons("Includes")}
+	    RelativePath IncludeOption 							-> IncludeDefinition {cons("Source")}
+	    
+	    "projectreferences" ":" AbsolutePath* 	-> ConfigSection {cons("SpxProjects")}
 	    	
 	    
-	    "CodeGeneration" CodeGenDefinition*     -> ConfigSection{cons("CodeGeneration")}
-	    "OutputDirectory"  RelativePath				    -> CodeGenDefinition {cons("OutputDirectory")}
-	    
-	    "AllDirectories"												->   IncludeOption{cons("AllDirectories")}
-	    "RootDirectory"												  ->   IncludeOption{cons("RootDirectory")}
+	    "codegen:" CodeGenDefinition*    			 	-> ConfigSection{cons("CodeGeneration")}
+	    "todir" ":" RelativePath				  			-> CodeGenDefinition {cons("OutputDirectory")}
+	    "stroutputmode" ":" STROutputMode				-> CodeGenDefinition {cons("STROutputMode")}
+
+	    "ctree"																	-> STROutputMode{cons("CTree")}
+	    "jar"																		-> STROutputMode{cons("Jar")}	
+	    "|" "**"	 															->   IncludeOption{cons("All")}
+	    "|" "."												  				->   IncludeOption{cons("ThisOnly")}
 
 	lexical syntax 
 		%%STRING -> RelativePath
@@ -43,7 +47,7 @@ exports
     "Includes"        					-> Reserved		
     "AllDirectories"   					-> Reserved		
     "CodeGeneration"            -> Reserved   
-    "RootDirectory" 				  -> Reserved		
+    "RootDirectory" 				  	-> Reserved		
    
     Reserved -> RelativePath{reject}
 	    
