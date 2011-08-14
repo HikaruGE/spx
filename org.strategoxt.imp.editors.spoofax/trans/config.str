@@ -48,6 +48,7 @@ rules
 	 	<+
 	 		<debug>$[Failed to Load Configuration.Loading Default Configuration. Please check spx.config]; fallback-configuration>"spx.config" => config-aterms
 	 	)
+	 	;normalize-config
 		;init-output-directory
 		;init-source-directory
 		;init-str-output-strategy     		
@@ -282,8 +283,7 @@ rules
 	 	
 		get-external-sources: []  -> []
 	 
-
-	// Resolves External Project Refernces and returns the directories configured in that configuration file
+ 	// Resolves External Project Refernces and returns the directories configured in that configuration file
 	// Transitive imports/inclusion is not allowed. If a->b , b->c != a->c
 	resolve-external-sources =
 		 // not started wtih  ..
@@ -295,7 +295,7 @@ rules
   	fail-if-no-config-found;   
   	<parse-spoofaxconfiguration-file>$[[current-project-path]/spx.config];
   	get-all-sources(|current-project-path)
-	
+  	
 	  	
 	resolve-external-sources =
 		?current-project-path;
@@ -315,14 +315,17 @@ rules
 	  	<+
 	  		<chdir>current-dir  
 		)
- 
+
 	
+ 
 	get-all-project-refernces = 
   	collect-all(?SpxProjects(<id>), conc) ; 
-  	flatten-list
+  	flatten-list;
+  	filter(?_{<id>};not(<eq>("" , <id>)))
   <+ 
-  	debug(!"Failed to retrieve list of projects.") ; fail 
-		
+  	debug(!"Failed to retrieve list of projects.");
+  	fail 
+  			
 rules 
 
 	// Utility strategies  
@@ -351,3 +354,22 @@ rules
 	
 	throw-config-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find spx.config file in the directory specified: ") ;post-processing-strategy
 	   	 		 		
+rules 
+	normalize-config: ast -> <alltd(normalized-spxproject-reference)>ast 
+		
+	normalized-spxproject-reference: 
+		SpxProjects(projectrefs*) -> SpxProjects(result) 
+		with
+			result := <map(annotate-project-location)>projectrefs*
+			
+			
+	annotate-project-location : 
+		projectname -> annotatedProjectName
+		where 
+			prim("LANG_get_all_projects_in_Workspace");
+			filter( ?(projectname, _));
+			if not(?[(_, projectlocation)]) then 
+				projectlocation := ""
+			end;
+			annotatedProjectName := projectname{projectlocation}
+				

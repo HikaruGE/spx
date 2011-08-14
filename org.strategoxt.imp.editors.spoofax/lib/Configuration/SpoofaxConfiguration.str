@@ -10,11 +10,11 @@ signature
     OutputDirectory : RelativePath -> CodeGenDefinition
     Source          : RelativePath * IncludeOption -> IncludeDefinition
     CodeGeneration  : List(CodeGenDefinition) -> ConfigSection
-    SpxProjects     : List(AbsolutePath) -> ConfigSection
+    SpxProjects     : List(ProjectName) -> ConfigSection
     Includes        : List(IncludeDefinition) -> ConfigSection
     Configuration   : List(ConfigSection) -> Start
-                    : String -> AbsolutePath
                     : String -> RelativePath
+                    : String -> ProjectName
 
 
 signature
