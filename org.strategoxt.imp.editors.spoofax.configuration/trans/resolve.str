@@ -92,7 +92,8 @@ rules
  
 	get-all-project-refernces = 
   	collect-all(?SpxProjects(<id>), conc) ; 
-  	flatten-list
+  	flatten-list;
+  	filter(?_{<id>};not(<eq>("" , <id>)))
   <+ 
   	debug(!"Failed to retrieve list of projects.");
   	fail 
@@ -111,4 +112,26 @@ rules
 	throw-directory-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find the directory specified: ") ;post-processing-strategy
 	
 	throw-config-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find spx.config file in the directory specified: ") ;post-processing-strategy
-	   	 	
+
+
+
+rules
+	
+	normalize: ast -> <alltd(normalized-spxproject-reference)>ast 
+		
+	normalized-spxproject-reference: 
+		SpxProjects(projectrefs*) -> SpxProjects(result) 
+		with
+			result := <map(annotate-project-location)>projectrefs*
+			
+			
+	annotate-project-location : 
+		projectname -> annotatedProjectName
+		where 
+			prim("LANG_get_all_projects_in_Workspace");
+			filter( ?(projectname, _));
+			if not(?[(_, projectlocation)]) then 
+				projectlocation := ""
+			end;
+			annotatedProjectName := projectname{projectlocation}
+				

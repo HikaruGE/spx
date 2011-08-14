@@ -17,7 +17,7 @@ rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders 
     (ast, path, project-path) -> (ast, errors, warnings, notes)
     with
       editor-init;
-      errors   := <collect-all(constraint-error, conc)> ast;
+      errors   := <collect-all(constraint-error, conc)> <normalize>ast;
       warnings := [];
       notes    := []
   
@@ -25,8 +25,8 @@ rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders 
   get-full-paths:
     (selected, position, ast, path, project-path) -> (filename, result)
  		where 
- 			filename := <guarantee-extension(|"config.fullpath")> path;
- 			result := <get-all-includes>selected
+ 			filename := <guarantee-extension(|"config.fullpath")> path; 
+ 			result := <get-all-includes><normalize>selected
  			
        
  // Prints the abstract syntax ATerm of a selection.
@@ -34,8 +34,8 @@ rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders 
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm")> path;
-      result   := selected	// we just return the input term
-  		 
+      result   := <normalize>selected	// we just return the input term;
+        
   // Resolves a reference when the user control-clicks or presses F3 in the editor.
   // Only succeeds for nodes of the form Type(_) for which GetEntity is defined.
   editor-resolve:

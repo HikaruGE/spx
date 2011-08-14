@@ -40,51 +40,32 @@ rules
   
   verify-project-references : [current | rest*] -> result 
   where 
-  	not(?[])
-  where 
   	result := <conc;flatten-list>(<verify-project-reference>current , <verify-project-references>rest*)  
 
 	verify-project-reference : current -> result
 	where 
-  	if (<is-dir-exist> current) then
-  		if(<is-spx-config-exist>current) then
-  			result := []
-  		else
-  			result := [(current, $[Illegal project reference. spx.config file is not found in the following directory : [current]])]
-  		end		
+	?_{<id>};
+	if not ( <eq>("" , <id>)) then
+  	(	is-spx-config-exist
+  		;result := []
+	<+
+  		result := [(current, $[Illegal project reference. spx.config file is not found in the following project : [current]])]
+  	)
   	else
-  		result := [(current, $[Illegal project reference. Following directory is not found [current]])]
-		end 
+  		result := [(current, $[Illegal project reference. Following project [current] is not found in the current workspace])]
+	end 
 	
 	
 	is-dir-exist =  where(file-exists ; filemode ; isdir) 
 
 	
 	is-spx-config-exist  =
-		?current-project-ref;
-		where(explode-string; <not(eq)>(<Hd> , 46)) ; // not started wtih  ..
-		where(<file-exists>$[[<id>]/spx.config]) ; 
-		with(
-			spx-config-location := $[[<id>]/spx.config];
-			rules (get-config-reference : current-project-ref ->spx-config-location)   
-		) 
-			
-	
-	is-spx-config-exist =
-		?current-project-ref;
-		where(
-			explode-string; <eq>(<Hd> , 46);
-			current-dir := <getcwd>
-		) ;
-		where(chdir);
 		where(
 			<file-exists>$[[<id>]/spx.config]
-			;spx-config-location := $[[<getcwd>]/spx.config]
-			;<debug> $[storing reference : "[current-project-ref]" -> "[spx-config-location]"]
-			;rules (get-config-reference : current-project-ref ->spx-config-location)
-		  ;<chdir>current-dir
-		<+
-			<chdir>current-dir;
-			fail
-		)
+		);
+		where(
+			spx-config-location := $[[<id>]/spx.config];
+			rules (get-config-reference :+ current-project-ref ->spx-config-location)   
+		) 
+			
 		 		 		

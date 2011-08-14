@@ -16,7 +16,7 @@ exports
 			"src" ":"  IncludeDefinition+    				-> ConfigSection{cons("Includes")}
 	    RelativePath IncludeOption 							-> IncludeDefinition {cons("Source")}
 	    
-	    "projectreferences" ":" AbsolutePath* 	-> ConfigSection {cons("SpxProjects")}
+	    "projectreferences" ":" ProjectName* 	-> ConfigSection {cons("SpxProjects")}
 	    	
 	    
 	    "codegen:" CodeGenDefinition*    			 	-> ConfigSection{cons("CodeGeneration")}
@@ -29,6 +29,7 @@ exports
 	    "|" "."												  				->   IncludeOption{cons("ThisOnly")}
 
 	lexical syntax 
+		[a-zA-Z][a-zA-Z0-9\_\-\.]* 					-> ProjectName
 		%%STRING -> RelativePath
 		PathChar                                   	-> RelativePath
 		PathChar (PathChar | Slash)* PathChar       -> RelativePath
@@ -53,14 +54,15 @@ exports
 	    
 	    
 	lexical restrictions
-	  Slash        -/- [\/]
-		RelativePath -/- [A-Za-z0-9\_\-\/\.\+]
-			
+	  	Slash        -/-  [\/]
+	  	RelativePath -/-  [A-Za-z0-9\_\-\/\.\+]
+		ProjectName  -/- [A-Za-z0-9\_\-\.]
+		
 		"SpxProjects" 
 		"Sources" 
 		"SpxSources"
 		"Configuration" 
-    "CodeGeneration" 
+    	"CodeGeneration" 
 		"Includes"
 		"AllDirectories"
 		"RootDirectory" -/- [A-Za-z0-9\_]
