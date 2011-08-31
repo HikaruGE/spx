@@ -3,6 +3,8 @@ module unit-tests/symboltable
 imports 
 	normalize/-
 	include/spoofaxlang
+	lib/editor-common.generated
+	
 signature constructors
 
 
@@ -53,12 +55,25 @@ rules
 	
 	
 	test-spx-index-compilation-unit-save: 
-		(selected, position, ast, path, project-path) -> None()
+		(selected, position, ast, path, project-path) ->(filename, result) 
+		
+		where 
+		  project-name := "test";
+		   filename := <guarantee-extension(|"test.aterm")> path
     where
-    	full-path := <concat-strings>[project-path, "/" , path]
-    
-    	
- 
+      prim("SPX_index_init" , project-name);
+    	full-path := <concat-strings>[project-path, "/" , path];
+ 		  parsedAST := <parse-file>full-path  ;
+ 		  <debug(!"Storing AST : ")>parsedAST ;
+ 		  prim("SPX_index_compilation_unit" , project-name , full-path , parsedAST);
+ 		  debug(!"Saving!");
+ 		  prim("SPX_index_save" , project-name);
+ 		  debug(!"Now reading it!");
+ 		  prim("SPX_index_init" , project-name);
+ 		  debug(!"Init is done!");
+ 		  debug(!"getting comp unit ? !");
+ 		  prim("SPX_index_compilation_unit_get" , project-name , full-path);
+      ?result
 rules 
 	
   // Initializes index  with the project name specifed  
