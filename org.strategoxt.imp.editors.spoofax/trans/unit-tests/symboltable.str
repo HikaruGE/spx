@@ -1,0 +1,79 @@
+module unit-tests/symboltable
+
+imports 
+	normalize/-
+	include/spoofaxlang
+signature constructors
+
+
+
+rules 
+	
+	test-constructors1: 	
+		(selected, position, ast, path, project-path) -> None()
+		where
+				packageDef := PackageDef(Package( ["test" , "A"]) , "String Path ");
+				<debug(!"Test PackageDef : ")>packageDef
+
+	test-constructors2: 	
+		(selected, position, ast, path, project-path) -> None()
+		where
+				moduleDef := ModuleDef(Module( ["test" , "A"]) , "String Path 2" , Package(["test"]) , Module(None(), SPXModuleName("Outliner"), []) , Module(None(), SPXModuleName("Outliner"), []));
+				<debug(!"Test ModuleDef : ")>moduleDef
+		where		
+				packageDef := PackageDef(Package( ["test" , "A"]) , "String Path ");
+				prim(
+				  "SPX_index_add_module" , 
+				  ModuleDef(
+			      Module( ["test" , "A"]) ,  // name of the module 
+			      "StringPath2" ,  // path 
+			      Package(["test"]) , // package name  
+			      Module(None(), SPXModuleName("Outliner"), []) , // ast  
+			      Module(None(), SPXModuleName("Outliner"), [])  // annotated ast 
+		      )
+	      )
+rules 
+
+	test-spx-index-init:
+    (selected, position, ast, path, project-path) -> None()
+    where
+    	debug(!"Invoking : SPX_index_init");
+      prim("SPX_index_init" , "test");
+      debug(!"SPX_index_init is ok!")
+ 		where
+ 			prim("SPX_index_add_module")
+
+ 		where
+ 			debug(!"Invoking : SPX_index_save");
+      prim("SPX_index_save" , "test");
+      debug(!"SPX_index_save is ok!")
+      	
+
+rules 
+	
+	
+	test-spx-index-compilation-unit-save: 
+		(selected, position, ast, path, project-path) -> None()
+    where
+    	full-path := <concat-strings>[project-path, "/" , path]
+    
+    	
+ 
+rules 
+	
+  // Initializes index  with the project name specifed  
+  test-spx-index-init:
+    (selected, position, ast, path, project-path) -> None()
+    where
+    	debug(!"Invoking : SPX_index_init");
+      prim("SPX_index_init" , "test");
+      debug(!"SPX_index_init is ok!")
+ 
+ 
+ 	// TODO : add more real-life tests 
+  test-spx-index-save:   (selected, position, ast, path, project-path) -> None()
+    where
+    	debug(!"Invoking : SPX_index_save");
+      prim("SPX_index_save" , "test");
+      debug(!"SPX_index_save is ok!")
+      
