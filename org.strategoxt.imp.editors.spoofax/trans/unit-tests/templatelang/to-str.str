@@ -44,13 +44,13 @@ strategies
         }
 
         test-placeholders =
-          <test'> ($[X.Y = <<<Z>>>],
+          <test2> ($[X.Y = <<<Z>>>],
             |[ prettyprint-X: Y(a) -> zz
-               with a' := <prettyprint-Z> a;
-                    zz := <concat-strings> [a'] ]|);
-          <test'> ($[X.Y = <<<this text is ignored : Z>>>],
+               with a2 := <prettyprint-Z> a;
+                    zz := <concat-strings> [a2] ]|);
+          <test2> ($[X.Y = <<<this text is ignored : Z>>>],
             |[ prettyprint-X: Y(a) -> zz
-               with a' := <prettyprint-Z> a;
+               with a2 := <prettyprint-Z> a;
                     zz := <concat-strings> [a'] ]|);
           // We got the hang of it; just test whether the varying part looks correct.
           <test'> ($[X.Y = <<<Z?>>>],

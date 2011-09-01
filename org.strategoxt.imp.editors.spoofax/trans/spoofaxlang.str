@@ -34,9 +34,11 @@ imports
 	utils/cache
 	common
   config
+  /*
 	unit-tests/-
 	unit-tests/templatelang/-
 	unit-tests/utils/-
+	*/
 imports
 	 editor/main
 	 codegen/main
@@ -68,6 +70,7 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := ast // we just return the input term
 
+/*
   run-templatelang-tests:
     (selected, position, ast, path, project-path) -> None()
     with
@@ -76,3 +79,4 @@ rules
       test-templatelang-to-stratego;
       test-templatelang-desugar;
       test-sdf2conflicts
+*/
