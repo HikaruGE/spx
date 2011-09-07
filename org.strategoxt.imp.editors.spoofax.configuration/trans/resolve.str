@@ -2,7 +2,7 @@ module resolve
 
 imports 
 	lib/editor-common.generated
-	include/spoofaxconfiguration 
+	include/SpoofaxConfiguration 
 	check
 
 rules
