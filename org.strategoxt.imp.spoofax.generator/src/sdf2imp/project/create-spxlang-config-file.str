@@ -29,7 +29,7 @@ $[configuration
 	// By default, it includes all the directories ( and their subdirectories) of the project during build. Hence, It is  
 	// always recommended to explicitly specify the sources to include. 							  
 	src:
-		test|**
+		src|**
 		
 				
 	codegen:
@@ -43,7 +43,9 @@ $[configuration
 		//stroutputmode : jar
 	
 	// Other project references are specified in this configuration section.
+	// Specify the name of the project from current workspace to include 
+	// Tested only with projects located in the local file system. 
 	//projectreferences:
-	//	C:/work/projects/spoofax/spx-imp/source-codes/workspaces/spx-examples/SpoofaxEntityLanguage
-	//../DatabaseSPXLang
+	//	 
+	//		<project-name>* 
 ]

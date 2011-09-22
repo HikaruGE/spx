@@ -32,9 +32,9 @@ module {language-name}-MainConstructs
 imports {package-name}.generated 
 	
 context-free syntax    
-	"module" ID Definition*       	-> Start       ${$ "Module"  $}$ 
-	"entity" ID "${$" Property* "$}$" 	-> Definition  ${$ "Entity"  $}$
-	ID  ":" Type               		  -> Property     ${$ "Property"$}$ 
+	"module" ID Definition*             -> Start${$ "Module"$}$ 
+	"entity" ID "${$" Property* "$}$"    -> Definition${$"Entity"$}$
+	ID  ":" Type               		      -> Property${$"Property"$}$ 
 	
 rules 
 	// Semantic analyses
@@ -59,13 +59,13 @@ rules
 	// Generates java codes from {language-name} language.
 	to-java: Module(x, d*) ->
 		$[package [x];
-    	[d'*]
+      [d'*]
 		 ]
     with
       d'* := <to-java> d*
   
 	to-java: Entity(x, p*) ->
-    $[ class [x] ${$
+    $[class [x] ${$
            [p'*]
        $}$
 		]
@@ -74,15 +74,15 @@ rules
 
 	to-java: Property(x, type) -> 
 		$[
-			private [<to-java>type] [x];
+           private [<to-java>type] [x];
       
-			public [<to-java>type] get_[x] ${$
-          return [x];
-      $}$
+           public [<to-java>type] get_[x] ${$
+              return [x];
+           $}$
       
-			public void set_[x] ([<to-java>type] [x]) ${$
-          this.[x] = [x];    
-			$}$
+           public void set_[x] ([<to-java>type] [x]) ${$
+              this.[x] = [x];    
+           $}$
 		]     
   	
 		to-java: t* -> <map(to-java)> t*
@@ -91,16 +91,16 @@ rules
 	
 	// Pretty-prints Abstract Syntax Tree to {language-name} language. 
 	pp-entitylang: Module(x, d*) ->
-		$[ module [x]
-				[d'*]
+		$[module [x]
+     [d'*]
 		]
 		with
 		d'* := <pp-entitylang> d*
   
 	pp-entitylang: Entity(x, p*) ->
-		$[ entity [x] ${$
-				[p'*]
-				$}$
+		$[entity [x] ${$
+         [p'*]
+     $}$
 			]
 		with
 			p'* := <pp-entitylang> p*

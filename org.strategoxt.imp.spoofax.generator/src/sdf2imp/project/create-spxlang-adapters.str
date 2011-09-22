@@ -57,7 +57,9 @@ $[package [package-name]
 		create-builders-definition = 
     where( 
 	    	package-name  := <BasePackage <+ default-package-name>;
-	    	language-name := <get-sdf-main-module>
+	    	language-name := <get-sdf-main-module>;
+	    	extensions := <require-option(EditorExtensions |"File extensions (-e)")>;
+      	extension  := <string-tokenize(|[',']); Hd> extensions
 			);	 
 !${module Builders  
 	 	
@@ -80,7 +82,7 @@ rules
 	prettyprint-entitylang:
 		(selected, position, ast, path, project-path) -> (filename, result)
 		with
-			filename := <guarantee-extension(|"pp.spo")> path;
+			filename := <guarantee-extension(|"pp.{extension}")> path;
 			result   := <pp-entitylang>selected // we just return the input term
 }
 
