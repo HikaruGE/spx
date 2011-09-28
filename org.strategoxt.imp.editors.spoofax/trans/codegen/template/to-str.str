@@ -13,6 +13,17 @@ imports
 
 strategies
 
+  test-templatelang-to-str:
+    (_, _, ast, _, _) -> result
+    with
+      init-template-options;
+      <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), sections)])])> ast;
+      (options, t-sections) := <partition(?TemplateOptions(<id>))> sections;
+      <try([declare-template-options-main])> options;
+      <template-sections-to-stratego; alltd(Str(escape; double-quote))> t-sections => result
+
+strategies
+
   template-sections-to-stratego =
     template-sections-to-stratego-string;
     parse-stratego-string;

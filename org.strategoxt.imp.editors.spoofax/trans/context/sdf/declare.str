@@ -105,10 +105,12 @@ rules
       <Declaration> qualified-sort-name
     <+
       (
-      	(GetEnclosingModuleName;get-module-abs-filepath <+ LegacyModuleResolvedPath) => file;
+        // in SPT tests, file may be unavailable
+      	if (GetEnclosingModuleName;get-module-abs-filepath <+ LegacyModuleResolvedPath) => file then
+      	  rules( DeclarationFile: qualified-sort-name -> file )
+      	end;
       	rules(
        		Declaration		 :    qualified-sort-name  -> prod
-        	DeclarationFile:    qualified-sort-name  -> file
         	// Added following two dynamic rules for the ESV Def. analysis
         	SortDeclaration  :  qualified-sort-name -> x
        		SortProductionLHS:+ qualified-sort-name -> lhs

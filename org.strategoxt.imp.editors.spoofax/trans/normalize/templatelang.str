@@ -6,6 +6,14 @@ imports
 
 strategies
 
+  test-templatelang-desugar-sdf:
+    (_, _, ast, _, _) -> <templatelang-desugar-sdf-top> ast
+
+  test-templatelang-desugar:
+    (_, _, ast, _, _) -> <templatelang-desugar-top> ast
+
+strategies
+
   templatelang-desugar-sdf-top = alltd(templatelang-desugar-sdf)
 
   templatelang-desugar-top = innermost(templatelang-desugar)
@@ -55,6 +63,7 @@ rules
           unescape =
             string-as-chars(rec x(
                \['\', ' ' | tail] -> [' '  | <x> tail]\
+            <+ \['\', '\' | tail] -> ['\'  | <x> tail]\
             <+ \['\', '"' | tail] -> ['"'  | <x> tail]\
             <+ \['\', '\''| tail] -> ['\'' | <x> tail]\
             <+ \['\', 't' | tail] -> ['\t' | <x> tail]\

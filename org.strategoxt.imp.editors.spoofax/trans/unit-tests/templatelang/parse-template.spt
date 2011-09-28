@@ -1,0 +1,21 @@
+module templatelang-parse
+
+language SpoofaxLang
+start symbol Template
+
+test parse common escape chars [[ <<<\ \'\"\t\r\n>>> ]]
+parse to Template([Escape("<\\ \\'\\\"\\t\\r\\n>")])
+
+test parse escaped brackets (1) [[ <<\<\>\\>> ]]
+parse to Template([Escape("\\<\\>\\\\")])
+
+test parse escaped brackets (2) [[[ [[\[\]\\]] ]]]
+parse to Template([Escape("\\[\\]\\\\")])
+
+test parse line ending (1) [[ <<<\\>
+>> ]]
+parse to Template([Escape("<\\\\>\n")])
+
+test parse line ending (2) [[[ [[[\\]
+]] ]]]
+parse to Template([Escape("[\\\\]\n")])

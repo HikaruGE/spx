@@ -1,0 +1,79 @@
+module templatelang-to-str-2
+
+language SpoofaxLang
+target language Stratego-Sugar
+
+// FIXME: This testsuite should really eval the generated stratego code on sample
+//        input, instead of testing the exact form of the generated stratego code.
+//        This is currently not really possible, however ...
+
+setup common input [[
+  package example
+  module example
+  templates
+    Statement.IfThen = <<
+      if <Exp> then
+        <Statement*; separator="\n">
+      end
+    >>
+]]
+
+target setup header [[
+  module prettyprinter
+  imports
+    libstratego-lib
+  strategies
+    pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
+    pp-list(s|t) = map(s); separate-by(|t); concat-strings
+]]
+
+test no newlines [[
+  template options
+    newlines : none
+]]
+build test-templatelang-to-str to [[
+    pp-ih(|t) = ?"" <+ string-replace(|"\n", t); <conc-strings> (t, <id>)
+
+  strategies
+	  prettyprint-Statement: IfThen(a, b) -> zz
+	  with a' := <prettyprint-Exp> a;
+	       b' := <pp-list(prettyprint-Statement|"\n")> b;
+	       zz := <concat-strings> ["if ", a', " then", <pp-ih(|"\n  ")> b', "\nend"]
+]]
+
+test leading newlines [[
+  template options
+    newlines : leading
+]]
+build test-templatelang-to-str to [[
+    pp-ih(|t) = ?"" <+
+      string-replace(|"\n", t);
+      if not(string-starts-with(|t)) then
+        <conc-strings> (t, <id>)
+      end
+
+  strategies
+    prettyprint-Statement: IfThen(a, b) -> zz
+    with a' := <prettyprint-Exp> a;
+         b' := <pp-list(prettyprint-Statement|"\n")> b;
+         zz := <concat-strings> ["\nif ", a', " then", <pp-ih(|"\n  ")> b', "\nend"]
+]]
+
+test trailing newlines [[
+  template options
+    newlines : trailing
+]]
+build test-templatelang-to-str to [[
+    pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>))
+
+  strategies
+    prettyprint-Statement: IfThen(a, b) -> zz
+    with a' := <prettyprint-Exp> a;
+         b' := <pp-list(prettyprint-Statement|"\n")> b;
+         zz := <concat-strings> ["if ", a', " then\n", <pp-ih(|"  ")> b', "end\n"]
+]]
+
+target setup footer [[
+  strategies
+    prettyprint-Exp = is-string
+]]

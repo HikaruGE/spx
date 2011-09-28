@@ -1,0 +1,129 @@
+module templatelang-to-esv
+
+language SpoofaxLang
+target language EditorService
+
+setup no newlines [[
+  package example
+  module example
+  templates
+]]
+
+// FIXME: Test with other newlines setting.
+//        There is no way to automatically run the tests with all three
+//        settings without repeating all tests, unfortunately.
+
+// setup leading newlines [[
+//   module example
+//   template options
+//     newlines : leading
+//   templates
+// ]]
+
+// setup trailing newlines [[
+//   module example
+//   template options
+//     newlines : trailing
+//   templates
+// ]]
+
+target setup [[
+  module example
+  completions
+]]
+
+test empty [[
+  X.Y = <<>>
+]]
+build test-templatelang-to-esv to [[
+
+]]
+
+test placeholder [[
+  X.Y = <<<Z>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = <Z:Z> (blank)
+]]
+
+test placeholder (text) [[
+  X.Y = <<< display text : Z>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = < display text :Z> (blank)
+]]
+
+test placeholder (option) [[
+  X.Y = <<<Z?>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test placeholder (plus) [[
+  X.Y = <<<Z+>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test placeholder (star) [[
+  X.Y = <<<Z*>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test placeholder (plus, separator) [[
+  X.Y = <<<Z+; separator=", ">>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test placeholder (star, separator) [[
+  X.Y = <<<Z*; separator=" + ">>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test placeholder and literals [[
+  X.Y = <<foo <Z> bar>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = "foo " <Z:Z> " bar" (blank)
+]]
+
+test placeholder (option) and literals [[
+  X.Y = <<foo <Z?> bar>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = "foo " (cursor) " bar" (blank)
+]]
+
+test n placeholders => one (cursor)-directive (1) [[
+  X.Y = <<<A?> <B?>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test n placeholders => one (cursor)-directive (2) [[
+  X.Y = <<<A?> <B?> <C?>>>
+]]
+build test-templatelang-to-esv to [[
+  completion template X: "Y" = (cursor) (blank)
+]]
+
+test statement [[
+  Statement.IfThen = <<
+    if <Exp> then
+      <Statement*; separator="\n">
+    end
+  >>
+]]
+build test-templatelang-to-esv to [[
+  completion template Statement: "IfThen" =
+    "if " <Exp:Exp> " then\n\t" (cursor) "\nend" (blank)
+]]

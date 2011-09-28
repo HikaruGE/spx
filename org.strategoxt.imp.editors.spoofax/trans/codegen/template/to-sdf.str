@@ -1,6 +1,7 @@
 module to-sdf
 imports
   libstratego-lib
+  libstratego-sglr
   include/SpoofaxLang
 imports
 	common
@@ -11,6 +12,18 @@ imports
   utils/debug
   utils/tokenize
   utils/templatelang
+
+strategies
+
+  test-templatelang-to-sdf:
+    (_, _, ast, _, _) -> "module"#([unparameterized(modulename), [], [exports(grammars)]])
+    with
+      init-template-options;
+      <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), sections)])])> ast;
+      (options, t-sections) := <partition(?TemplateOptions(<id>))> sections;
+      <try([declare-template-options-main])> options;
+      <template-sections-to-sdf /*;alltd(quoted(double-quote))*/> t-sections;
+      (\[x] -> x\ + \[x, y] -> conc-grammars(x, y)\) => grammars
 
 strategies
 
@@ -191,13 +204,13 @@ strategies
     collect-one(?Separator(<remove-whitespace>)); escape; double-quote
 
   placeholder-to-sdf:
-    Placeholder(_, sort(S'), Option(), _) -> A|[ S'? ]|
+    Placeholder(_, sort(S), Option(), _) -> A|[ S? ]|
 
   sort-to-contentcomplete:
-    S' -> p|[ CONTENTCOMPLETE -> S' {cons("WATER"), avoid} ]|
+    sort(S) -> p|[ CONTENTCOMPLETE -> S {cons("\"WATER\""), avoid} ]|
 
   sort-to-insertion:
-    S'@sort(x) -> p|[ -> S' {cons("INSERTION"), recover} ]|
+    sort(S) -> p|[ -> S {cons("\"INSERTION\""), recover} ]|
 
 strategies
 

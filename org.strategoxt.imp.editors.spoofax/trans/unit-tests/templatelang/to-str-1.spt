@@ -1,0 +1,53 @@
+module templatelang-to-str-1
+
+language SpoofaxLang
+target language Stratego-Sugar
+
+// FIXME: This testsuite should really eval the generated stratego code on sample
+//        input, instead of testing the exact form of the generated stratego code.
+//        This is currently not really possible, however ...
+
+setup [[
+  package example
+  module example
+  templates
+]]
+
+target setup header [[
+  module prettyprinter
+  imports
+    libstratego-lib
+  strategies
+    pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
+    pp-list(s|t) = map(s); separate-by(|t); concat-strings
+    pp-ih(|t) = ?"" <+ string-replace(|"\n", t); <conc-strings> (t, <id>)
+  strategies
+    prettyprint-X: Y(a) -> zz with
+      // The strategies invoked here differ per test
+      // The footer contains a last, common line.
+]]
+
+test placeholder [[ X.Y = <<<Z>>> ]]
+build test-templatelang-to-str to [[ a' := <prettyprint-Z> a; ]]
+
+test placeholder (text) [[ X.Y = <<<this text is ignored : Z>>> ]]
+build test-templatelang-to-str to [[ a' := <prettyprint-Z> a; ]]
+
+test placeholder (plus) [[ X.Y = <<<Z+>>> ]]
+build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" ")> a; ]]
+
+test placeholder (star) [[ X.Y = <<<Z*>>> ]]
+build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" ")> a; ]]
+
+test placeholder (plus, separator) [[ X.Y = <<<Z+; separator=", ">>> ]]
+build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|", ")> a; ]]
+
+test placeholder (star, separator) [[ X.Y = <<<Z*; separator=" + ">>> ]]
+build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" + ")> a; ]]
+
+target setup footer [[
+	  zz := <concat-strings> [a']
+
+  strategies
+    prettyprint-Z = is-string
+]]

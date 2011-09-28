@@ -13,6 +13,14 @@ imports
 
 strategies
 
+  test-templatelang-to-esv:
+    (_, _, ast, _, _) -> Module(modulename, NoImports(), [Completions("", listOfCompletions)])
+    with
+    	<?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), _)])])> ast;
+    	<?CompilationUnit([], [Package(_, [<template-module-to-esv>])]); alltd(String(double-quote))> ast => listOfCompletions
+
+strategies
+
 	/** @type Module -> List(Completions) */
 	template-module-to-esv:
 		Module(_, _, section*) -> <template-sections-to-esv> section*
