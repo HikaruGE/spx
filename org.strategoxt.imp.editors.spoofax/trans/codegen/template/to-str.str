@@ -6,8 +6,8 @@ imports
   include/SpoofaxLang
 imports
   context/str/parse
-	context/template/declare
-	normalize/templatelang
+  context/template/declare
+  normalize/templatelang
   utils/sdf2conflicts
   utils/templatelang
 
@@ -54,8 +54,8 @@ strategies
     with
       // All sorts used in pp minus all sorts for which a pp strategy has been
       // created will get a `prettyprint-sort = is-string' default strategy.
-      sorts-used-in-pp := <collect-om(sort-used-in-prettyprinting); nub> section'*;
-      sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*;
+      sorts-used-in-pp := <collect-om(sort-used-in-prettyprinting); nub> section'*; // FIXME: global data
+      sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*; // FIXME: global data
       sorts-without-pp := <diff> (sorts-used-in-pp, sorts-decl-in-pp);
       strategy* := <map(sort-to-prettyprint-strategy); separate-by(|"\n\n")> sorts-without-pp
     with
@@ -98,16 +98,16 @@ strategies
 
   // Optimization for single-string-element templates
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template([String(t)]), attr*) ->
+    TemplateProduction(sort, Template([String(t)]), attrs(attr*)) ->
     $[prettyprint-[sort]:
         [cons]() -> "[result]"]
     where
-      cons   := <collect-one(?sdf-cons(<un-double-quote>))> attr*
+      cons   := <getfirst(?sdf-cons(<un-double-quote>))> attr*
     with
       result := <templatelang-escape> t
 
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template(elem*), attr*) ->
+    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
     <trim-chars(' ' + '\t' + '\r' + '\n')> // Workaround Stratego/856
     $[prettyprint-[sort]:
         [cons]([arg'*]) -> zz
@@ -116,7 +116,7 @@ strategies
     where
       not(!elem* => [String(_)])
     where
-      cons    := <collect-one(?sdf-cons(<un-double-quote>))> attr*
+      cons    := <getfirst(?sdf-cons(<un-double-quote>))> attr*
     with
       elem'*  := <try-re-indent;
                   !(<id>, 0);
@@ -132,19 +132,34 @@ strategies
                   separate-by(|", ")> elem'*;
       result  := <concat-strings>["zz := <concat-strings> [", part*, "]"];
       confl*  := <bagof-SubtermConflicts> Symbol(cons, <length> arg*);
-      if !confl* => [] then
-        let*  := <filter(template-element-to-prettyprint)> elem'*
-      else
-        let*  := <filter(?Placeholder(_, _, _, _));
-                  add-indices; map((dec, id));
-                  filter(template-element-to-parenthesize(|confl*))> elem'*
-      end;
+      // if !confl* => [] then
+        let*  := <filter(template-element-to-prettyprint)> elem'*;
+      // else
+      //   let*  := <filter(?Placeholder(_, _, _, _));
+      //             add-indices; map((dec, id));
+      //             filter(template-element-to-parenthesize(|confl*))> elem'*
+      // end;
       let'*   := <separate-by(|";\n")> [let*, result]
+
+  // Injection (no cons, no bracket, exactly one placeholder)
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
+    $[prettyprint-[sort]:
+        a -> a'
+        with
+          [let']]
+    where
+      not(<getfirst(?sdf-cons(<un-double-quote>))> attr*);
+      not(<getfirst(?bracket())> attr*)
+    where
+      <one(?Placeholder(w, x, y, z))> elem*
+    with
+      let' := <template-element-to-prettyprint> Placeholder(w, x{"a"}, y, z)
 
   // Production without cons but with bracket annotation
   // (cons + bracket -> no need to parenthesize)
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template(elem*), attr*) ->
+    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
     ${parenthesize-{sort}(not-allowed) =
         if not-allowed then
           <concat-strings> ["{open}", <prettyprint-{sort}>, "{close}"]
@@ -152,8 +167,8 @@ strategies
           prettyprint-{sort}
         end}
     where
-      not(<collect-one(?sdf-cons(<un-double-quote>))> attr*);
-      <collect-one(?bracket())> attr*
+      not(<getfirst(?sdf-cons(<un-double-quote>))> attr*);
+      <getfirst(?bracket())> attr*
     where
       <length> <filter(?Placeholder(_, _, _, _))> elem* => 1
       <+ debug(!"Bracket production must have exactly one placeholder: "); fail
@@ -204,7 +219,7 @@ strategies
   template-element-to-prettyprint:
     Placeholder(_, sort(x){name}, <Star() + Plus()>, Options(opt*)) -> t
     with
-      if sep := <collect-one(?Separator(<id>))> opt* then
+      if sep := <getfirst(?Separator(<id>))> opt* then
         t := $[[name]' := <pp-list(prettyprint-[x]|"[<escape> sep]")> [name]]
       else
         t := $[[name]' := <pp-list(prettyprint-[x]|" ")> [name]]

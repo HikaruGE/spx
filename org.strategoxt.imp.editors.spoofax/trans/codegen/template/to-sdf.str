@@ -4,7 +4,7 @@ imports
   libstratego-sglr
   include/SpoofaxLang
 imports
-	common
+  common
   context/template/declare
   normalize/templatelang
   utils/annotations
@@ -31,7 +31,7 @@ strategies
   template-sections-to-sdf:
     section* -> sdf-section'*
     with
-    	contracts(
+      contracts(
         contract-requires(ListOf(?TemplateSection(_)) | section*)
       )
     with
@@ -41,7 +41,7 @@ strategies
     with
       contracts(
         contract-requires(ListOf(?context-free-syntax(_) + ?lexical-restrictions(_)) | sdf-section'*)
-    	)
+      )
 
 /*internal*/ strategies
 

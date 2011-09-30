@@ -16,14 +16,14 @@ strategies
   test-templatelang-to-esv:
     (_, _, ast, _, _) -> Module(modulename, NoImports(), [Completions("", listOfCompletions)])
     with
-    	<?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), _)])])> ast;
-    	<?CompilationUnit([], [Package(_, [<template-module-to-esv>])]); alltd(String(double-quote))> ast => listOfCompletions
+      <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), _)])])> ast;
+      <?CompilationUnit([], [Package(_, [<template-module-to-esv>])]); alltd(String(double-quote))> ast => listOfCompletions
 
 strategies
 
-	/** @type Module -> List(Completions) */
-	template-module-to-esv:
-		Module(_, _, section*) -> <template-sections-to-esv> section*
+  /** @type Module -> List(Completions) */
+  template-module-to-esv:
+    Module(_, _, section*) -> <template-sections-to-esv> section*
 
   /** @type List(TemplateSection) -> List(Completions) */
   template-sections-to-esv:
@@ -41,19 +41,19 @@ strategies
 
   /** @type TemplateSection -> List(CompletionTemplate) */
   template-section-to-esv:
-  	TemplateSection(prod*) -> completion*
-  	with
-  	  contracts(
-  	    // FIXME: remove TemplateProductionWithCons/3 when desugaring is performed before code generation.
-  	    contract-requires(ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _)) | prod*)
-  	  )
-  	with
-  	  // FIXME: desugaring should have been performed before the current strategy is invoked.
-  	  completion* := <templatelang-desugar-top; filter(template-to-completion-template)> prod*
-  	with
-  	  contracts(
-  	    contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
-  	  )
+    TemplateSection(prod*) -> completion*
+    with
+      contracts(
+        // FIXME: remove TemplateProductionWithCons/3 when desugaring is performed before code generation.
+        contract-requires(ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _)) | prod*)
+      )
+    with
+      // FIXME: desugaring should have been performed before the current strategy is invoked.
+      completion* := <templatelang-desugar-top; filter(template-to-completion-template)> prod*
+    with
+      contracts(
+        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
+      )
 
 /*internal*/ strategies
 

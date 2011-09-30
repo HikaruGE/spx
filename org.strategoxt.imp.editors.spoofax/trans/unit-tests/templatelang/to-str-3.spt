@@ -1,0 +1,16 @@
+module templatelang-to-str-3
+
+language SpoofaxLang
+target language Stratego-Sugar
+
+setup [[
+  package example
+  module example
+  templates
+]]
+
+test injection (1) [[ QId = <<<ID>>> ]]
+build test-templatelang-to-str succeeds
+
+test injection (2) [[ QId = <<#<ID>#>> ]]
+build test-templatelang-to-str succeeds
