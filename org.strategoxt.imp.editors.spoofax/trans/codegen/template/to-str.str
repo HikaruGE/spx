@@ -40,7 +40,8 @@ strategies
         pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
         pp-list(s|t) = map(s); separate-by(|t); concat-strings
 
-        [ih]
+        // ih = indent helper, t = indent string
+        pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>)); <conc-strings> (<id>, "\n")
 
       [section''*]
 
@@ -58,22 +59,6 @@ strategies
       sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*; // FIXME: global data
       sorts-without-pp := <diff> (sorts-used-in-pp, sorts-decl-in-pp);
       strategy* := <map(sort-to-prettyprint-strategy); separate-by(|"\n\n")> sorts-without-pp
-    with
-      ih := <newlines-switch(
-        // No newlines: need to prepend a newline+indent if the string is non-empty.
-        !$[// ih = indent helper, t = indent string (including "\n")
-           pp-ih(|t) = ?"" <+ string-replace(|"\n", t); <conc-strings> (t, <id>)],
-        // Leading newlines: easy, since indent is (per definition) also leading.
-        !$[// ih = indent helper, t = indent string (including "\n")
-           pp-ih(|t) = ?"" <+
-             string-replace(|"\n", t);
-             if not(string-starts-with(|t)) then
-               <conc-strings> (t, <id>)
-             end],
-        // Trailing newlines: harder, since indent and newline are separated.
-        !$[// ih = indent helper, t = indent string (excluding "\n")
-           pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>))]
-      )>
 
   template-section-to-stratego-string:
     TemplateSection(prod*) ->
@@ -124,8 +109,11 @@ strategies
                   ?(<id>, _)> elem*;
       arg*    := <filter(template-element-to-cons-arg)> elem'*;
       arg'*   := <separate-by(|", ")> arg*;
-      part*   := <newlines-switch(trim-layout, trim-trailing-layout,
-                                  trim-leading-layout ; trim-trailing-indent);
+      part*   := <try(\[Newline(_) | tail] -> tail\); // strip first newline, but KEEP INDENT!
+                  // FIXME: might want to replace Newline,Indent with Newline, thereby
+                  //        making multi-line templates implicitly newline-separated.
+                  try(at-suffix(\[Newline(t), Indent(_)] -> [/*Newline(t)*/]\)); // strip last newline
+                  trim-trailing-layout;
                   listtd(template-element-to-stratego);
                   concatenate-consecutive-strings;
                   map(try(?String(<templatelang-escape; double-quote>)));
@@ -146,7 +134,7 @@ strategies
     TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
     $[prettyprint-[sort]:
         a -> a'
-        with
+        where
           [let']]
     where
       not(<getfirst(?sdf-cons(<un-double-quote>))> attr*);
@@ -189,18 +177,8 @@ strategies
     Placeholder(_, sort(_){name}, _, _) -> name
 
   template-element-to-stratego =
-    newlines-switch(
-      // No newlines
-      \[Newline(_), Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()} | tail] ->
-        [$[<pp-ih(|"\n[indent]")> [name]'] | tail]\,
-      // Leading newlines
-      \[Newline(_), Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()} | tail] ->
-        [$[<pp-ih(|"\n[indent]")> [name]'] | tail]\,
-      // Trailing newlines
-      \[Indent(indent), Placeholder(_, sort(_){name}, _, _){Blank()}, Newline(_) | tail] ->
+      \[Indent(indent), Placeholder(_, sort(_){name}, _, _), Newline(_) | tail] ->
         [$[<pp-ih(|"[indent]")> [name]'] | tail]\
-    )
-    // Anything else.
     <+
       [template-element-to-stratego' | id]
     <+
