@@ -9,8 +9,52 @@ setup [[
   templates
 ]]
 
+target setup header [[
+  module prettyprinter
+  imports
+    libstratego-lib
+  strategies
+    pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
+    pp-list(s|t) = map(s); separate-by(|t); concat-strings
+    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
+    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
+  strategies
+]]
+
 test injection (1) [[ QId = <<<ID>>> ]]
 build test-templatelang-to-str succeeds
 
 test injection (2) [[ QId = <<#<ID>#>> ]]
 build test-templatelang-to-str succeeds
+
+test indentation of placeholder at end of template [[
+  Start.Configuration = <<
+    configuration
+      <Setting*; separator="\n">
+  >>
+]]
+build test-templatelang-to-str to [[
+  prettyprint-Start :
+    Configuration(a) -> zz
+    with a' := <pp-list(prettyprint-Setting|"\n")> a
+         ; zz := <concat-strings> ["configuration\n", <pp-ih(|"  ")> a']
+]]
+
+// silly test; there might be a real use case though
+test indentation of placeholder at start of template [[
+  Start.Configuration = <<
+      <Setting*; separator="\n">
+    configuration
+  >>
+]]
+build test-templatelang-to-str to [[
+  prettyprint-Start :
+    Configuration(a) -> zz
+    with a' := <pp-list(prettyprint-Setting|"\n")> a
+         ; zz := <concat-strings> [<pp-ih(|"  ")> a', "configuration"]
+]]
+
+target setup footer [[
+  strategies
+    prettyprint-Setting = is-string        
+]]

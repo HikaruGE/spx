@@ -28,7 +28,8 @@ target setup header [[
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
-    pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>)); <conc-strings> (<id>, "\n")
+    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
+    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
   strategies
 ]]
 

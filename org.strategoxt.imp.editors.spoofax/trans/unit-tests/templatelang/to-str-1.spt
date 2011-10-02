@@ -20,7 +20,8 @@ target setup header [[
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
-    pp-ih(|t) = ?"" <+ string-replace(|"\n", t); <conc-strings> (t, <id>)
+    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
+    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
   strategies
     prettyprint-X: Y(a) -> zz with
       // The strategies invoked here differ per test

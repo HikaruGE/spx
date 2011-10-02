@@ -39,9 +39,9 @@ strategies
 
         pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
         pp-list(s|t) = map(s); separate-by(|t); concat-strings
-
+        pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
         // ih = indent helper, t = indent string
-        pp-ih(|t) = ?"" <+ all-lines(<conc-strings>(t, <id>)); <conc-strings> (<id>, "\n")
+        pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
 
       [section''*]
 
@@ -179,6 +179,10 @@ strategies
   template-element-to-stratego =
       \[Indent(indent), Placeholder(_, sort(_){name}, _, _), Newline(_) | tail] ->
         [$[<pp-ih(|"[indent]")> [name]'] | tail]\
+    <+
+      // At the end, the Newline(_) may have been stripped.
+      \[Indent(indent), Placeholder(_, sort(_){name}, _, _)] ->
+        [$[<pp-ih(|"[indent]")> [name]']]\
     <+
       [template-element-to-stratego' | id]
     <+
