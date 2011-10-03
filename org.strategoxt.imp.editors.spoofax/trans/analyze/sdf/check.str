@@ -29,12 +29,14 @@ rules
 		with
 	    // We only collect-om since we don't want inner warning dupes
 	    error*   := <flatten-list><collect-om( ?context-free-syntax       (<collect-om(context-free-syntax-error)>)
+                                           + ?lexical-syntax            (<collect-om(lexical-syntax-error)>)
 	    																		 + ?context-free-start-symbols(<collect-om(context-free-start-symbols-error)>)
 	    																		 + ?kernel-start-symbols      (<collect-om(context-free-start-symbols-error)>)
 	    																		 + ?lexical-start-symbols     (<collect-om(context-free-start-symbols-error)>)		
 	                                         + ?TemplateSection           (<collect-om(context-free-templates-error)>), conc)
 	                              > ast;
 	    warning* := <collect-om( ?context-free-syntax (<collect-om(context-free-syntax-warning)>)
+                             + ?lexical-syntax      (<collect-om(lexical-syntax-warning)>)
 	    											 + ?TemplateSection     (<collect-om(context-free-templates-warning)>), conc)
 	    						> ast;
 	    if <file-exists> $[[<get-project-path>]/.disable-global-analysis] then
@@ -105,6 +107,8 @@ rules  //global checks
 		s@sort(x) -> (s, $[Unknown Start Symbol :  "[x]". Please specify it as a Start Symbol in Language Description(esv)])
 		where 
 			<not(fetch-elem(?Sort(x)))>start-symbols-found-in-esv-def 	
+  
+  lexical-syntax-error = fail
    
 rules // Local checks
 	
@@ -130,6 +134,9 @@ rules // Local checks
     t @ term(default(appl(unquoted("cons"), a*))) -> (t, $[Single argument expected for {cons("Name")} attribute])
     where
       not(<length> a* => 1)
+  
+  lexical-syntax-warning:
+    t @ term(default(appl(unquoted("cons"), a*))) -> (t, $[Constructor only expected in context-free syntax])
 
   context-free-syntax-warning:
     t @ term(default(annotated(_, _))) -> (t, $[Use round parentheses () for attribute arguments])
