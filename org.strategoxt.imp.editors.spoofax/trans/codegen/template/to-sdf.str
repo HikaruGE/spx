@@ -207,7 +207,7 @@ strategies
     Placeholder(_, sort(S), Option(), _) -> A|[ S? ]|
 
   sort-to-contentcomplete:
-    sort(S) -> p|[ CONTENTCOMPLETE -> S {cons("\"WATER\""), avoid} ]|
+    sort(S) -> p|[ CONTENTCOMPLETE -> S {recover} ]|
 
   sort-to-insertion:
     sort(S) -> p|[ -> S {cons("\"INSERTION\""), recover} ]|

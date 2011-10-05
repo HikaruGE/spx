@@ -49,7 +49,9 @@ strategies
       )
     with
       // FIXME: desugaring should have been performed before the current strategy is invoked.
-      completion* := <templatelang-desugar-top; filter(template-to-completion-template)> prod*
+      completion* := <templatelang-desugar-top;
+                      declare-template-definition-main;
+                      filter(template-to-completion-template)> prod*
     with
       contracts(
         contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
@@ -70,6 +72,11 @@ strategies
 
   template-elements-to-completion-parts =
     map(try(placeholder-to-completion-part));
+    // HACK
+    try(\[Cursor() | tail] -> tail\
+      + \[Newline(_), Cursor() | tail] -> tail\
+      + \[Newline(_), Layout(_), Cursor() | tail] -> tail\);
+    // END HACK
     remove-cursor-except-first;
     try-re-indent;
     trim-layout;
@@ -81,10 +88,17 @@ strategies
     CanNotBeBlank < !None() + !Blank()
 
   placeholder-to-completion-part:
-    Placeholder(Text(name), sort(sort), None(), _) -> PlaceholderWithSort($[<[name]:], sort)
+    Placeholder(Text(name), sort(sort), _, _){} -> PlaceholderWithSort($[<[name]:], sort)
 
   placeholder-to-completion-part:
-    Placeholder(None(), sort(sort), None(), _) -> t with t :=
+    Placeholder(None(), sort(sort), _, _){} -> t with t :=
+      PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
+
+  placeholder-to-completion-part:
+    Placeholder(Text(name), sort(sort), None(), _){Blank()} -> PlaceholderWithSort($[<[name]:], sort)
+
+  placeholder-to-completion-part:
+    Placeholder(None(), sort(sort), None(), _){Blank()} -> t with t :=
       PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
 
   // FIXME: does this make sense?
@@ -111,13 +125,13 @@ strategies
     concat-strings
 
   placeholder-to-completion-part:
-    Placeholder(_, _, Option(), _) -> Cursor()
+    Placeholder(_, _, Option(), _){Blank()} -> Cursor()
 
   placeholder-to-completion-part:
-    Placeholder(_, _, Plus(), _) -> Cursor()
+    Placeholder(_, _, Plus(), _){Blank()} -> Cursor()
 
   placeholder-to-completion-part:
-    Placeholder(_, _, Star(), _) -> Cursor()
+    Placeholder(_, _, Star(), _){Blank()} -> Cursor()
 
   text-to-completion-part:
     Newline(_) -> String("\n")
