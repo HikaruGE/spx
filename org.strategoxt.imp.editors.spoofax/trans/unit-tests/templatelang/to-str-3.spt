@@ -16,16 +16,21 @@ target setup header [[
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
-    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
-    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
-  strategies
+    pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
+    pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
 ]]
 
 test injection (1) [[ QId = <<<ID>>> ]]
-build test-templatelang-to-str succeeds
+run test-templatelang-to-str
 
 test injection (2) [[ QId = <<#<ID>#>> ]]
-build test-templatelang-to-str succeeds
+run test-templatelang-to-str
+
+test keyword injection (1) [[ Expression.SomeKeyword = <<somekeyword>> ]]
+run test-templatelang-to-str
+
+test keyword injection (2) [[ Expression.SomeKeyword = << somekeyword >> ]]
+run test-templatelang-to-str
 
 test indentation of placeholder at end of template [[
   Start.Configuration = <<
@@ -33,11 +38,14 @@ test indentation of placeholder at end of template [[
       <Setting*; separator="\n">
   >>
 ]]
-build test-templatelang-to-str to [[
-  prettyprint-Start :
-    Configuration(a) -> zz
-    with a' := <pp-list(prettyprint-Setting|"\n")> a
-         ; zz := <concat-strings> ["configuration\n", <pp-ih(|"  ")> a']
+run test-templatelang-to-str to [[
+  strategies
+    prettyprint-Start :
+      Configuration(a) -> zz
+      where a' := <pp-list(prettyprint-Setting|"\n")> a
+            ; zz := <concat-strings> ["configuration", <pp-ih-2(|"  ")> a']
+  strategies
+    prettyprint-Setting = is-string
 ]]
 
 // silly test; there might be a real use case though
@@ -47,14 +55,31 @@ test indentation of placeholder at start of template [[
     configuration
   >>
 ]]
-build test-templatelang-to-str to [[
-  prettyprint-Start :
-    Configuration(a) -> zz
-    with a' := <pp-list(prettyprint-Setting|"\n")> a
-         ; zz := <concat-strings> [<pp-ih(|"  ")> a', "configuration"]
+run test-templatelang-to-str to [[
+  strategies
+    prettyprint-Start :
+      Configuration(a) -> zz
+      where a' := <pp-list(prettyprint-Setting|"\n")> a
+            ; zz := <concat-strings> [<pp-ih-1(|"  ")> a', "configuration"]
+  strategies
+    prettyprint-Setting = is-string
 ]]
 
-target setup footer [[
+test escaped chars in literal (1) [[ X.Y = <<<\"\t>>> ]]
+run test-templatelang-to-str to [[
   strategies
-    prettyprint-Setting = is-string        
+    prettyprint-X :
+      Y() -> "\"\t"
+  strategies
+]]
+
+test escaped chars in literal (2) [[ X.Y = <<<\"\t><Z>>> ]]
+run test-templatelang-to-str to [[
+  strategies
+    prettyprint-X :
+      Y(a) -> zz
+      where a' := <prettyprint-Z> a
+            ; zz := <concat-strings> ["\"\t", a']
+  strategies
+    prettyprint-Z = is-string
 ]]

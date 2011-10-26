@@ -77,20 +77,23 @@ exports
     "[" <PlaceholderText2-LEX> ":" -> <PlaceholderPrefix2-CF> {cons("Text")}
 
     %% template parts
-    "<<" <TemplatePart1-CF>* ">>" -> <Template-CF> {cons("Template")}
+    "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template")}
+    "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template")}
+    <TemplatePart1-CF>* -> <TemplateLine1-CF> {cons("Line")}
     <TemplateString1-LEX> -> <TemplatePart1-CF> {cons("String")}
     <TemplateEscape1-LEX> -> <TemplatePart1-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePart1-CF> {cons("Layout")}
-    <TemplateNewline-LEX> -> <TemplatePart1-CF> {cons("Newline")}
+    %% <TemplateNewline-LEX> -> <TemplatePart1-CF> {cons("Newline")}
 
-    "[[" <TemplatePart2-CF>* "]]" -> <Template-CF> {cons("Template")}
+    "[[" {<TemplateLine2-CF> "\n"}+ "]]" -> <Template-CF> {cons("Template")}
+    <TemplatePart2-CF>* -> <TemplateLine2-CF> {cons("Line")}
     <TemplateString2-LEX> -> <TemplatePart2-CF> {cons("String")}
     <TemplateEscape2-LEX> -> <TemplatePart2-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePart2-CF> {cons("Layout")}
-    <TemplateNewline-LEX> -> <TemplatePart2-CF> {cons("Newline")}
+    %% <TemplateNewline-LEX> -> <TemplatePart2-CF> {cons("Newline")}
 
     %% special: no placeholders, no newlines
-    "\"" <TemplatePartQ-CF>* "\"" -> <Template-CF> {cons("Template")}
+    '"' <TemplatePartQ-CF>* '"' -> <Template-CF> {cons("SingleLineTemplate")}
     <TemplateStringQ-LEX> -> <TemplatePartQ-CF> {cons("String")}
     <TemplateEscapeQ-LEX> -> <TemplatePartQ-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePartQ-CF> {cons("Layout")}
@@ -104,8 +107,8 @@ exports
     PlaceholderText2 -/- ~[\:]
 
   lexical syntax
-    [\ \t\r]* [\n] -> TemplateNewline
-    [\ \t\r]+      -> TemplateLayout
+  	[\r][\n] -> "\n"
+    [\ \t]+  -> TemplateLayout
 
     (~[\\\<\>\ \t\r\n] | Backslash1)+ -> TemplateString1
     (~[\\\[\]\ \t\r\n] | Backslash2)+ -> TemplateString2
@@ -115,7 +118,7 @@ exports
     [\\] -> Backslash2
 
   lexical restrictions
-    TemplateLayout -/- [\ \t\r\n]
+    TemplateLayout -/- [\ \t]
 
     %% must be followed by:
     TemplateString1 -/- ~[\\\<\>\ \t\r\n]
@@ -152,16 +155,18 @@ exports
     ("\\\\" | EscapedChar)+ -> TemplateEscapeQ
 
     %% escapes allowed in a placeholder-like construct
-    "\\ "  -> EscapedChar
-    "\\'"  -> EscapedChar
-    "\\\"" -> EscapedChar
-    "\\t"  -> EscapedChar
-    "\\r"  -> EscapedChar
-    "\\n"  -> EscapedChar
-    "\\u" [0-9A-Fa-f]+ -> UnicodeEscapedChar
-    UnicodeEscapedChar -> EscapedChar
+    "\\'" -> EscapedChar
+    '\\"' -> EscapedChar
+    "\\ " -> EscapedChar
+    "\\t" -> EscapedChar
+    "\\r" -> EscapedChar
+    "\\n" -> EscapedChar
 
-    "\\" ~[] -> EscapedChar {recover, cons("WATER")}
+    "\\u" [0-9A-Fa-f]+ -> EscapedUnicodeChar
+    EscapedUnicodeChar -> EscapedChar
+
+    "\\" ~[] -> EscapedLayoutChar {recover, cons("WATER")}
+    "\\" ~[] -> EscapedNonLayoutChar {recover, cons("WATER")}
     "<" ~[\>]+ ">" -> EscapedChar1 {recover, cons("WATER")}
     "[" ~[\]]+ "]" -> EscapedChar2 {recover, cons("WATER")}
 
@@ -171,4 +176,4 @@ exports
     TemplateEscape2 -/- [\\]
     TemplateEscape2 -/- [\[].[\\]
     TemplateEscapeQ -/- [\\]
-    UnicodeEscapedChar -/- [0-9A-Fa-f]
+    EscapedUnicodeChar -/- [0-9A-Fa-f]

@@ -16,7 +16,7 @@ imports
 strategies
 
   test-templatelang-to-sdf:
-    (_, _, ast, _, _) -> "module"#([unparameterized(modulename), [], [exports(grammars)]])
+    ast -> 'module(unparameterized(modulename), [], [exports(grammars)])
     with
       init-template-options;
       <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), sections)])])> ast;
@@ -81,7 +81,7 @@ strategies
             )
       in
         A* := <collect-om(lit(ends-with-identifier-char)); nub; string-sort-ex> sdf-section*;
-        r  := <get-keyword-follow-restriction>;
+        r  := <Options> KeywordFollowRestriction();
         if (!A* => []) + (!r => None()) then
           restrictions* := []
         else
@@ -101,116 +101,72 @@ strategies
       A* := <template-to-sdf> t
 
   template-to-sdf:
-    Template(e* @[_|_]) -> A*
+    SingleLineTemplate(elem*) -> A*
     with
-      A* := <newlines-switch(id, trim-trailing-layout, trim-leading-layout);
-             combine-consecutive-newlines;
-             filter(template-element-to-sdf);
-             flatten-list> e*
+      A* := <filter(template-element-to-sdf);
+             flatten-list> elem*
 
   template-to-sdf:
-    Template([]) -> []
+    Template(line*) -> A*
+    with
+      A* := <filter(?Line([Layout(_), _ | _]));
+             map(template-line-to-sdf);
+             flatten-list> line*
 
-  template-element-to-sdf:
-    Newline(_){ /* neither Leading() nor Trailing() */ } -> A|[ "\"\\n\"" ]|
-    where not(use-no-newlines)
-
-  template-element-to-sdf:
-    Newline(_) -> A|[ "\"\\n\"" ]|
-    where use-leading-newlines
-    where not(has-annotation(|Leading()))
-
-  template-element-to-sdf:
-    Newline(_) -> A|[ "\"\\n\"" ]|
-    where use-trailing-newlines
-    where not(has-annotation(|Trailing()))
+  template-line-to-sdf =
+    ?Line(<id>);
+    if not(?[Layout(_), Placeholder(_, _, _, _)]) then
+      switch <Options> Newlines()
+        case ?None()     : id
+        case ?Leading()  : ![String("\n") | <id>]
+        case ?Trailing() : (elem* -> [elem*, String("\n")])
+      end
+    end;
+    filter(template-element-to-sdf)
 
   template-element-to-sdf:
     String(x) -> <string-to-sdf> x
 
-// FIXME: unbreak this (remember to add {} anno to next strategy)
-/*
-  // Insert "\n" into generated grammar whenever
-  // 1) leading or trailing newlines is enabled
-  // 2) the sort itself does not contain a leading resp. trailing newline
-  // 3) the placeholder is on its own on the line
   template-element-to-sdf:
-    p@ Placeholder(_, sort(sort), None(), _){Blank()} -> t'
-    with
-      t := <placeholder-to-sdf> p;
-      t' := <newlines-switch(id,
-        if not(<sort-has-leading-newline> sort) then
-          ?A; !A|[ ("\\n" A) ]|
-        end,
-        if not(<sort-has-trailing-newline> sort) then
-          ?A; !A|[ (A "\\n") ]|
-        end
-      )> t
-
-  // FIXME: generates suboptimal SDF (bad AST)
-  template-element-to-sdf:
-    p@ Placeholder(_, sort(sort), <?Plus() + ?Star() + ?Option()>, _){Blank()} -> t'
-    with
-      t := <placeholder-to-sdf> p;
-      t' := <newlines-switch(id,
-        if not(<sort-has-leading-newline> sort) then
-          ?A; !A|[ ("\\n" A)? ]|
-        end,
-        if not(<sort-has-trailing-newline> sort) then
-          ?A; !A|[ (A "\\n")? ]|
-        end
-      )> t
-*/
+    Placeholder(_, sort(S), None(), _) -> A|[ S ]|
 
   template-element-to-sdf:
-    Placeholder(_, _, _, _) -> <placeholder-to-sdf>
-
-  placeholder-to-sdf:
-    Placeholder(_, sort(S'), None(), _) -> A|[ S' ]|
-
-  // TODO: this needs improvement, too much duplication and not readable enough
-
-  placeholder-to-sdf:
-    Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ S* ]|
-    where <not(one(Separator(not(all-whitespace))))> option*
-
-  placeholder-to-sdf:
-    Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ { S L }* ]|
-    where <one(Separator(not(all-whitespace)))> option*
-    with L := <separator-to-literal> option*
-
-  placeholder-to-sdf:
-    Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ S+ ]|
-    where <not(one(Separator(not(all-whitespace))))> option*
-
-  placeholder-to-sdf:
-    Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ { S L }+ ]|
-    where <one(Separator(not(all-whitespace)))> option*
-    with L := <separator-to-literal> option*
-
-  // name conflicts with is-whitespace from the library
-  xxx-is-whitespace =
-    // if use-no-newlines then
-      ' ' + '\t' + '\r' + '\n'
-    // else
-    //   ' ' + '\t' + '\r'
-    // end
-
-  all-whitespace = string-as-chars(all(xxx-is-whitespace))
-
-  remove-whitespace = string-as-chars(filter(not(xxx-is-whitespace)))
-
-  separator-to-literal =
-    collect-one(?Separator(<remove-whitespace>)); escape; double-quote
-
-  placeholder-to-sdf:
     Placeholder(_, sort(S), Option(), _) -> A|[ S? ]|
 
-  sort-to-contentcomplete:
-    sort(S) -> p|[ CONTENTCOMPLETE -> S {recover} ]|
+  template-element-to-sdf:
+    Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ S* ]|
+    where <not(one(Separator(not(string-is-layout))))> option*
 
-  sort-to-insertion:
-    sort(S) -> p|[ -> S {cons("\"INSERTION\""), recover} ]|
+  template-element-to-sdf:
+    Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ { S L }* ]|
+    where <one(Separator(not(string-is-layout)))> option*
+    with L := <separator-to-literal> option*
+
+  template-element-to-sdf:
+    Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ S+ ]|
+    where <not(one(Separator(not(string-is-layout))))> option*
+
+  template-element-to-sdf:
+    Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ { S L }+ ]|
+    where <one(Separator(not(string-is-layout)))> option*
+    with L := <separator-to-literal> option*
+
+  char-is-layout =
+    ' ' + '\t' + '\r' + '\n'
+
+  string-is-layout =
+    string-as-chars(all(char-is-layout))
+
+  remove-layout =
+    string-as-chars(filter(not(char-is-layout)))
+
+  separator-to-literal =
+    getfirst(?Separator(<remove-layout; templatelang-escape; double-quote>))
+
+  sort-to-contentcomplete:
+    sort(S) -> p|[ CONTENTCOMPLETE -> S {cons(L)} ]|
+    where
+      L := $["COMPLETION-[S]"]
 
 strategies
 
@@ -218,33 +174,19 @@ strategies
    * Sorts a list of terms on the outermost string within each term.
    */
   string-sort-ex =
-    qsort(
-      \(a, b) -> (<collect-one(is-string)> a, <collect-one(is-string)> b)\;
-      string-lt
-    )
+    qsort(<string-lt> (<collect-one(is-string)>, <collect-one(is-string)>))
 
+  /**
+   * Split on the edges delimiting identifiers.
+   * E.g. "func(x,y)" => ["func", "(", "x", ",", "y", ")"]
+   */
   string-to-sdf =
-    string-identifier-tokenize;
+    // FIXME: Use identifier lexical (or keyword follow restriction?) defined by the language.
+    string-edge-tokenize(is-alphanum + '_');
     // FIXME: Case insensitive literals need ci-lit/single-quote.
     map({raw, sdf:
-      ?raw; escape; !lit(<double-quote>); ?sdf;
-      if <explode-string; last; (is-alphanum + '_')> raw then
+      ?raw; !lit(<templatelang-escape; double-quote>); ?sdf;
+      if <explode-string; at-last(is-alphanum + '_')> raw then
         rules(Restrictions :+= sdf)
       end
     })
-
-  /**
-   * Split on the edges delimiting identifiers and then strip layout
-   * from the resulting tokens and remove empty tokens.
-   * E.g. " func ( x y )" => ["func", "(", "x", "y", ")"]
-   */
-  string-identifier-tokenize =
-    // FIXME: Use layout defined by the language.
-    let is-layout = ' ' + '\t' + '\n' + '\r'
-        strip-layout = string-as-chars(filter(not(is-layout)))
-    in
-      // FIXME: Use identifier lexical defined by the language.
-      string-edge-tokenize(is-alphanum + '_');
-      filter(strip-layout; not(""))
-    end
-

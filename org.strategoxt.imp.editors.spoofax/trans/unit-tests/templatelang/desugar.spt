@@ -1,37 +1,20 @@
 module templatelang-desugar
 
 language SpoofaxLang
-start symbol Template
+start symbol TemplateProduction
 
-test transform NoOptions() into Options([]) [[ <<<Z>>> ]]
-build test-templatelang-desugar to
-  Template([Placeholder(_, _, _, Options([]))])
+test transform no-attrs() into attrs(...) (1) [[ X = "" ]]
+run templatelang-desugar-top to TemplateProduction(_, _, attrs(_))
 
-// NOTE: Do not replace the tab in the next line with a space!
-test replace tabs with two spaces [[ <<	ddd>> ]]
-build test-templatelang-desugar to Template([Layout("  "),String("ddd")])
+test transform no-attrs() into attrs(...) (2) [[ X.Y = "" ]]
+run templatelang-desugar-top to TemplateProduction(_, _, attrs(_))
 
-// FIXME: Add tab char, see also spoofax-431.spt
-test unescape common escape chars [[ <<<\ \'\"\r\n>>> ]]
-build test-templatelang-desugar to Template([String(" '\"\r\n")])
+test transform TemplateProductionWithCons without attrs into TemplateProduction [[
+	X.Y = <<a>>
+]]
+run templatelang-desugar-top to TemplateProduction(_, _, _)
 
-test unescape escaped brackets (1) [[ <<\<\>\\>> ]]
-build test-templatelang-desugar to Template([String("<>\\")])
-
-test unescape escaped brackets (2) [[[ [[\[\]\\]] ]]]
-build test-templatelang-desugar to Template([String("[]\\")])
-
-test unescape line ending (1) [[ <<<\\>  
->> ]]
-build test-templatelang-desugar to Template([String("")])
-
-test unescape line ending (2) [[[ [[[\\]  
-]] ]]]
-build test-templatelang-desugar to Template([String("")])
-
-test unescape unicode codepoints [[ <<<\u41\u61>>> ]]
-build test-templatelang-desugar to Template([String("Aa")])
-
-test un-double-quote and unescape separators [[ <<<Z*; separator="\n">>> ]]
-build test-templatelang-desugar to Template(
-  [Placeholder(_, _, _, Options([Separator("\n")]))])
+test transform TemplateProductionWithCons with attrs into TemplateProduction [[
+  X.Y = <<a>> {left}
+]]
+run templatelang-desugar-top to TemplateProduction(_, _, _)

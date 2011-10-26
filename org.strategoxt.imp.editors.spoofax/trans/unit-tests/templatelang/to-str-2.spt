@@ -7,9 +7,7 @@ target language Stratego-Sugar
 //        input, instead of testing the exact form of the generated stratego code.
 //        This is currently not really possible, however ...
 
-// TODO: All tests are now equal, remove the duplicates?
-
-setup common input [[
+test if then statement [[
   package example
   module example
   templates
@@ -20,59 +18,22 @@ setup common input [[
       end
     >>
 ]]
-
-target setup header [[
+run test-templatelang-to-str to [[
   module prettyprinter
   imports
     libstratego-lib
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
-    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
-    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
+    pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
+    pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
   strategies
-]]
-
-test no newlines [[
-  template options
-    newlines : none
-]]
-build test-templatelang-to-str to [[
-  prettyprint-Statement: IfThen(a, b, c) -> zz
-    with
-      a' := <pp-list(prettyprint-MetaAnno|"\n")> a;
-      b' := <prettyprint-Exp> b;
-      c' := <pp-list(prettyprint-Statement|"\n")> c;
-      zz := <concat-strings> [<pp-ih(|"")> a', "if ", b', " then\n", <pp-ih(|"  ")> c', "end"]
-]]
-
-test leading newlines [[
-  template options
-    newlines : leading
-]]
-build test-templatelang-to-str to [[
-  prettyprint-Statement: IfThen(a, b, c) -> zz
-    with
-      a' := <pp-list(prettyprint-MetaAnno|"\n")> a;
-      b' := <prettyprint-Exp> b;
-      c' := <pp-list(prettyprint-Statement|"\n")> c;
-      zz := <concat-strings> [<pp-ih(|"")> a', "if ", b', " then\n", <pp-ih(|"  ")> c', "end"]
-]]
-
-test trailing newlines [[
-  template options
-    newlines : trailing
-]]
-build test-templatelang-to-str to [[
-  prettyprint-Statement: IfThen(a, b, c) -> zz
-    with
-      a' := <pp-list(prettyprint-MetaAnno|"\n")> a;
-      b' := <prettyprint-Exp> b;
-      c' := <pp-list(prettyprint-Statement|"\n")> c;
-      zz := <concat-strings> [<pp-ih(|"")> a', "if ", b', " then\n", <pp-ih(|"  ")> c', "end"]   
-]]
-
-target setup footer [[
+    prettyprint-Statement: IfThen(a, b, c) -> zz
+      where
+        a' := <pp-list(prettyprint-MetaAnno|"\n")> a;
+        b' := <prettyprint-Exp> b;
+        c' := <pp-list(prettyprint-Statement|"\n")> c;
+        zz := <concat-strings> [<pp-ih-1(|"")> a', "if ", b', " then", <pp-ih-2(|"  ")> c', "\nend"]
   strategies
     prettyprint-MetaAnno = is-string
     prettyprint-Exp = is-string

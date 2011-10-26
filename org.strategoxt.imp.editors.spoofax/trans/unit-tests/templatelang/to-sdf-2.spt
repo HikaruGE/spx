@@ -1,0 +1,75 @@
+module templatelang-to-sdf-2
+
+language SpoofaxLang
+target language SDF
+
+setup [[
+  package example
+  module example
+  templates
+    // multi line template
+    Statement.IfThen = <<
+      <MetaAnno*; separator="\n">
+      if <Exp> then
+        <Statement*; separator="\n">
+      else
+        <Statement*; separator="\n">
+    >>
+    // single line template
+    Exp.Plus = <<<Exp> + <Exp>>>
+]]
+
+target setup header [[
+  module example
+  exports
+    context-free syntax  
+]]
+
+test no newlines [[
+  template options
+    newlines: none
+]]
+run test-templatelang-to-sdf to [[
+  MetaAnno* "if" Exp "then" Statement* "else" Statement* -> Statement {cons("IfThen")}  
+]]
+
+test leading newlines [[
+  template options
+    newlines: leading
+]]
+run test-templatelang-to-sdf to [[
+  MetaAnno* "\n" "if" Exp "then" Statement* "\n" "else" Statement* -> Statement {cons("IfThen")}
+]]
+
+test trailing newlines [[
+  template options
+    newlines: trailing
+]]
+run test-templatelang-to-sdf to [[
+  MetaAnno* "if" Exp "then" "\n" Statement* "else" "\n" Statement* -> Statement {cons("IfThen")}
+]]
+
+// test separating newlines [[
+//   template options
+//     newlines: separating
+// ]]
+// run test-templatelang-to-sdf to [[
+//   %% Newlines separating MetaAnnos must be at end because sort is used at start of production.  
+//   %% Newlines separating Statement must be at start because sort is used at end of production.
+//   (MetaAnno "\n")* "if" Exp "then" ("\n" Statement)* "\n" "else" ("\n" Statement)* -> Statement {cons("IfThen")}
+// 
+//   %% Issue: Cannot support separators with both a newline and another character!
+//   %%
+//   %% {MetaAnno ";\n"}+ "\n" -> MetaAnnos
+//   %% -> MetaAnnos {ast("[]")}
+//   %% "\n" {Statement ";\n"}+ -> Statements
+//   %% -> Statements {ast("[]")}
+// ]]
+
+target setup footer [[
+    Exp "+" Exp -> Exp {cons("Plus")}
+  context-free syntax
+    CONTENTCOMPLETE -> MetaAnno {cons("COMPLETION-MetaAnno")}
+    CONTENTCOMPLETE -> Statement {cons("COMPLETION-Statement")}
+    CONTENTCOMPLETE -> Exp {cons("COMPLETION-Exp")}
+]]

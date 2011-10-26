@@ -35,22 +35,28 @@ target setup [[
 test empty [[
   X.Y = <<>>
 ]]
-build test-templatelang-to-esv to [[
+run test-templatelang-to-esv to [[
 
 ]]
 
 test placeholder [[
-  X.Y = <<<Z>>>
+  X.Y = <<
+    foo
+    <Z>
+  >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = <Z:Z> (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" <Z:Z> (blank)
 ]]
 
 test placeholder (text) [[
-  X.Y = <<< display text : Z>>>
+  X.Y = <<
+    foo
+    < display text : Z>
+  >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = < display text :Z> (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" < display text :Z> (blank)
 ]]
 
 test placeholder (option) [[
@@ -59,8 +65,8 @@ test placeholder (option) [[
     <Z?>
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" (cursor) (blank)
 ]]
 
 test placeholder (plus) [[
@@ -69,8 +75,8 @@ test placeholder (plus) [[
     <Z+>
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" <Z:Z> (blank)
 ]]
 
 test placeholder (star) [[
@@ -79,35 +85,19 @@ test placeholder (star) [[
     <Z*>
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) (blank)
-]]
-
-test placeholder (plus, separator) [[
-  X.Y = <<
-    foo
-    <Z+; separator=", ">
-  >>
-]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) (blank)
-]]
-
-test placeholder (star, separator) [[
-  X.Y = <<
-    foo
-    <Z*; separator=" + ">
-  >>
-]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" (cursor) (blank)
 ]]
 
 test placeholder and literals [[
-  X.Y = <<foo <Z> bar>>
+  X.Y = <<
+    foo
+    <Z>
+    bar
+  >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo " <Z:Z> " bar" (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" <Z:Z> "\nbar" (blank)
 ]]
 
 test placeholder (option) and literals [[
@@ -117,8 +107,8 @@ test placeholder (option) and literals [[
     bar
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = "foo\n" (cursor) "\nbar" (blank)
+run test-templatelang-to-esv to [[
+  completion template X: "foo\n" (cursor) "\nbar" (blank)
 ]]
 
 test n placeholders => one (cursor)-directive (1) [[
@@ -127,8 +117,8 @@ test n placeholders => one (cursor)-directive (1) [[
     <B?>
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = (cursor) (blank)
+run test-templatelang-to-esv to [[
+  completion template X: (cursor) (blank)
 ]]
 
 test n placeholders => one (cursor)-directive (2) [[
@@ -138,31 +128,19 @@ test n placeholders => one (cursor)-directive (2) [[
     <C?>
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template X: "Y" = (cursor) (blank)
+run test-templatelang-to-esv to [[
+  completion template X: (cursor) (blank)
 ]]
 
-test statement [[
+test if then statement [[
   Statement.IfThen = <<
+    <MetaAnno*; separator="\n">
     if <Exp> then
       <Statement*; separator="\n">
     end
   >>
 ]]
-build test-templatelang-to-esv to [[
-  completion template Statement: "IfThen" =
+run test-templatelang-to-esv to [[
+  completion template Statement:
     "if " <Exp:Exp> " then\n\t" (cursor) "\nend" (blank)
-]]
-
-test Mobl MetaAnno [[
-  FunctionDef.FunctionNoReturnType = <<
-    <MetaAnno*; separator="\n">
-    function <QId>(<FArg*; separator=", ">) {
-      <Statement*; separator="\n">
-    }
-  >>
-]]
-build test-templatelang-to-esv to [[
-  completion template FunctionDef: "FunctionNoReturnType" =
-    "function " <QId:QId> "(" <FArg:FArg> ") {\n\t" (cursor) "\n}" (blank)
 ]]

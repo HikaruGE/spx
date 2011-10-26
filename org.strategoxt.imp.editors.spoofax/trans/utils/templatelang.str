@@ -11,86 +11,16 @@ signature
   constructors
     // Options
     Newlines : X
-    // Other
-    Indent : String -> Indent
-
-strategies
-
-  sort-has-leading-newline =
-    bagof-Declaration;
-    ?[_|_];
-    all(?TemplateProduction(_, Template([Newline(_)| _]), _))
-
-  sort-has-trailing-newline =
-    bagof-Declaration;
-    ?[_|_];
-    let trailing-newline =
-          at-suffix([Newline(id), ?Layout(_) + ?Indent(_)] <+ [Newline(id)])
-    in
-      all(?TemplateProduction(_, Template(<trailing-newline>), _))
-    end
 
 strategies // Utility strategies
 
-  // is-layout is already defined somewhere else
-  xxx-is-layout = ?Layout(_) + ?Indent(_) + ?Newline(_)
-
-  trim-leading-layout =
-    ltrim(xxx-is-layout)
-
-  trim-trailing-layout =
-    rtrim(xxx-is-layout)
-
-  trim-trailing-indent =
-    rtrim(?Indent(_))
-
-  trim-layout =
-    trim-leading-layout;
-    trim-trailing-layout
-
-  // This doesn't take the indentation due to everything up to
-  // the open brackets of the template into account.
-  get-indent-string =
-    let get-indent =
-             \[Newline(_), Layout(y), _ | tail] -> [<string-replace(|"\t", "  "); string-length> y | <get-indent> tail]\
-          <+ \[Newline(_), Layout(_)] -> []\
-          <+ \[Newline(_), Newline(_) | tail] -> <get-indent> tail\
-          <+ \[Newline(_), y | tail] -> [0 | <get-indent> tail]\
-          <+ \[_ | tail] -> <get-indent> tail\
-          <+ []
-    in
-      get-indent; list-min => size;
-      // Build string from right to left, as list.
-      ![]; repeat(![' ' | <id>] | size); !['\n' | <id>];
-      implode-string
-    end
-
-  re-indent(|indent-string) =
-    \[Newline(_), Layout(indent) | tail] -> result
-    with
-      // Add a newline because indent-string contains a newline as anchor.
-      indent' := <string-replace(|indent-string, "")> <conc-strings>("\n", indent);
-      tail' := <re-indent(|indent-string)> tail;
-      result := [Newline("\n"), Indent(indent') | tail']\
-  <+
-    \[head | tail] -> [head | <re-indent(|indent-string)> tail]\
-  <+
-    []
-
-  try-re-indent =
-    if get-indent-string => is then
-      re-indent(|is)
-    end
-
   concatenate-consecutive-strings =
-       \[String(a), String(b) | tail] -> <concatenate-consecutive-strings> [String(<conc-strings> (a, b)) | tail]\
-    <+ [id | concatenate-consecutive-strings]
-    <+ []
-
-  combine-consecutive-newlines =
-       \[Newline(x){a*}, Newline(_){b*} | tail] -> <combine-consecutive-newlines> [Newline(x){a*, b*} | tail]\
-    <+ [id | combine-consecutive-newlines]
-    <+ []
+    rec r(
+         ?[String("") | <r>]
+      <+ \[String(a), String(b) | tail] -> <r> [String(<conc-strings> (a, b)) | tail]\
+      <+ [id | r]
+      <+ []
+    )
 
   templatelang-escape =
     string-replace(|"\\", "\\\\");

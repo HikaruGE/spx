@@ -8,7 +8,7 @@ language SpoofaxLang
 
 // this test succeeds
 test tab char (1) [[ <<	>> ]] // tab char!
-parse to Template([Layout("	")]) // tab char!
+parse to Template([Line([Layout("	")])]) // tab char!
 
 // this test fails
 // test tab char (2) [[ <<	>> ]] // tab char!
@@ -21,6 +21,6 @@ parse to Template([Layout("	")]) // tab char!
 // ")])
 
 // and this test succeeds(!)
-test newline char (2) [[ <<
->> ]]
-parse to Template([Newline("\n")])
+// test newline char (2) [[ <<
+// >> ]]
+// parse to Template([Newline("\n")])

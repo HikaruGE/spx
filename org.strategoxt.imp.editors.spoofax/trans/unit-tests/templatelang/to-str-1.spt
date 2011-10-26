@@ -20,35 +20,36 @@ target setup header [[
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
-    pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
-    pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
+    pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
+    pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
   strategies
-    prettyprint-X: Y(a) -> zz with
+    prettyprint-X: Y(a) -> a'
       // The strategies invoked here differ per test
       // The footer contains a last, common line.
 ]]
 
 test placeholder [[ X.Y = <<<Z>>> ]]
-build test-templatelang-to-str to [[ a' := <prettyprint-Z> a; ]]
+run test-templatelang-to-str to [[ where a' := <prettyprint-Z> a ]]
 
 test placeholder (text) [[ X.Y = <<<this text is ignored : Z>>> ]]
-build test-templatelang-to-str to [[ a' := <prettyprint-Z> a; ]]
+run test-templatelang-to-str to [[ where a' := <prettyprint-Z> a ]]
 
 test placeholder (plus) [[ X.Y = <<<Z+>>> ]]
-build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" ")> a; ]]
+run test-templatelang-to-str to [[ where a' := <pp-list(prettyprint-Z|" ")> a ]]
 
 test placeholder (star) [[ X.Y = <<<Z*>>> ]]
-build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" ")> a; ]]
+run test-templatelang-to-str to [[ where a' := <pp-list(prettyprint-Z|" ")> a ]]
 
 test placeholder (plus, separator) [[ X.Y = <<<Z+; separator=", ">>> ]]
-build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|", ")> a; ]]
+run test-templatelang-to-str to [[ where a' := <pp-list(prettyprint-Z|", ")> a ]]
 
 test placeholder (star, separator) [[ X.Y = <<<Z*; separator=" + ">>> ]]
-build test-templatelang-to-str to [[ a' := <pp-list(prettyprint-Z|" + ")> a; ]]
+run test-templatelang-to-str to [[ where a' := <pp-list(prettyprint-Z|" + ")> a ]]
+
+test escaped chars in separator [[ X.Y = <<<Z*; separator="\"\t">>> ]]
+run test-templatelang-to-str to [[ where a' := <pp-list(prettyprint-Z|"\"\t")> a ]]
 
 target setup footer [[
-	  zz := <concat-strings> [a']
-
   strategies
     prettyprint-Z = is-string
 ]]

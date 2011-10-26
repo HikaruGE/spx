@@ -14,7 +14,7 @@ imports
 strategies
 
   test-templatelang-to-esv:
-    (_, _, ast, _, _) -> Module(modulename, NoImports(), [Completions("", listOfCompletions)])
+    ast -> Module(modulename, NoImports(), [Completions("", listOfCompletions)])
     with
       <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), _)])])> ast;
       <?CompilationUnit([], [Package(_, [<template-module-to-esv>])]); alltd(String(double-quote))> ast => listOfCompletions
@@ -60,48 +60,54 @@ strategies
 /*internal*/ strategies
 
   template-to-completion-template:
-    TemplateProduction(sort, Template(e* @[_|_]), attr*) -> t
+    TemplateProduction(sort, Template(line* @ [_ | _]), attr*) -> t
     with
-      part* := <template-elements-to-completion-parts> e*;
-      anno  := <template-sort-to-anno> sort;
-      if prefix := String(<collect-one(?sdf-cons(<un-double-quote>))> attr*) then
-        t := |[ completion template ~sort : ~prefix = ~*part* ~anno:anno ]|
-      else
-        t := |[ completion template ~sort : ~*part* ~anno:anno ]|
-      end
+      part* := <map(template-line-to-esv);
+                try(\[[_, Cursor()] | tail] -> tail\); // HACK for Mobl <MetaAnno*>
+                remove-cursor-except-first;
+                separate-by(|String("\n"));
+                flatten-list;
+                concatenate-consecutive-strings;
+                map(try(String(templatelang-escape)))> line*;
+      // if prefix := String(<collect-one(?sdf-cons(<un-double-quote>))> attr*) then
+      //   t := |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
+      // else
+        t := |[ completion template ~sort : ~*part* (blank) ]|
+      // end
 
-  template-elements-to-completion-parts =
-    map(try(placeholder-to-completion-part));
-    // HACK
-    try(\[Cursor() | tail] -> tail\
-      + \[Newline(_), Cursor() | tail] -> tail\
-      + \[Newline(_), Layout(_), Cursor() | tail] -> tail\);
-    // END HACK
-    remove-cursor-except-first;
-    try-re-indent;
-    trim-layout;
-    map(try(text-to-completion-part));
-    concatenate-consecutive-strings;
-    map(try(String(templatelang-escape)))
+  template-line-to-esv:
+    Line([Layout(x), Placeholder(None(), _, <Option() + Star()>, _)]) ->
+      <spaces-to-tabs> [String(x), Cursor()]
 
-  template-sort-to-anno =
-    CanNotBeBlank < !None() + !Blank()
+  template-line-to-esv:
+    Line(elem*) -> <map(template-element-to-esv); spaces-to-tabs> elem*
 
-  placeholder-to-completion-part:
-    Placeholder(Text(name), sort(sort), _, _){} -> PlaceholderWithSort($[<[name]:], sort)
+  spaces-to-tabs =
+    try([String(string-replace(|"  ", "\t")) | id])
 
-  placeholder-to-completion-part:
-    Placeholder(None(), sort(sort), _, _){} -> t with t :=
+  template-element-to-esv:
+    Placeholder(Text(name), sort(sort), _, _) -> PlaceholderWithSort($[<[name]:], sort)
+
+  template-element-to-esv:
+    Placeholder(None(), sort(sort), <None() + Plus()>, _) ->
       PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
 
-  placeholder-to-completion-part:
-    Placeholder(Text(name), sort(sort), None(), _){Blank()} -> PlaceholderWithSort($[<[name]:], sort)
+  template-element-to-esv:
+    Placeholder(None(), sort(sort), <Option() + Star()>, _) -> []
 
-  placeholder-to-completion-part:
-    Placeholder(None(), sort(sort), None(), _){Blank()} -> t with t :=
-      PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
+  template-element-to-esv:
+    Layout(x) -> String(x)
 
-  // FIXME: does this make sense?
+  template-element-to-esv:
+    String(_) -> <id>
+
+  remove-cursor-except-first =
+    [[id, Cursor()] | remove-cursor] <+ [id | remove-cursor-except-first] <+ []
+
+  remove-cursor =
+    ?[[_, Cursor()] | <remove-cursor>] <+ [id | remove-cursor] <+ []
+
+  // FIXME: Does this make sense? Answer: not any more!
   generate-placeholder =
     bagof-Declaration;
     map(\TemplateProduction(_, Template(e*), _) -> e*\);
@@ -115,7 +121,7 @@ strategies
     <divr> (<length> <filter(?String(_))> e*, <length> e*)
 
   template-elements-to-string =
-    trim-layout;
+    // trim-layout;
     filter(
          \Placeholder(Text(x), _, _, _) -> x\
       <+ \Placeholder(None(), sort(x), _, _) -> x\
@@ -123,50 +129,3 @@ strategies
       <+ \Layout(x) -> <string-replace(|"\t", " ")> x\
     );
     concat-strings
-
-  placeholder-to-completion-part:
-    Placeholder(_, _, Option(), _){Blank()} -> Cursor()
-
-  placeholder-to-completion-part:
-    Placeholder(_, _, Plus(), _){Blank()} -> Cursor()
-
-  placeholder-to-completion-part:
-    Placeholder(_, _, Star(), _){Blank()} -> Cursor()
-
-  text-to-completion-part:
-    Newline(_) -> String("\n")
-
-  text-to-completion-part:
-    Layout(t) -> String(t)
-
-  text-to-completion-part:
-    Indent(t) -> String(<string-replace(|"  ", "\t")> t)
-
-// removing cursors (including layout before and newline after, if present)
-
-  remove-cursor-except-first =
-       [Layout(id) + Indent(id), Cursor(), Newline(id) | remove-cursor]
-    <+ [Cursor(), Newline(id) | remove-cursor]
-    <+ [Layout(id) + Indent(id), Cursor() | remove-cursor]
-    <+ [Cursor() | remove-cursor]
-    <+ [id | remove-cursor-except-first]
-    <+ []
-
-  remove-cursor =
-       \[<?Layout(_) + ?Indent(_)>, Cursor(), Newline(_) | tail] -> <remove-cursor> tail\
-    <+ \[Cursor(), Newline(_) | tail] -> <remove-cursor> tail\
-    <+ \[<?Layout(_) + ?Indent(_)>, Cursor() | tail] -> <remove-cursor> tail\
-    <+ \[Cursor() | tail] -> <remove-cursor> tail\
-    <+ [id | remove-cursor]
-    <+ []
-
-strategies
-
-  nonempty-substring-from-last-occurence-of(|t) =
-    substring-after-last-occurence-of(|t);
-    not("");
-    <conc-strings> (t, <id>)
-
-  substring-after-last-occurence-of(|t) =
-    where(is-substring(!t));
-    repeat(is-substring(!t); implode-string)

@@ -3,19 +3,31 @@ module templatelang-parse
 language SpoofaxLang
 start symbol Template
 
+test empty [[ <<>> ]]
+parse to Template([Line([])])
+
 test parse common escape chars [[ <<<\ \'\"\t\r\n>>> ]]
-parse to Template([Escape("<\\ \\'\\\"\\t\\r\\n>")])
+parse to Template([Line([Escape("<\\ \\'\\\"\\t\\r\\n>")])])
 
 test parse escaped brackets (1) [[ <<\<\>\\>> ]]
-parse to Template([Escape("\\<\\>\\\\")])
+parse to Template([Line([Escape("\\<\\>\\\\")])])
 
 test parse escaped brackets (2) [[[ [[\[\]\\]] ]]]
-parse to Template([Escape("\\[\\]\\\\")])
+parse to Template([Line([Escape("\\[\\]\\\\")])])
 
 test parse line ending (1) [[ <<<\\>
 >> ]]
-parse to Template([Escape("<\\\\>\n")])
+parse to Template([Line([Escape("<\\\\>\n")])])
 
 test parse line ending (2) [[[ [[[\\]
 ]] ]]]
-parse to Template([Escape("[\\\\]\n")])
+parse to Template([Line([Escape("[\\\\]\n")])])
+
+test parse separator (1) [[ <<<X; separator="\n">>> ]]
+parse to Template([Line([Placeholder(_, _, _, Options([Separator("\"\\n\"")]))])])
+
+test parse separator (2) [[ <<<X; separator=",">>> ]]
+parse to Template([Line([Placeholder(_, _, _, Options([Separator("\",\"")]))])])
+
+test parse separator (3) [[ <<<X; separator="x y">>> ]]
+parse to Template([Line([Placeholder(_, _, _, Options([Separator("\"x y\"")]))])])

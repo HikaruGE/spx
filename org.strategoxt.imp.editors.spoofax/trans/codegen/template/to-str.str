@@ -8,19 +8,20 @@ imports
   context/str/parse
   context/template/declare
   normalize/templatelang
+  utils/attributes
   utils/sdf2conflicts
   utils/templatelang
 
 strategies
 
   test-templatelang-to-str:
-    (_, _, ast, _, _) -> result
+    ast -> result
     with
       init-template-options;
       <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), sections)])])> ast;
       (options, t-sections) := <partition(?TemplateOptions(<id>))> sections;
       <try([declare-template-options-main])> options;
-      <template-sections-to-stratego; alltd(Str(escape; double-quote))> t-sections => result
+      <template-sections-to-stratego; alltd(Str(templatelang-escape; double-quote))> t-sections => result
 
 strategies
 
@@ -39,9 +40,9 @@ strategies
 
         pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
         pp-list(s|t) = map(s); separate-by(|t); concat-strings
-        pp-guarantee-newline = string-ends-with(|"\n") <+ <conc-strings> (<id>, "\n")
         // ih = indent helper, t = indent string
-        pp-ih(|t) = ?"" <+ prefix-lines(|t); pp-guarantee-newline
+        pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
+        pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
 
       [section''*]
 
@@ -76,156 +77,204 @@ strategies
     sort -> $[prettyprint-[sort] = is-string]
 
   sort-decl-in-prettyprinting:
-    TemplateProduction(sort, Template(_), _) -> sort
+    TemplateProduction(sort, _, _) -> sort
 
   sort-used-in-prettyprinting:
     Placeholder(_, sort(sort), _, _) -> sort
 
-  // Optimization for single-string-element templates
+rules
+
+  // Single line template with only Layout and String elements.
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template([String(t)]), attrs(attr*)) ->
+    TemplateProduction(sort, SingleLineTemplate(elem*), attrs) ->
     $[prettyprint-[sort]:
-        [cons]() -> "[result]"]
+        [cons]() -> "[<templatelang-escape> t]"]
     where
-      cons   := <getfirst(?sdf-cons(<un-double-quote>))> attr*
+      [String(t)] := <map(\Layout(t) -> String(t)\ + ?String(_));
+                      concatenate-consecutive-strings> elem*;
+      cons := <fetch-cons-name> attrs
+
+  // Single line template with only a placeholder. (i.e., injection)
+  // The placeholder is at the start AND at the end of the template!
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, SingleLineTemplate([p @ Placeholder(_, _, _, _)]), attrs) ->
+    $[prettyprint-[sort]:
+        [input] -> a'
+        where
+        	[<template-element-to-prettyprint> p{"a"}]]
     with
-      result := <templatelang-escape> t
+      if cons := <fetch-cons-name> attrs then
+        input := $[[cons](a)]
+      else
+        input := "a"
+      end
 
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
-    <trim-chars(' ' + '\t' + '\r' + '\n')> // Workaround Stratego/856
+    TemplateProduction(sort, SingleLineTemplate(elem*), attrs) ->
     $[prettyprint-[sort]:
-        [cons]([arg'*]) -> zz
-        with
+        [input] -> zz
+        where
           [let'*]]
     where
-      not(!elem* => [String(_)])
-    where
-      cons    := <getfirst(?sdf-cons(<un-double-quote>))> attr*
+      not(<map(?Layout(_) + ?String(_))> elem*);
+      not(!elem* => [Placeholder(_, _, _, _)])
     with
-      elem'*  := <try-re-indent;
-                  !(<id>, 0);
-                  thread-map(try(rename-template-element));
-                  ?(<id>, _)> elem*;
-      arg*    := <filter(template-element-to-cons-arg)> elem'*;
-      arg'*   := <separate-by(|", ")> arg*;
-      part*   := <try(\[Newline(_) | tail] -> tail\); // strip first newline, but KEEP INDENT!
-                  // FIXME: might want to replace Newline,Indent with Newline, thereby
-                  //        making multi-line templates implicitly newline-separated.
-                  try(at-suffix(\[Newline(t), Indent(_)] -> [/*Newline(t)*/]\)); // strip last newline
-                  trim-trailing-layout;
-                  listtd(template-element-to-stratego);
-                  concatenate-consecutive-strings;
-                  map(try(?String(<templatelang-escape; double-quote>)));
-                  separate-by(|", ")> elem'*;
-      result  := <concat-strings>["zz := <concat-strings> [", part*, "]"];
-      confl*  := <bagof-SubtermConflicts> Symbol(cons, <length> arg*);
-      // if !confl* => [] then
-        let*  := <filter(template-element-to-prettyprint)> elem'*;
-      // else
-      //   let*  := <filter(?Placeholder(_, _, _, _));
-      //             add-indices; map((dec, id));
-      //             filter(template-element-to-parenthesize(|confl*))> elem'*
-      // end;
-      let'*   := <separate-by(|";\n")> [let*, result]
+      (elem'*, _)    := <thread-map(try(rename-template-element))> (elem*, 0);
+      elem''*        := <map(template-element-to-stratego)> elem'*;
+      arg*           := <filter(template-element-to-cons-arg)> elem'*;
+      let*           := <filter(template-element-to-prettyprint)> elem'*;
+      (input, let'*) := <template-common> (let*, elem''*, attrs, arg*)
 
-  // Injection (no cons, no bracket, exactly one placeholder)
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
+    TemplateProduction(sort, Template(line*), attrs) ->
     $[prettyprint-[sort]:
-        a -> a'
+        [input] -> zz
         where
-          [let']]
-    where
-      not(<getfirst(?sdf-cons(<un-double-quote>))> attr*);
-      not(<getfirst(?bracket())> attr*)
-    where
-      <one(?Placeholder(w, x, y, z))> elem*
+          [let'*]]
     with
-      let' := <template-element-to-prettyprint> Placeholder(w, x{"a"}, y, z)
+      (line'*, _)    := <thread-map(rename-template-line)> (line*, 0);
+      (line''*, _)   := <thread-map(template-line-to-stratego)> (line'*, 0);
+      arg*           := <mapconcat(template-line-to-cons-arg)> line'*;
+      let*           := <mapconcat(template-line-to-prettyprint)> line'*;
+      (input, let'*) := <template-common> (let*, <concat> line''*, attrs, arg*)
 
+  template-common:
+    (let*, elem*, attrs, arg*) -> (input, let'*)
+    where
+      part*  := <concatenate-consecutive-strings;
+                 map(try(?String(<templatelang-escape; double-quote>)));
+                 separate-by(|",")> elem*;
+      result := <concat-strings>["zz := <concat-strings> [", part*, "]"];
+      let'*  := <separate-by(|";\n")> [let*, result]
+    where
+      if cons := <fetch-cons-name> attrs then
+        input := $[[cons]([<separate-by(|",")> arg*])]
+      else
+        if !arg* => [_] then
+          input := "a"
+        else
+          input := $[([<separate-by(|",")> arg*])]
+        end
+      end
+
+  // FIXME
   // Production without cons but with bracket annotation
   // (cons + bracket -> no need to parenthesize)
-  template-to-prettyprint-strategy:
-    TemplateProduction(sort, Template(elem*), attrs(attr*)) ->
-    ${parenthesize-{sort}(not-allowed) =
-        if not-allowed then
-          <concat-strings> ["{open}", <prettyprint-{sort}>, "{close}"]
-        else
-          prettyprint-{sort}
-        end}
-    where
-      not(<getfirst(?sdf-cons(<un-double-quote>))> attr*);
-      <getfirst(?bracket())> attr*
-    where
-      <length> <filter(?Placeholder(_, _, _, _))> elem* => 1
-      <+ debug(!"Bracket production must have exactly one placeholder: "); fail
+  // template-to-prettyprint-strategy:
+  //   TemplateProduction(sort, Template(elem*), attrs) ->
+  //   ${parenthesize-{sort}(not-allowed) =
+  //       if not-allowed then
+  //         <concat-strings> ["{open}", <prettyprint-{sort}>, "{close}"]
+  //       else
+  //         prettyprint-{sort}
+  //       end}
+  //   where
+  //     not(<fetch-cons-name> attrs);
+  //     FIXME <getfirst(?bracket())> attr*
+  //   where
+  //     <length> <filter(?Placeholder(_, _, _, _))> elem* => 1
+  //     <+ debug(!"Bracket production must have exactly one placeholder: "); fail
+  //   with
+  //     (before, placeholder, after) := <split-fetch-keep(?Placeholder(_, _, _, _))> elem*
+  //   where
+  //     [String(open)]  := <map(template-element-to-stratego'); concatenate-consecutive-strings> before;
+  //     [String(close)] := <map(template-element-to-stratego'); concatenate-consecutive-strings> after
+  //     <+ debug(!"Bracket production must have text before and after the placeholder: "); fail
+
+rules
+
+  rename-template-line:
+    (Line(elem*), index) -> (Line(elem'*), index')
     with
-      (before, placeholder, after) := <split-fetch-keep(?Placeholder(_, _, _, _))> elem*
-    where
-      [String(open)]  := <map(template-element-to-stratego'); concatenate-consecutive-strings> before;
-      [String(close)] := <map(template-element-to-stratego'); concatenate-consecutive-strings> after
-      <+ debug(!"Bracket production must have text before and after the placeholder: "); fail
+      (elem'*, index') := <thread-map(try(rename-template-element))> (elem*, index)
 
   rename-template-element:
-    (Placeholder(a, b@ sort(x), c, d){a*}, index) -> (Placeholder(a, b{newname}, c, d){a*}, newindex)
+    (Placeholder(a, b, c, d), index) -> (Placeholder(a, b, c, d){name'}, index')
     with
-      newname  := <implode-string> [<addi> ('a', index)];
-      newindex := <inc> index
+      name'  := <implode-string> [<addi> ('a', index)];
+      index' := <inc> index
+
+rules
+
+  template-line-to-cons-arg:
+    Line(elem*) -> <filter(template-element-to-cons-arg)> elem*
 
   template-element-to-cons-arg:
-    Placeholder(_, sort(_){name}, _, _) -> name
+    Placeholder(_, _, _, _){name} -> name
 
-  template-element-to-stratego =
-      \[Indent(indent), Placeholder(_, sort(_){name}, _, _), Newline(_) | tail] ->
-        [$[<pp-ih(|"[indent]")> [name]'] | tail]\
-    <+
-      // At the end, the Newline(_) may have been stripped.
-      \[Indent(indent), Placeholder(_, sort(_){name}, _, _)] ->
-        [$[<pp-ih(|"[indent]")> [name]']]\
-    <+
-      [template-element-to-stratego' | id]
-    <+
-      []
+rules
 
-  template-element-to-stratego' =
-      \Placeholder(_, sort(_){name}, _, _) -> $[[name]']\
-    + \String(t) -> String(t)\
-    + \Layout(t) -> String(t)\
-    + \Indent(t) -> String(t)\
-    + \Newline(t) -> String(t)\
+  // template-line-to-stratego is to be used with thread map.
+  // The thread starts at 0 and is set to 1 once we passed the first line.
+  // It is used to determine whether we already generated the initial newline.
+
+  template-line-to-stratego:
+    (Line([Layout(indent), Placeholder(_, _, _, _){name}]), 0) ->
+      ([$[<pp-ih-1(|"[indent]")> [name]']], 0)
+
+  template-line-to-stratego:
+    (Line(elem*), 0) -> (elem'*, 1)
+    where
+      not(!elem* => [Layout(_), Placeholder(_, _, _, _)]);
+      elem'* := <map(template-element-to-stratego)> elem*
+
+  template-line-to-stratego:
+    (Line([Layout(indent), Placeholder(_, _, _, _){name}]), 1) ->
+      ([$[<pp-ih-2(|"[indent]")> [name]']], 1)
+
+  template-line-to-stratego:
+    (Line(elem*), 1) -> ([String("\n") | elem'*], 1)
+    where
+      not(!elem* => [Layout(_), Placeholder(_, _, _, _)]);
+      elem'* := <map(template-element-to-stratego)> elem*
+
+  template-element-to-stratego:
+    String(t) -> <id>
+
+  template-element-to-stratego:
+    Layout(t) -> String(t)
+
+  template-element-to-stratego:
+    Placeholder(_, _, _, _){name} -> $[[name]']
+
+rules
+
+  template-line-to-prettyprint:
+    Line(elem*) -> <filter(template-element-to-prettyprint)> elem*
 
   template-element-to-prettyprint:
-    Placeholder(_, sort(x){name}, None(), _) -> $[[name]' := <prettyprint-[x]> [name]]
+    Placeholder(_, sort(x), None(), _){name} -> $[[name]' := <prettyprint-[x]> [name]]
 
   template-element-to-prettyprint:
-    Placeholder(_, sort(x){name}, <Star() + Plus()>, Options(opt*)) -> t
+    Placeholder(_, sort(x), <Star() + Plus()>, Options(opt*)){name} -> t
     with
       if sep := <getfirst(?Separator(<id>))> opt* then
-        t := $[[name]' := <pp-list(prettyprint-[x]|"[<escape> sep]")> [name]]
+        t := $[[name]' := <pp-list(prettyprint-[x]|"[<templatelang-escape> sep]")> [name]]
       else
         t := $[[name]' := <pp-list(prettyprint-[x]|" ")> [name]]
       end
 
   template-element-to-prettyprint:
-    Placeholder(_, sort(x){name}, Option(), _) -> $[[name]' := <pp-option(prettyprint-[x])> [name]]
+    Placeholder(_, sort(x), Option(), _){name} -> $[[name]' := <pp-option(prettyprint-[x])> [name]]
 
-  template-element-to-parenthesize(|conflicts):
-    (i0, Placeholder(_, sort(x){name}, None(), _)) -> $[[name]' := <parenthesize-[x]([na])> [name]]
-    where
-      not(<filter(?(i0, <id>))> conflicts => conflicts' => [])
-    with
-      let to-match =
-            {a*: \ Symbol(x, n) -> <concat-strings> ["?", x, "(", a*, ")"]
-                   with a* := <range; map(!"_"); separate-by(|", ")> (0, n) \}
-      in
-        na := <filter(to-match); separate-by(|" + ")> conflicts'
-      end
+rules
 
-  template-element-to-parenthesize(|conflicts):
-    (i0, p@ Placeholder(_, sort(x){name}, None(), _)) -> <template-element-to-prettyprint> p
-    where
-      <filter(?(i0, _))> conflicts => []
-
-  template-element-to-parenthesize(|conflicts):
-    (i0, p@ Placeholder(_, sort(x){name}, <not(?None())>, _)) -> <template-element-to-prettyprint> p
+//   template-element-to-parenthesize(|conflicts):
+//     (i0, Placeholder(_, sort(x), None(), _){name}) -> $[[name]' := <parenthesize-[x]([na])> [name]]
+//     where
+//       not(<filter(?(i0, <id>))> conflicts => conflicts' => [])
+//     with
+//       let to-match =
+//             {a*: \ Symbol(x, n) -> <concat-strings> ["?", x, "(", a*, ")"]
+//                    with a* := <range; map(!"_"); separate-by(|", ")> (0, n) \}
+//       in
+//         na := <filter(to-match); separate-by(|" + ")> conflicts'
+//       end
+//
+//   template-element-to-parenthesize(|conflicts):
+//     (i0, p@ Placeholder(_, sort(x), None(), _){name}) -> <template-element-to-prettyprint> p
+//     where
+//       <filter(?(i0, _))> conflicts => []
+//
+//   template-element-to-parenthesize(|conflicts):
+//     (i0, p@ Placeholder(_, sort(x), <not(?None())>, _){name}) -> <template-element-to-prettyprint> p

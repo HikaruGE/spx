@@ -1,6 +1,7 @@
 module analyze/sdf/check
 
 imports
+  lib/editor-common.generated
  	common
  	utils/debug
  	utils/attributes
@@ -225,26 +226,24 @@ rules // Local checks
 rules // TemplateLang - Local checks
 
   context-free-syntax-error:
-    SdfProductionWithCons(_, _, attrs) ->
-      (x, $[Constructor already specified at start of production. Please remove this cons attribute.])
+    prod(_, _, attrs(attr*)) ->
+      (attr*, $[Multiple definition of constructor (already specified at start of production?)])
     where
-      x := <fetch-cons> attrs
+      <gti> (<filter(fetch-cons); length> attr*, 1)
 
   context-free-templates-error:
-    TemplateProductionWithCons(_, _, attrs) ->
-      (x, $[Constructor already specified at start of production. Please remove this cons attribute.])
+    TemplateProduction(_, _, attrs(attr*)) ->
+      (attr*, $[Multiple definition of constructor (already specified at start of production?)])
     where
-      x := <fetch-cons> attrs
+      <gti> (<filter(fetch-cons); length> attr*, 1)
 
   context-free-templates-warning:
-    Template([head | tail]) ->
-      (head, $[It is recommended to insert a linebreak between the start of a multiline template and its first element.])
+    Template([head | _]) ->
+      (head, $[Insert a linebreak between the start of a multi line template and its first element])
     where
-      <not(?Newline(_))> head; // doesn't start with newline
-      <one(?Newline(_))> tail  // does contain a newline
+    	<eq> (<origin-line>, <origin-line> head)
 
   context-free-templates-warning:
-    Layout(t) ->
-      (t, $[It is recommended not to use tab characters in templates.])
+    Layout(t) -> (t, $[Do not use tab characters in templates])
     where
-      <explode-string; one('\t')> t
+    	origin-text; explode-string; one('\t')

@@ -24,10 +24,11 @@ imports
 	codegen/sdf/to-name-analysis
   codegen/sdf/to-signature
   codegen/main
-  
+
 imports
 	normalize/main
 	normalize/signatures
+	normalize/templatelang
 imports
 	context/-
 imports
@@ -36,12 +37,13 @@ imports
   config
   /*
 	unit-tests/-
-	unit-tests/templatelang/-
 	unit-tests/utils/-
 	*/
 imports
 	 editor/main
 	 codegen/main
+imports
+  codegen/template/-
 
 rules
 
@@ -80,3 +82,17 @@ rules
       test-templatelang-desugar;
       test-sdf2conflicts
 */
+
+strategies
+
+  //testing only
+  main =
+    editor-analyze;
+    generate-aterm;
+    test-templatelang-to-esv;
+    test-templatelang-to-sdf;
+    test-templatelang-to-str;
+    templatelang-desugar-sdf-top; // FIXME shouldn't be needed
+    templatelang-desugar-top;     // FIXME shouldn't be needed
+    build-spoofaxlang-jvm;
+    compile-spx
