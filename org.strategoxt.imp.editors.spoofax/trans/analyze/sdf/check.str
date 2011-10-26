@@ -227,23 +227,23 @@ rules // TemplateLang - Local checks
 
   context-free-syntax-error:
     prod(_, _, attrs(attr*)) ->
-      (attr*, $[Multiple definition of constructor (already specified at start of production?)])
+      (attr*, "Multiple definition of constructor (already specified at start of production?)")
     where
       <gti> (<filter(fetch-cons); length> attr*, 1)
 
   context-free-templates-error:
     TemplateProduction(_, _, attrs(attr*)) ->
-      (attr*, $[Multiple definition of constructor (already specified at start of production?)])
+      (attr*, "Multiple definition of constructor (already specified at start of production?)")
     where
       <gti> (<filter(fetch-cons); length> attr*, 1)
 
   context-free-templates-warning:
     Template([head | _]) ->
-      (head, $[Insert a linebreak between the start of a multi line template and its first element])
+      (head, "Insert a linebreak between the start of a multi line template and its first element")
     where
     	<eq> (<origin-line>, <origin-line> head)
 
   context-free-templates-warning:
-    Layout(t) -> (t, $[Do not use tab characters in templates])
+    Layout(t) -> (t, "Do not use tab characters in templates")
     where
     	origin-text; explode-string; one('\t')

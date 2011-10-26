@@ -94,14 +94,17 @@ rules
                       concatenate-consecutive-strings> elem*;
       cons := <fetch-cons-name> attrs
 
-  // Single line template with only a placeholder. (i.e., injection)
+  // Template with only a placeholder. (i.e., injection)
   // The placeholder is at the start AND at the end of the template!
   template-to-prettyprint-strategy:
-    TemplateProduction(sort, SingleLineTemplate([p @ Placeholder(_, _, _, _)]), attrs) ->
+    TemplateProduction(sort, template, attrs) ->
     $[prettyprint-[sort]:
         [input] -> a'
         where
-        	[<template-element-to-prettyprint> p{"a"}]]
+          [<template-element-to-prettyprint> p{"a"}]]
+    where
+      < ?SingleLineTemplate([p @ Placeholder(_, _, _, _)])
+      + ?Template([Line([Layout(_), p @ Placeholder(_, _, _, _)])]) > template
     with
       if cons := <fetch-cons-name> attrs then
         input := $[[cons](a)]

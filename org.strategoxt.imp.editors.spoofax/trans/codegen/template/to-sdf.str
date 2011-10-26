@@ -100,18 +100,74 @@ strategies
     with
       A* := <template-to-sdf> t
 
+  // Single line template.
+  //  -OR-
+  // Template with only a placeholder. (i.e., injection)
+  // The placeholder is at the start AND at the end of the template!
   template-to-sdf:
-    SingleLineTemplate(elem*) -> A*
+    < ?SingleLineTemplate(elem*)
+    + ?Template([Line(elem* @ [Layout(_), Placeholder(_, _, _, _)])]) > -> A*
     with
-      A* := <filter(template-element-to-sdf);
+      A* := <maybe-separating(
+      	       filter(template-element-to-sdf-sep <+ template-element-to-sdf),
+      	       filter(template-element-to-sdf)
+      	     );
              flatten-list> elem*
 
+  // Multi line template.
   template-to-sdf:
     Template(line*) -> A*
     with
       A* := <filter(?Line([Layout(_), _ | _]));
-             map(template-line-to-sdf);
+             maybe-separating(
+             	 !(<id>, 0); thread-map(template-line-to-sdf-sep); ?(<id>, _),
+             	 map(template-line-to-sdf)
+             );
              flatten-list> line*
+
+  maybe-separating(yes, no) =
+    if <Options> Newlines() => Separating() then yes else no end
+
+rules
+
+  template-line-to-sdf-sep:
+    (Line([Layout(_), p @ Placeholder(_, sort(S), mult, Options(option*))]), state) ->
+      (result, state)
+    where
+      <one(Separator("\n"))> option*
+    where
+      L := "\"\\n\"";
+      switch !(mult, state)
+        case ?(None()  , 0) : result := A|[ (S L)  ]|
+        case ?(Option(), 0) : result := A|[ (S L)? ]|
+        case ?(Star()  , 0) : result := A|[ (S L)* ]|
+        case ?(Plus()  , 0) : result := A|[ (S L)+ ]|
+        case ?(None()  , 1) : result := A|[ (L S)  ]|
+        case ?(Option(), 1) : result := A|[ (L S)? ]|
+        case ?(Star()  , 1) : result := A|[ (L S)* ]|
+        case ?(Plus()  , 1) : result := A|[ (L S)+ ]|
+      end
+
+  template-line-to-sdf-sep:
+    (Line(elem*), 0) -> (<template-line-to-sdf-sep-helper> elem*, 1)
+
+  template-line-to-sdf-sep:
+    (Line(elem*), 1) ->
+      ([ A|[ "\"\\n\"" ]| | <template-line-to-sdf-sep-helper> elem*], 1)
+
+  template-line-to-sdf-sep-helper =
+    not(?[Layout(_), Placeholder(_, _, _, Options(<one(Separator("\n"))>))]);
+    filter(template-element-to-sdf-sep <+ template-element-to-sdf)
+
+  template-element-to-sdf-sep:
+    Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ {S "\"\\n\""}* ]|
+    where <one(Separator("\n"))> option*
+
+  template-element-to-sdf-sep:
+    Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ {S "\"\\n\""}+ ]|
+    where <one(Separator("\n"))> option*
+
+rules
 
   template-line-to-sdf =
     ?Line(<id>);

@@ -28,7 +28,14 @@ target setup header [[
       // The footer contains a last, common line.
 ]]
 
-test placeholder [[ X.Y = <<<Z>>> ]]
+test placeholder (single line, injection) [[ X.Y = <<<Z>>> ]]
+run test-templatelang-to-str to [[ where a' := <prettyprint-Z> a ]]
+
+test placeholder (multi line, injection) [[
+  X.Y = <<
+    <Z>
+  >>
+]]
 run test-templatelang-to-str to [[ where a' := <prettyprint-Z> a ]]
 
 test placeholder (text) [[ X.Y = <<<this text is ignored : Z>>> ]]

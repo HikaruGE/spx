@@ -23,9 +23,10 @@ exports
 
     "newlines" ":" NewlineOptionValue -> TemplateOption {cons("Newlines")}
 
-    "none"     -> NewlineOptionValue {cons("None")}
-    "leading"  -> NewlineOptionValue {cons("Leading")}
-    "trailing" -> NewlineOptionValue {cons("Trailing")}
+    "none"       -> NewlineOptionValue {cons("None")}
+    "leading"    -> NewlineOptionValue {cons("Leading")}
+    "trailing"   -> NewlineOptionValue {cons("Trailing")}
+    "separating" -> NewlineOptionValue {cons("Separating")}
 
     "keyword" "-/-" Lookaheads[[SDF]] -> TemplateOption {cons("KeywordFollowRestriction")}
 
