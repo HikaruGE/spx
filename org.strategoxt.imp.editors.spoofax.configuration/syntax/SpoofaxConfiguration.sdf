@@ -18,14 +18,14 @@ exports
 	    
 	    "projectreferences" ":" ProjectName* 	-> ConfigSection {cons("SpxProjects")}
 	    
-	    "debug-switch:" {DebugOption ","}* 	-> ConfigSection {cons("Debug")}
+	    "debug" ":" {DebugOption ","}* 	-> ConfigSection {cons("Debug")}
 	    
 	    "compiler" -> DebugOption{cons("DebugCompiler")}
 	    "declaration" -> DebugOption{cons("DebugDeclaration")}
 	    "analysis" -> DebugOption{cons("DebugAnalysis")}
 	    "symboltable" -> DebugOption{cons("DebugSymbolTable")}
 	    "all" -> DebugOption{cons("DebugAll")}
-	    
+	    "none" -> DebugOption{cons("DebugNone")}
 	    
 	    "codegen:" CodeGenDefinition*    			 	-> ConfigSection{cons("CodeGeneration")}
 	    "todir" ":" RelativePath				  			-> CodeGenDefinition {cons("OutputDirectory")}
