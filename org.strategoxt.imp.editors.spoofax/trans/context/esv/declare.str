@@ -11,7 +11,7 @@ imports
 rules 
 	resolve-sdf-sort-declaration = 
  		?symbol; 
- 		<resolve-symbol-declarations(all-keys-SortDeclaration , bagof-SortDeclaration)><to-scoped-symbol>symbol 
+ 		<resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol 
  	<+
  		<debug-analysis> $[ErrorChecking|Failed to retrive SDF Sort for symbol [<pp-aterm>]];
  		fail

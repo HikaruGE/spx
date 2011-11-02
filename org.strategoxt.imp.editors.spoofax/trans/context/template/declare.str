@@ -51,7 +51,6 @@ rules
       rules(Usage: x -> x)
 
 rules // Options
-  // FIXME: move to spoofax.configuration
 
   declare-template-option:
     Newlines(t) -> <id>

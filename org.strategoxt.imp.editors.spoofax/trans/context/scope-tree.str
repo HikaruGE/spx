@@ -61,7 +61,9 @@ rules
 		x -> x
 		where
 			scoped-x := <to-scoped-symbol>x;
-			rules( Declaration : (Type, scoped-x) -> x)
+			// DR fails if this tuple is placed in-line ...
+			tuple := (Type, scoped-x);
+			rules( Declaration :+ tuple -> x)
 		where
 			<debug-symboltable>$[ScopeTree|Storing Declaration [<pp-aterm>(Type, scoped-x)] -> [<pp-aterm>x]]	
 	

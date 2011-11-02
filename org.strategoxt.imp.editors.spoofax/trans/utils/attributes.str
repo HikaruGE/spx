@@ -4,6 +4,10 @@ imports
 	libstratego-sglr
 	include/SpoofaxLang
 
+signature
+  constructors
+    deprecated : String -> Term
+
 overlays
   sdf-cons(x) = term(default(appl(unquoted("cons"), [fun(quoted(x))])))
 
@@ -23,3 +27,9 @@ strategies
 
   fetch-cons-name:
     attrs(attr*) -> <getfirst(fetch-cons-name)> attr*
+
+  is-bracket:
+    attrs(attr*) -> <one(?bracket())> attr*
+
+  is-deprecated:
+    attrs(attr*) -> <one(?deprecated(_))> attr*
