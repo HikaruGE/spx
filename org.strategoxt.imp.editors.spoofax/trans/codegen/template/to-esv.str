@@ -4,6 +4,7 @@ imports
   lib/EditorService
   include/SpoofaxLang
 imports
+  context/resolve-symbols
   context/sdf/declare
   context/template/declare
   normalize/templatelang
@@ -60,24 +61,64 @@ strategies
 /*internal*/ strategies
 
   template-to-completion-template:
-    TemplateProduction(sort, Template(line* @ [_ | _]), attr*) -> t
-    with
+    TemplateProduction(sort, SingleLineTemplate(elem* @ [_ | _]), attrs) ->
+      |[ completion template ~sort : ~prefix = ~*part* ]|
+    where
+      not(<is-deprecated> attrs)
+    with {|Expanded:
+      part* := <map(template-element-to-esv);
+                template-to-completion-template-helper> elem*;
+      prefix := <build-prefix> part*
+    |}
+    where
+      <accept-template-parts(|sort)> part*
+
+  template-to-completion-template:
+    TemplateProduction(sort, Template(line* @ [_ | _]), attrs) ->
+      |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
+    where
+      not(<is-deprecated> attrs)
+    with {|Expanded:
       part* := <map(template-line-to-esv);
                 try(\[[_, Cursor()] | tail] -> tail\); // HACK for Mobl <MetaAnno*>
                 remove-cursor-except-first;
                 separate-by(|String("\n"));
-                flatten-list;
-                concatenate-consecutive-strings;
-                map(try(String(templatelang-escape)))> line*;
-      // if prefix := String(<collect-one(?sdf-cons(<un-double-quote>))> attr*) then
-      //   t := |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
-      // else
-        t := |[ completion template ~sort : ~*part* (blank) ]|
-      // end
+                template-to-completion-template-helper> line*;
+      prefix := <build-prefix> part*
+    |}
+    where
+      <accept-template-parts(|sort)> part*
+
+  template-to-completion-template-helper =
+    flatten-list;
+    concatenate-consecutive-strings;
+    map(try(String(templatelang-escape)))
+
+  build-prefix =
+    map(template-element-to-string);
+    concat-strings;
+    string-replace(|"\\n", " ");
+    string-replace(|"\\t", " ");
+    string-as-chars(listbu(try( \[' ', ' ' | t] -> [' ' | t]\ )));
+    !String(<id>)
+
+  accept-template-parts(|sort) =
+    // not acceptable are:
+    //  * empty templates
+    //  * injections (i.e., a single element that isn't String(_))
+    (?[_, _ | _] + ?[String(_) | _])
+      <+ <debug(!"template rejected: ")> sort; fail
+
+rules
 
   template-line-to-esv:
     Line([Layout(x), Placeholder(None(), _, <Option() + Star()>, _)]) ->
       <spaces-to-tabs> [String(x), Cursor()]
+
+  template-line-to-esv:
+    line @ Line([Layout(_), Placeholder(None(), _, <None() + Plus()>, _)]) ->
+      // ?t and not(?t) are cycle breaker
+      <?t; expand-template-line; not(?t); map(template-line-to-esv)> [line]
 
   template-line-to-esv:
     Line(elem*) -> <map(template-element-to-esv); spaces-to-tabs> elem*
@@ -85,15 +126,25 @@ strategies
   spaces-to-tabs =
     try([String(string-replace(|"  ", "\t")) | id])
 
+  // Any placeholder with title results in a placeholder with that title.
   template-element-to-esv:
-    Placeholder(Text(name), sort(sort), _, _) -> PlaceholderWithSort($[<[name]:], sort)
+    Placeholder(Text(name), sort(sort), _, _) ->
+      PlaceholderWithSort($[<[name]:], sort)
 
+  // A and A+ result in a placeholder containing the shortest expansion of A.
   template-element-to-esv:
-    Placeholder(None(), sort(sort), <None() + Plus()>, _) ->
-      PlaceholderWithSort($[<[<try(generate-placeholder)> sort]:], sort)
+    placeholder @ Placeholder(None(), sort(sort), <None() + Plus()>, _) ->
+      PlaceholderWithSort($[<[text]:], sort)
+    where
+      text := <expand-template-element;
+               map(template-element-to-string);
+               concat-strings
+               <+ !sort> [placeholder]
 
+  // A? and A* result in a 0-length placeholder.
   template-element-to-esv:
-    Placeholder(None(), sort(sort), <Option() + Star()>, _) -> []
+    Placeholder(None(), sort(sort), <Option() + Star()>, _) ->
+      PlaceholderWithSort("<:", sort)
 
   template-element-to-esv:
     Layout(x) -> String(x)
@@ -107,25 +158,151 @@ strategies
   remove-cursor =
     ?[[_, Cursor()] | <remove-cursor>] <+ [id | remove-cursor] <+ []
 
-  // FIXME: Does this make sense? Answer: not any more!
-  generate-placeholder =
-    bagof-Declaration;
-    map(\TemplateProduction(_, Template(e*), _) -> e*\);
-    filter(not([])); // is this desired?
-    qsort((percentage-string-elements, percentage-string-elements); gt);
-    Hd;
-    template-elements-to-string
+rules // TemplateLang / completion template element to string
 
-  percentage-string-elements =
-    ?e*;
-    <divr> (<length> <filter(?String(_))> e*, <length> e*)
+  template-element-to-string:
+    Placeholder(Text(t), _, _, _) -> t
 
-  template-elements-to-string =
-    // trim-layout;
-    filter(
-         \Placeholder(Text(x), _, _, _) -> x\
-      <+ \Placeholder(None(), sort(x), _, _) -> x\
-      <+ \String(x) -> x\
-      <+ \Layout(x) -> <string-replace(|"\t", " ")> x\
-    );
-    concat-strings
+  template-element-to-string:
+    Placeholder(None(), sort(sort), <None() + Plus()>, _) -> sort
+
+  template-element-to-string:
+    Placeholder(None(), _, <Option() + Star()>, _) -> ""
+
+  template-element-to-string:
+    Placeholder(t) -> t
+
+  template-element-to-string:
+    PlaceholderWithSort(t, _) -> <string-as-chars(Tl; init)> t
+
+  template-element-to-string:
+    Layout(x) -> x
+
+  template-element-to-string:
+    String(x) -> x
+
+  template-element-to-string:
+    Cursor() -> ""
+
+strategies // Template expansion
+
+  expand-multi-line-template-production:
+    TemplateProduction(sort, SingleLineTemplate(elem*), a) ->
+      <memo(expand-template-production)> TemplateProduction(sort, Template([Line(elem*)]), a)
+
+  expand-multi-line-template-production:
+    TemplateProduction(_, Template(_), _) -> <memo(expand-template-production)>
+
+  expand-single-line-template-production:
+    TemplateProduction(_, SingleLineTemplate(_), _) -> <memo(expand-template-production)>
+
+  expand-template-production:
+    TemplateProduction(sort, template, attrs) -> result{score}
+    where
+      <not(Expanded)> sort
+    where {|Expanded:
+      rules( Expanded: sort -> sort );
+      result := <expand-template> template;
+      score := <is-deprecated < !-100 + !0> attrs
+    |}
+
+  expand-template:
+    t @ SingleLineTemplate(elem*) -> elem'*
+    where
+      elem'* := <listbu(expand-template-element)> elem*
+
+  expand-template:
+    t @ Template(line*) -> line'*
+    where
+      line'* := <listbu(expand-template-line)> line*
+
+  is-template-placeholder:
+    Placeholder(_, sort(x), _, _) -> <id>
+    where
+      <setof-Declaration; one(?TemplateProduction(_, _, _))> x
+
+  is-template-placeholder:
+    PlaceholderWithSort(_, x) -> <id>
+    where
+      <setof-Declaration; one(?TemplateProduction(_, _, _))> x
+
+  // expand-template-line covers exactly all valid input terms except:
+  //  Line([indent @ Layout(_), Placeholder(_, sort(x), <None() + Plus()>, _)]) where <Expanded> x
+
+  expand-template-line:
+    [t @ Line([indent @ Layout(_), Placeholder(_, sort(x), <None() + Plus()>, _)]) | tail] -> [line* | tail]
+    where
+      <not(Expanded)> x
+    where
+      line* := <get-template-lines(|indent) <+ ![t]> x
+
+  expand-template-line:
+    [t @ Line(elem*) | tail] -> [Line(elem'*) | tail]
+    where
+      not(!elem* => [Layout(_), Placeholder(_, _, <None() + Plus()>, _)])
+    where
+      elem'* := <listbu(expand-template-element)> elem*
+
+  expand-template-line:
+    [] -> <id>
+
+  // expand-template-element covers exactly all valid input terms except:
+  //  Placeholder(_, sort(x), <None() + Plus()>, _) where <Expanded> x
+
+  expand-template-element:
+    [t @ Placeholder(_, sort(x), <None() + Plus()>, _) | tail] -> [elem* | tail]
+    where
+      <not(Expanded)> x
+    where
+      elem* := <get-template-elements <+ ![t]> x
+
+  expand-template-element:
+    [t | tail] -> [t | tail]
+    where
+      not(!t => Placeholder(_, sort(x), <None() + Plus()>, _))
+
+  expand-template-element:
+    [] -> <id>
+
+  // helpers
+
+  get-template-lines(|indent) =
+    setof-Declaration;
+    filter(expand-multi-line-template-production);
+    choose-one-expansion;
+    map(Line(![indent | <id>]))
+
+  get-template-elements =
+    setof-Declaration;
+    filter(expand-single-line-template-production);
+    choose-one-expansion
+
+  choose-one-expansion =
+       filter(not(oncetd(is-template-placeholder)));
+       qsort(template-compare);
+       Hd
+    <+
+       Hd
+
+  // prefer least amount of literal characters
+  template-compare:
+    (x{x-score}, y{y-score}) -> <id>
+    where
+      <gti> (x-score, y-score)
+    <+
+      <eq> (x-score, y-score);
+      <lti> (<template-character-count> x, <template-character-count> y)
+
+  template-character-count =
+    ?String(<string-length>)
+    <+ ?Layout(<string-length>)
+    <+ ?Text(<string-length>)
+    <+ crush(!0, addi, template-character-count)
+
+  lti = not(gti)
+
+  setof-Declaration =
+    to-package-scoped-symbol;
+    bagof-Declaration; nub; is-not-empty
+
+  is-not-empty = ?[_ | _]

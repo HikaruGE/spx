@@ -1,0 +1,85 @@
+module templatelang-to-esv-2
+
+language SpoofaxLang
+target language EditorService
+
+setup [[
+  package example
+  module example
+  templates
+]]
+
+target setup [[
+  module example
+  completions
+]]
+
+test deprecated templates [[
+  A.F = "foo" {deprecated}
+  A.FF = "ffoo" {deprecated("don't panic")}
+  A.B = "bar"
+  B = <<x: <A>>>
+]]
+run test-templatelang-to-esv to [[
+  // WRONG: completion template A: "foo" = "foo"
+  // WRONG: completion template A: "ffoo" = "ffoo"
+  completion template A: "bar" = "bar"
+  // WRONG: completion template B: "x: foo" = "x: " <foo:A>
+  completion template B: "x: bar" = "x: " <bar:A>
+]]
+
+test Mobl module [[
+  QId = <<<ID>>>
+  QId.QId = <<<QId>::<ID>>>
+  Start.Module = <<
+    module <QId>
+
+    <Definition*; separator="\n">
+  >>
+]]
+run test-templatelang-to-esv to [[
+  completion template QId: "ID::ID" = <ID:QId> "::" <ID:ID>
+  completion template Start: "module ID " =
+    "module " <ID:QId> "\n\n" (cursor) (blank)
+]]
+
+test Mobl types [[[[
+  QId = <<<ID>>>
+  QId.QId = <<<QId>::<ID>>>
+  NFType.SimpleType = <<<QId>>>
+  NFType.GenericType = [[[QId]<[Type*; separator=", "]>]]
+  NFType.TupleType = <<(<Type*; separator=", ">)>>
+  NFType.ArrayType = <<[<Type>]>>
+  NFType.DynamicType = <<?>>
+  Type = <<<NFType>>>
+  Type.FunctionType = [[[NFType+; separator=" * "] -> [NFType]]] {avoid}
+
+  FunctionDef.Function = <<
+    <MetaAnno*; separator="\n">
+    function <QId>(<FArg*; separator=", ">) : <Type> {
+      <Statement*; separator="\n">
+    }
+  >>
+]]]]
+run test-templatelang-to-esv to [[
+  completion template QId: "ID::ID" = <ID:QId> "::" <ID:ID>
+  completion template NFType: "ID<>" = <ID:QId> "<" <:Type> ">"
+  completion template NFType: "()" = "(" <:Type> ")"
+  completion template NFType: "[ID]" = "[" <ID:Type> "]"
+  completion template NFType: "?" = "?"
+  completion template Type: "ID -> ID" = <ID:NFType> " -> " <ID:NFType>
+  completion template FunctionDef: "function ID() : ID { }" =
+    "function " <ID:QId> "(" <:FArg> ") : " <ID:Type> " {\n\t" (cursor) "\n}" (blank)
+]]
+
+test template-character-count
+  !(String("foo"), Placeholder(Text("f"), "Sort", None(), Options([])), [Layout("bar"), String("baz")]);
+  template-character-count => 10
+
+test substring(1, -1)
+  !"foo";
+  string-as-chars(Tl; init) => "o"
+
+test remove spaces
+  !"foo   bar    baz";
+  string-as-chars(listbu(try(\[' ', ' ' | t] -> [' ' | t]\))) => "foo bar baz"

@@ -28,7 +28,6 @@ imports
 imports
 	normalize/main
 	normalize/signatures
-	normalize/templatelang
 imports
 	context/-
 imports
@@ -72,17 +71,6 @@ rules
       filename := <guarantee-extension(|"aterm")> path;
       result   := ast // we just return the input term
 
-/*
-  run-templatelang-tests:
-    (selected, position, ast, path, project-path) -> None()
-    with
-      test-templatelang-to-sdf;
-      test-templatelang-to-esv;
-      test-templatelang-to-stratego;
-      test-templatelang-desugar;
-      test-sdf2conflicts
-*/
-
 strategies
 
   //testing only
@@ -92,7 +80,5 @@ strategies
     test-templatelang-to-esv;
     test-templatelang-to-sdf;
     test-templatelang-to-str;
-    templatelang-desugar-sdf-top; // FIXME shouldn't be needed
-    templatelang-desugar-top;     // FIXME shouldn't be needed
     build-spoofaxlang-jvm;
     compile-spx
