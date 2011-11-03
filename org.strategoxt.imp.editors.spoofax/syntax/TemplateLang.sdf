@@ -166,8 +166,7 @@ exports
     "\\u" [0-9A-Fa-f]+ -> EscapedUnicodeChar
     EscapedUnicodeChar -> EscapedChar
 
-    "\\" ~[] -> EscapedLayoutChar {recover, cons("WATER")}
-    "\\" ~[] -> EscapedNonLayoutChar {recover, cons("WATER")}
+    "\\" ~[]       -> EscapedChar  {recover, cons("WATER")}
     "<" ~[\>]+ ">" -> EscapedChar1 {recover, cons("WATER")}
     "[" ~[\]]+ "]" -> EscapedChar2 {recover, cons("WATER")}
 
