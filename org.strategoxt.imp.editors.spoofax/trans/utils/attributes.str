@@ -7,9 +7,12 @@ imports
 signature
   constructors
     deprecated : String -> Term
+    deprecated : Term
 
 overlays
   sdf-cons(x) = term(default(appl(unquoted("cons"), [fun(quoted(x))])))
+  sdf-deprecated() = term(default(fun(unquoted("deprecated"))))
+  sdf-deprecated(x) = term(default(appl(unquoted("deprecated"), [fun(quoted(x))])))
 
 strategies
 
@@ -32,4 +35,5 @@ strategies
     attrs(attr*) -> <one(?bracket())> attr*
 
   is-deprecated:
-    attrs(attr*) -> <one(?deprecated(_))> attr*
+    attrs(attr*) -> <one(?deprecated(_) + ?deprecated()
+                         + ?sdf-deprecated() + ?sdf-deprecated(_))> attr*
