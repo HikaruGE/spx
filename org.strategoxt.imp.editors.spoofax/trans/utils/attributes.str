@@ -42,6 +42,9 @@ strategies
     attrs(attr*) -> <one(?deprecated(_) + ?deprecated()
                          + ?sdf-deprecated() + ?sdf-deprecated(_))> attr*
 
+  is-reject:
+    attrs(attr*) -> <one(?reject())> attr*
+
   is-completion-prefer:
   	attrs(attr*) -> <one(?sdf-completion-prefer())> attr*
 

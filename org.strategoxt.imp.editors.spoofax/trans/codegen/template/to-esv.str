@@ -50,6 +50,7 @@ strategies
       )
     with
       // FIXME: desugaring should have been performed before the current strategy is invoked.
+      // FIXME: declaring is here for unit testing only ???
       completion* := <templatelang-desugar-top;
                       declare-template-definition-main;
                       filter(template-to-completion-template)> prod*
@@ -58,13 +59,44 @@ strategies
         contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
       )
 
+  template-section-to-esv:
+    SDFSection(lexical-syntax(prod*)) ->
+      <sdf-productions-to-completion-templates> prod*
+
+  template-section-to-esv:
+    SDFSection(context-free-syntax(prod*)) ->
+      <sdf-productions-to-completion-templates> prod*
+
+  sdf-productions-to-completion-templates:
+    prod* -> completion*
+    with
+      contracts(
+        // FIXME: remove SdfProduction/3 and SdfProductionWithCons/3 when desugaring is performed before code generation.
+        contract-requires(ListOf(?prod(_, _, _) + ?SdfProduction(_, _, _) + ?SdfProductionWithCons(_, _, _)) | prod*)
+      )
+    with
+      // FIXME: desugaring should have been performed before the current strategy is invoked.
+      // FIXME: declaring is here for unit testing only ???
+      completion* := <templatelang-desugar-sdf-top;
+                      declare-sdf-definition-main;
+                      filter(sdf-production-to-template;
+                             template-to-completion-template)> prod*
+    with
+      contracts(
+        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
+      )
+
 /*internal*/ strategies
+
+  sdf-production-to-template:
+    prod([lit(text)], sort(sort), attrs) -> 
+      TemplateProduction(sort, SingleLineTemplate([String(<un-double-quote> text)]), attrs)
 
   template-to-completion-template:
     TemplateProduction(sort, SingleLineTemplate(elem* @ [_ | _]), attrs) ->
       |[ completion template ~sort : ~prefix = ~*part* ]|
     where
-      not(<is-deprecated> attrs)
+      not(<is-deprecated + is-reject> attrs)
     with {|Expanded:
       part* := <map(template-element-to-esv);
                 template-to-completion-template-helper> elem*;
@@ -77,7 +109,7 @@ strategies
     TemplateProduction(sort, Template(line* @ [_ | _]), attrs) ->
       |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
     where
-      not(<is-deprecated> attrs)
+      not(<is-deprecated + is-reject> attrs)
     with {|Expanded:
       part* := <map(template-line-to-esv);
                 try(\[[_, Cursor()] | tail] -> tail\); // HACK for Mobl <MetaAnno*>
@@ -106,8 +138,7 @@ strategies
     // not acceptable are:
     //  * empty templates
     //  * injections (i.e., a single element that isn't String(_))
-    (?[_, _ | _] + ?[String(_) | _])
-      <+ <debug(!"template rejected: ")> sort; fail
+    ?[_, _ | _] + ?[String(_) | _]
 
 rules
 
@@ -193,18 +224,28 @@ strategies // Template expansion
   expand-multi-line-template-production:
     TemplateProduction(_, Template(_), _) -> <memo(expand-template-production)>
 
+  expand-multi-line-template-production:
+    prod(_, _, _) -> <memo(expand-template-production)>
+
   expand-single-line-template-production:
     TemplateProduction(_, SingleLineTemplate(_), _) -> <memo(expand-template-production)>
+
+  expand-single-line-template-production:
+    prod(_, _, _) -> <memo(expand-template-production)>
 
   expand-template-production:
     TemplateProduction(sort, template, attrs) -> result{score}
     where
+    	<not(is-reject)> attrs;
       <not(Expanded)> sort
     where {|Expanded:
       rules( Expanded: sort -> sort );
       result := <expand-template> template;
       score := <determine-score> attrs
     |}
+
+  expand-template-production:
+    prod(_, _, _) -> <sdf-production-to-template; expand-template-production>
 
   determine-score:
     attrs -> <sum> [depr', prefer', avoid']
