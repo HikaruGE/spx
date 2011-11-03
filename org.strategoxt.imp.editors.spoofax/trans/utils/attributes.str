@@ -14,6 +14,10 @@ overlays
   sdf-deprecated() = term(default(fun(unquoted("deprecated"))))
   sdf-deprecated(x) = term(default(appl(unquoted("deprecated"), [fun(quoted(x))])))
 
+  sdf-completion-prefer() = term(default(appl(unquoted("completion"), [fun(unquoted("prefer"))])))
+  sdf-completion-avoid() = term(default(appl(unquoted("completion"), [fun(unquoted("avoid"))])))
+  sdf-completion(x) = term(default(appl(unquoted("completion"), [x])))
+
 strategies
 
   fetch-cons =
@@ -37,3 +41,9 @@ strategies
   is-deprecated:
     attrs(attr*) -> <one(?deprecated(_) + ?deprecated()
                          + ?sdf-deprecated() + ?sdf-deprecated(_))> attr*
+
+  is-completion-prefer:
+  	attrs(attr*) -> <one(?sdf-completion-prefer())> attr*
+
+  is-completion-avoid:
+    attrs(attr*) -> <one(?sdf-completion-avoid())> attr*

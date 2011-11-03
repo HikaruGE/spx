@@ -51,6 +51,9 @@ run test-templatelang-to-sdf to [[ "\"\t\n" Z -> X {cons("Y")} ]]
 test escaped chars in separator [[ X.Y = <<<Z*; separator="\"">>> ]]
 run test-templatelang-to-sdf to [[ {Z "\""}* -> X {cons("Y")} ]]
 
+test completion(...) attribute is erased [[ X.Y = <<<Z>>> {completion(prefer) }]]
+run test-templatelang-to-sdf to [[ Z -> X {cons("Y")} ]]
+
 target setup footer [[
   context-free syntax
     CONTENTCOMPLETE -> Z {cons("COMPLETION-Z")}

@@ -7,6 +7,7 @@ imports
   common
   context/template/declare
   normalize/templatelang
+  utils/attributes
   utils/annotations
   utils/contract
   utils/debug
@@ -96,9 +97,10 @@ strategies
       A* := <template-to-sdf> t
 
   template-production-to-sdf:
-    TemplateProduction(S', t, attrs') -> p|[ A* -> S' attrs' ]|
+    TemplateProduction(S', t, attrs) -> p|[ A* -> S' attrs' ]|
     with
-      A* := <template-to-sdf> t
+      A* := <template-to-sdf> t;
+      attrs' := <attrs(filter(not(?sdf-completion(_)))) <+ no-attrs()> attrs
 
   // Single line template.
   //  -OR-

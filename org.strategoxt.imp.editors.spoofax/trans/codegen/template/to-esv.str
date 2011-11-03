@@ -203,8 +203,15 @@ strategies // Template expansion
     where {|Expanded:
       rules( Expanded: sort -> sort );
       result := <expand-template> template;
-      score := <is-deprecated < !-100 + !0> attrs
+      score := <determine-score> attrs
     |}
+
+  determine-score:
+    attrs -> <sum> [depr', prefer', avoid']
+    where
+      depr'   := <is-deprecated < !-100 + !0> attrs;
+      prefer' := <is-completion-prefer < !50 + !0> attrs;
+      avoid'  := <is-completion-avoid < !-50 + !0> attrs
 
   expand-template:
     t @ SingleLineTemplate(elem*) -> elem'*
