@@ -8,10 +8,6 @@ exports
     SdfProduction TemplateProduction Template
 
   context-free syntax
-    %% testing language does not accept parameterized sorts
-    Production[[SDF]] -> SdfProduction
-
-  context-free syntax
     %% tweaks for content completion
     CONTENTCOMPLETE -> TemplateProduction {recover, cons("WATER")}
     CONTENTCOMPLETE -> PlaceholderOption  {recover, cons("WATER")}
@@ -40,12 +36,19 @@ exports
     %% "grammars"
     "templates" TemplateProduction* -> Section {cons("TemplateSection")}
 
+    %% BNF order and SDF order can't go together in the same section,
+    %% because of ambiguity. "X = Y -> Z": is it "X = Y" "Z" or "X =" "Y -> Z"?
+    "lexical" "syntax"      SdfProduction* -> Grammar[[SDF]] {cons("lexical-syntax")}
+    "context-free" "syntax" SdfProduction* -> Grammar[[SDF]] {cons("context-free-syntax")}
+
+    %% syntactic sugar for SDF
+    ID "=" Symbols[[SDF]] Attributes[[SDF]] -> SdfProduction {cons("SdfProduction")}
+    SortCons "=" Symbols[[SDF]] Attributes[[SDF]] -> SdfProduction {cons("SdfProductionWithCons")}
+
     %% template productions
-    ID "=" Symbols[[SDF]] Attributes[[SDF]] -> Production[[SDF]] {cons("SdfProduction")}
     ID "=" Template Attributes[[SDF]] -> TemplateProduction {cons("TemplateProduction")}
 
     %% template productions `sort.cons = ...'
-    SortCons "=" Symbols[[SDF]] Attributes[[SDF]] -> Production[[SDF]] {cons("SdfProductionWithCons")}
     SortCons "=" Template Attributes[[SDF]] -> TemplateProduction {cons("TemplateProductionWithCons")}
 
     ID "." ID -> SortCons {cons("SortCons")}
@@ -78,20 +81,19 @@ exports
     "[" <PlaceholderText2-LEX> ":" -> <PlaceholderPrefix2-CF> {cons("Text")}
 
     %% template parts
-    "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template")}
-    "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template")}
+    "<" {<TemplateLine1-CF> "\n"}+ ">" -> <Template-CF> {cons("Template")}
+    "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template"), avoid, deprecated("Use single brackets to delimit the template")}
     <TemplatePart1-CF>* -> <TemplateLine1-CF> {cons("Line")}
     <TemplateString1-LEX> -> <TemplatePart1-CF> {cons("String")}
     <TemplateEscape1-LEX> -> <TemplatePart1-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePart1-CF> {cons("Layout")}
-    %% <TemplateNewline-LEX> -> <TemplatePart1-CF> {cons("Newline")}
 
-    "[[" {<TemplateLine2-CF> "\n"}+ "]]" -> <Template-CF> {cons("Template")}
+    "[" {<TemplateLine2-CF> "\n"}+ "]" -> <Template-CF> {cons("Template")}
+    "[[" {<TemplateLine2-CF> "\n"}+ "]]" -> <Template-CF> {cons("Template"), avoid, deprecated("Use single brackets to delimit the template")}
     <TemplatePart2-CF>* -> <TemplateLine2-CF> {cons("Line")}
     <TemplateString2-LEX> -> <TemplatePart2-CF> {cons("String")}
     <TemplateEscape2-LEX> -> <TemplatePart2-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePart2-CF> {cons("Layout")}
-    %% <TemplateNewline-LEX> -> <TemplatePart2-CF> {cons("Newline")}
 
     %% special: no placeholders, no newlines
     '"' <TemplatePartQ-CF>* '"' -> <Template-CF> {cons("SingleLineTemplate")}
