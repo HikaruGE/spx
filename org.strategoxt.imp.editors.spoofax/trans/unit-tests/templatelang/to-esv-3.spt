@@ -15,28 +15,28 @@ target setup [[
 ]]
 
 test stuff [[
-  Statement.IfThen = <<
+  Statement.IfThen = <
     <MetaAnno*; separator="\n">
     if <Exp> then
       <Statement*; separator="\n">
     end
-  >>
-  Statement.For = <<
+  >
+  Statement.For = <
     <MetaAnno*; separator="\n">
     for (<Exp>; <Exp>; <Exp>) do
       <Statement*; separator="\n">
     end
-  >>
+  >
 
-  Exp = <<<Term>>>
+  Exp = <<Term>>
 
-  Term = <<<Factor>>>
-  Term.BinOp = <<<Term> <TermOp> <Factor>>>
+  Term = <<Factor>>
+  Term.BinOp = <<Term> <TermOp> <Factor>>
 
-  Factor = <<<Var>>>
-  Factor.BinOp = <<<Factor> <FactorOp> <Var>>>
+  Factor = <<Var>>
+  Factor.BinOp = <<Factor> <FactorOp> <Var>>
 
-  Var.Var = <<$<ID>$>>
+  Var.Var = <$<ID>$>
 
   TermOp.Plus = "+"
   TermOp.Minus = "-"

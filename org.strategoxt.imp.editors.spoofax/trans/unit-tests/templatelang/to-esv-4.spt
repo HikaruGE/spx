@@ -33,7 +33,7 @@ test completion templates from lexical syntax expanded [[
   lexical syntax
     BoolMethodId = "||"
   templates
-    Exp.BinOp = <<<Exp> <BoolMethodId> <Exp>>>
+    Exp.BinOp = <<Exp> <BoolMethodId> <Exp>>
 ]]
 run test-templatelang-to-esv to [[
   completion template BoolMethodId: "||" = "||"
@@ -51,7 +51,7 @@ test no expansion for reject production [[
   lexical syntax
     "if" -> ID {reject}
   templates
-    Exp.Var = <<*<ID>>>
+    Exp.Var = <*<ID>>
 ]]
 run test-templatelang-to-esv to [[
 	completion template Exp: "*ID" = "*" <ID:ID>

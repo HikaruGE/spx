@@ -11,12 +11,12 @@ test if then statement [[
   package example
   module example
   templates
-    Statement.IfThen = <<
+    Statement.IfThen = <
       <MetaAnno*; separator="\n">
       if <Exp> then
         <Statement*; separator="\n">
       end
-    >>
+    >
 ]]
 run test-templatelang-to-str to [[
   module prettyprinter
@@ -25,8 +25,25 @@ run test-templatelang-to-str to [[
   strategies
     pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
     pp-list(s|t) = map(s); separate-by(|t); concat-strings
+    pp-ih-0(|t) = ?"" <+ prefix-lines(|t)
     pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
     pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
+    pp-ih-3(|t) = ?"" <+ prefix-lines-except-first(|t)
+
+    all-lines-except-first(s) =
+        is-string
+      ; string-tokenize-keep-empty(|['
+'])
+      ; at-last( \ [""] -> [] \  // Do not run s on a final empty line.
+               < where(!["\n"] => laststring) // ... but remember that the second last line was delimited by a newline
+               + where(![] => laststring))    // ... or not.
+      ; ([id | map(s)] + [])
+      ; <separate-by> ("\n", <id>)
+      ; <conc> (<id>, laststring) // Restore the final newline, if there was one.
+      ; concat-strings
+
+    prefix-lines-except-first(|p) =
+      all-lines-except-first(<conc-strings> (p, <id>))
   strategies
     prettyprint-Statement: IfThen(a, b, c) -> zz
       where

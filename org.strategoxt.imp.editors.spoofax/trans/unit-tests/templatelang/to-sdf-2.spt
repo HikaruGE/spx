@@ -9,23 +9,23 @@ setup [[
   templates
     // multi line template
     // placeholder @ (start, middle, end)
-    Statement.IfThen = <<
+    Statement.IfThen = <
       <MetaAnno*; separator="\n">
       if <Exp> then
         <Statement*; separator="\n">
       else
         <Statement*; separator="\n">
-    >>
+    >
     // placeholder @ start & end
-    Statements = <<
+    Statements = <
       <Statement*; separator="\n">
-    >>
+    >
     // single line template
-    Exp.Plus = <<<Exp> + <Exp>>>
+    Exp.Plus = <<Exp> + <Exp>>
     // injection (1)
-    Statement = <<<Comment>>>
+    Statement = <<Comment>>
     // injection (2)
-    Statement.Comment = <<<Comment>>>
+    Statement.Comment = <<Comment>>
 ]]
 
 target setup header [[
