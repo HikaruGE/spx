@@ -32,7 +32,7 @@ strategies
 
   template-sections-to-stratego-string:
     section* ->
-    $[module prettyprinter
+    ${module prettyprinter
       imports
         libstratego-lib
 
@@ -43,12 +43,27 @@ strategies
         // ih = indent helper, t = indent string
         pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
         pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
+        pp-ih-3(|t) = ?"" <+ prefix-lines-except-first(|t)
 
-      [section''*]
+        all-lines-except-first(s) =
+            is-string
+          ; string-tokenize-keep-empty(|['\n'])
+          ; at-last( \ [""] -> [] \  // Do not run s on a final empty line.
+                   < where(!["\n"] => laststring) // ... but remember that the second last line was delimited by a newline
+                   + where(![] => laststring))    // ... or not.
+          ; ([id | map(s)] + [])
+          ; <separate-by> ("\n", <id>)
+          ; <conc> (<id>, laststring) // Restore the final newline, if there was one.
+          ; concat-strings
+
+        prefix-lines-except-first(|p) =
+          all-lines-except-first(<conc-strings> (p, <id>))
+
+      {section''*}
 
       strategies // all other sorts used in placeholders
 
-        [strategy*]]
+        {strategy*}}
     with
       section'*  := <templatelang-desugar-top> section*;
       section''* := <filter(template-section-to-stratego-string);
@@ -123,7 +138,7 @@ rules
       not(!elem* => [Placeholder(_, _, _, _)])
     with
       (elem'*, _)    := <thread-map(try(rename-template-element))> (elem*, 0);
-      elem''*        := <map(template-element-to-stratego)> elem'*;
+      elem''*        := <map(template-element-to-stratego(|""))> elem'*;
       arg*           := <filter(template-element-to-cons-arg)> elem'*;
       let*           := <filter(template-element-to-prettyprint)> elem'*;
       (input, let'*) := <template-common> (let*, elem''*, attrs, arg*)
@@ -216,29 +231,35 @@ rules
       ([$[<pp-ih-1(|"[indent]")> [name]']], 0)
 
   template-line-to-stratego:
-    (Line(elem*), 0) -> (elem'*, 1)
+    (Line([Layout(indent) | elem*]), 0) -> (elem'*, 1)
     where
-      not(!elem* => [Layout(_), Placeholder(_, _, _, _)]);
-      elem'* := <map(template-element-to-stratego)> elem*
+      not(!elem* => [Placeholder(_, _, _, _)]);
+      elem'* := <map(template-element-to-stratego(|indent))> elem*
 
   template-line-to-stratego:
     (Line([Layout(indent), Placeholder(_, _, _, _){name}]), 1) ->
       ([$[<pp-ih-2(|"[indent]")> [name]']], 1)
 
   template-line-to-stratego:
-    (Line(elem*), 1) -> ([String("\n") | elem'*], 1)
+    (Line([Layout(indent) | elem*]), 1) -> ([String("\n") | elem'*], 1)
     where
-      not(!elem* => [Layout(_), Placeholder(_, _, _, _)]);
-      elem'* := <map(template-element-to-stratego)> elem*
+      not(!elem* => [Placeholder(_, _, _, _)]);
+      elem'* := <map(template-element-to-stratego(|indent))> elem*
 
-  template-element-to-stratego:
+  template-element-to-stratego(|indent):
     String(t) -> <id>
 
-  template-element-to-stratego:
+  template-element-to-stratego(|indent):
     Layout(t) -> String(t)
 
-  template-element-to-stratego:
-    Placeholder(_, _, _, _){name} -> $[[name]']
+  template-element-to-stratego(|indent):
+    Placeholder(_, _, _, _){name} -> $[[s][name]']
+      where
+        if !indent => "" then
+          s := ""
+        else
+          s := $[<pp-ih-3(|"[indent]")> ]
+        end
 
 rules
 
