@@ -46,7 +46,7 @@ rules
 
   // Invoked by declare-sdf-definition-internal
   declare-sdf-usage:
-    Placeholder(_, sort(x), _, _) -> <id>
+    Placeholder(sort(x), _, _) -> <id>
     with
       rules(Usage: x -> x)
 

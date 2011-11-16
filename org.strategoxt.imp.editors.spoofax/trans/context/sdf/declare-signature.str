@@ -227,15 +227,15 @@ rules
 
   // TemplateLang
   get-sort-decl:
-    Placeholder(_, sort(x), None(), _) -> <id>
+    Placeholder(sort(x), None(), _) -> <id>
     with rules( lhs-sort :+ _ -> x )
 
   get-sort-decl:
-    Placeholder(_, sort(x), <?Plus() + ?Star()>, _) -> <id>
+    Placeholder(sort(x), <?Plus() + ?Star()>, _) -> <id>
     with rules( lhs-sort :+ _ -> $[List([x])] )
 
   get-sort-decl:
-    Placeholder(_, sort(x), Option(), _) -> <id>
+    Placeholder(sort(x), Option(), _) -> <id>
     with rules( lhs-sort :+ _ -> $[Option([x])] )
 
 strategies

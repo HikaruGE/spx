@@ -112,10 +112,16 @@ rules
     alltd(origin-track-forced(templatelang-element-desugar))
 
   templatelang-element-desugar:
-    NoOptions() -> Options([])
+    NoOptions() -> []
 
   templatelang-element-desugar:
+    Options(x) -> <alltd(origin-track-forced(templatelang-option-desugar))> x
+
+  templatelang-option-desugar:
     Separator(x) -> Separator(<origin-track-forced(un-double-quote; unescape)> x)
+
+  templatelang-option-desugar:
+    Placeholder(x) -> Placeholder(<origin-track-forced(un-double-quote; unescape)> x)
 
   templatelang-element-desugar:
     Escape(t) -> String(t')
