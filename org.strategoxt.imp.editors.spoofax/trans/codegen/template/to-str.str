@@ -1,3 +1,13 @@
+// FIXME: Refactor to use lists, and separate-by(|"\n") to insert newlines.
+//        Then we can get rid of the four (!) pp-ih-* strategies.
+//        [Layout, Placeholder] could just generate an empty tuple for an
+//        empty substitute, which could be filtered out later on...
+//
+// 1. template-line-to-stratego
+// 2. filter(not(?()))
+// 3. separate-by(|"\n")
+// 4. concat
+
 module to-str
 
 imports
@@ -41,6 +51,7 @@ strategies
         pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
         pp-list(s|t) = map(s); separate-by(|t); concat-strings
         // ih = indent helper, t = indent string
+        pp-ih-0(|t) = ?"" <+ prefix-lines(|t)
         pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
         pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
         pp-ih-3(|t) = ?"" <+ prefix-lines-except-first(|t)
@@ -126,6 +137,24 @@ rules
       else
         input := "a"
       end
+
+  // Generalized injection: a list of placeholder lines only.
+  // This means that there is no place where
+  template-to-prettyprint-strategy:
+    TemplateProduction(sort, Template(line*), attrs) ->
+    $[prettyprint-[sort]:
+        [input] -> zz
+        where
+          [let'*]]
+    where
+      <all(?Line([Layout(_), Placeholder(_, _, _, _)]))> line*;
+      not(!line* => [_]) // normal injection
+    with
+      (line'*, _)    := <thread-map(rename-template-line)> (line*, 0);
+      (line''*, _)   := <thread-map(template-line-to-stratego)> (line'*, -1);
+      arg*           := <mapconcat(template-line-to-cons-arg)> line'*;
+      let*           := <mapconcat(template-line-to-prettyprint)> line'*;
+      (input, let'*) := <template-common> (let*, <separate-by(|["\"\\n\""]); concat> line''*, attrs, arg*)
 
   template-to-prettyprint-strategy:
     TemplateProduction(sort, SingleLineTemplate(elem*), attrs) ->
@@ -225,6 +254,13 @@ rules
   // template-line-to-stratego is to be used with thread map.
   // The thread starts at 0 and is set to 1 once we passed the first line.
   // It is used to determine whether we already generated the initial newline.
+
+  // Or: it is set to -1 and stays at -1, this means there are only
+  //     placeholders in the template, so none needs to add a newline.
+
+  template-line-to-stratego:
+    (Line([Layout(indent), Placeholder(_, _, _, _){name}]), -1) ->
+      ([$[<pp-ih-0(|"[indent]")> [name]']], -1)
 
   template-line-to-stratego:
     (Line([Layout(indent), Placeholder(_, _, _, _){name}]), 0) ->
