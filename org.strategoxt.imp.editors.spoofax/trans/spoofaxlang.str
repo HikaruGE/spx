@@ -17,32 +17,30 @@ imports
   context/sdf/declare
   context/str/declare
 imports
-  codegen/buildscripts
+	codegen/buildscripts
 	codegen/compile
 	codegen/esv/to-esv
 	codegen/sdf/to-sdf
 	codegen/sdf/to-name-analysis
-  codegen/sdf/to-signature
-  codegen/main
-
+ 	codegen/sdf/to-signature
+  	codegen/main
+   	codegen/template/-
 imports
 	normalize/main
 	normalize/signatures
-imports
 	context/-
 imports
 	utils/cache
 	common
-  config
-  /*
-	unit-tests/-
-	unit-tests/utils/-
-	*/
+	config
 imports
 	 editor/main
 	 codegen/main
-imports
-  codegen/template/-
+/*
+	unit-tests/templatelang/-
+	unit-tests/utils/-
+	unit-tests/-
+*/
 
 rules
 
@@ -54,7 +52,7 @@ rules
   editor-resolve:
     (sort(x), position, ast, path, project-path) -> target
     where
-      target := <Declaration> x
+      target := <resolve-atleast-one-sdf-declaration> x
 
  /*  TODO : Fix Editor Resolve
   editor-resolve:
@@ -69,7 +67,7 @@ rules
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm")> path;
-      result   := ast // we just return the input term
+      result   := selected // we just return the input term
 
 strategies
 
@@ -81,4 +79,4 @@ strategies
     test-templatelang-to-sdf;
     test-templatelang-to-str;
     build-spoofaxlang-jvm;
-    compile-spx
+    editor-clean-and-compile-spx-all

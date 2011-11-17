@@ -11,6 +11,8 @@ imports
 	spoofaxlang
 
 rules 
+		get-normalized-path = string-replace(|"\\", "/")			
+rules 
 	
 	has-known-extensions  =
 		?file-path ;
@@ -19,17 +21,17 @@ rules
 		is-not-empty-list;
 		!file-path
 	<+
-		<debug> $[Unknown File Type found at :[<pp-aterm>] . Supported File Extensions are : [<get-known-legacy-extensions;pp-aterm>]];
+		<debug> $[ERROR::  Unknown File Type found at :[<print-as-string>] . Supported File Extensions are : [<get-known-legacy-extensions;print-as-string>]];
 		fail
 		
 
 rules 
 	
-	qname-to-path = 
-		convert-qname(|"/")
+	qname-to-string-as-qualified-path = convert-qname(|".")
+	 
+	qname-to-path = 	convert-qname(|"/")
 	
-	qname-to-string = 
-		convert-qname(|"-")
+	qname-to-string =	convert-qname(|"-")
 		
 	convert-qname(|seperator) =
 		?QName(qname-parts*)
@@ -113,10 +115,12 @@ rules
 	
 	create-folder(|directory-to-create) = <file-exists<+mkdir(|"w")> directory-to-create;<chdir>directory-to-create  
 	
-  create-folder: folder-name -> None() 
-		with 
+  create-folder: 
+  	folder-name -> None() 
+		where with-spxverify(
     	<file-exists<+mkdir(|"w")> folder-name 
-      ;<chdir>folder-name 		    
+      ;<chdir>folder-name
+   	) 		    
   
   chdir-to-project-path =  
   <chdir><get-project-path>   
@@ -134,68 +138,60 @@ rules
 		
 	spx-cache-path(|extension-prefix):
     full-path -> cache-path
-    with
-      project-path := <get-project-path>;
-      cache-dir    := <file-exists <+ mkdir> $[[project-path]/.spxcache];
-      full-path'   := <string-replace(|"/", "+"); string-replace(|"\\", "+"); string-replace(|":", "+")> full-path;
-      cache-path   := $[[cache-dir]/[full-path'].[extension-prefix]]
+    where 
+    	with-spxverify(
+	      project-path := <get-project-path>;
+	      cache-dir    := <file-exists <+ mkdir> $[[project-path]/.spxcache];
+	      full-path'   := <string-replace(|"/", "+"); string-replace(|"\\", "+"); string-replace(|":", "+")> full-path;
+	      cache-path   := $[[cache-dir]/[full-path'].[extension-prefix]]
+    	)
 	
-	spx-compilation-unit-path=
-		where(is-string);
-		abspath
+	spx-compilation-unit-path = where(is-string); abspath
 		
 rules 
 	resolve-legacy-import-path(|sourcedir) =
 		 where (is-string);
-		 {| SourceDir, ProjectDir:
-		 		rules( 
-		 			ProjectDir  := <get-project-path>
-		 			SourceDir		:= sourcedir 
-		 		);	
-			 		 try-resolve-as-sdf
-				<+ try-resolve-as-str
-				<+ try-resolve-as-esv
-		 |}
-		<+ 
-		 <debug-symboltable> $[PathResolving | resolve-legacy-import-path|Failed to resolve import path for : [<pp-aterm>]]
-		 ;!Unresolved() 
+		 try-resolve-as-sdf(|sourcedir )
+	<+ try-resolve-as-str(|sourcedir )
+	<+ try-resolve-as-esv(|sourcedir )
+	<+ 
+		 dbg-compiler(! $[PathResolving | resolve-legacy-import-path|Failed to resolve import path for : [<print-as-string>]])
+		 ; !Unresolved() 
 	
 			
-	try-resolve-as-str = 
+	try-resolve-as-str(|source-dir) = 
 		?importname; 
 		where (
-			full-path := <resolve-import-path> $[[importname].str]
+			full-path := <resolve-import-path'(|source-dir)> $[[importname].str]
   	<+
-  		full-path := <resolve-import-path> $[[importname].rtree]
+  		full-path := <resolve-import-path'(|source-dir)> $[[importname].rtree]
 		);
 		!full-path
 	
 	
-	try-resolve-as-sdf = 
+	try-resolve-as-sdf(|source-dir) = 
 		?importname; 
 		where (
-			full-path := <resolve-import-path> $[[importname].sdf]
+			full-path := <resolve-import-path'(|source-dir)> $[[importname].sdf]
   	<+
-  		full-path := <resolve-import-path> $[[importname].def]
+  		full-path := <resolve-import-path'(|source-dir)> $[[importname].def]
 		);
 		!full-path
 		
 		
-	try-resolve-as-esv = 
+	try-resolve-as-esv(|source-dir) = 
 		fail
 	
-	
-	
 	//TODO refactor : fetch the folders from the config.str 
-	resolve-import-path:
+	resolve-import-path'(|source-dir):
   x -> full-path
   where
-  	full-path := <file-exists> $[[<SourceDir>]/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/trans/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/lib/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/src/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/syntax/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/syn/[x]]
- <+ full-path := <file-exists> $[[<ProjectDir>]/src/syntax/[x]]
+  	full-path := <file-exists> $[[source-dir]/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/trans/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/lib/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/src/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/syntax/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/syn/[x]]
+ <+ full-path := <file-exists> $[[<get-project-path>]/src/syntax/[x]]
    		

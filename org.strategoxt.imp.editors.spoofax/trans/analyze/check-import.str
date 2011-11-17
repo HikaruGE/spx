@@ -2,7 +2,7 @@ module analyze/check-import
 
 imports
 	context/-
-	
+	context/symboltable
 imports 
 	include/SpoofaxLang
 	utils/debug
@@ -13,19 +13,19 @@ rules
 	analyze-section: 
 		Imports(ast) -> (errors, [], [])
 		where
-  		<debug-analysis>$[ErrorChecking | Imports Section : [<pp-aterm>]]
-		with 
-			errors   := <collect-om(imports-constraint-error)> ast
+  		dbg-analysis(!$[ErrorChecking | Imports Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>)
+			; errors   := <collect-om(imports-constraint-error)> ast
 rules
+	
 	imports-constraint-error:
 		 ImportLegacyArtifact(Name(m@modulename)) -> ( m, $[Failed to import '[m]'. Module is not found. Please verify it exist at [directory-path] directory.])
 		 where
 		 	!modulename;
-		 	not-declared-legacy-artifact 
+		 	not(is-declared-legacy-artifact) 
 		 where
 		 	directory-path := <concat-strings;dirname> [<get-project-path>, "/", m]
 	
-	imports-constraint-error: 
+	imports-constraint-error:
 		ImportPackage(package-qname@QName(_)) -> (package-qname , $[Failed to resolve '[package-qname-string]'. Please check spx.config for configured SPX sources. ])
 		where
 			!package-qname;
@@ -39,7 +39,7 @@ rules
 			require(
 				<is-declared-package>QName([package-name])
 			+		
-				<is-declared-legacy-artifact<+is-declared-global-artifact>package-name
+				<is-declared-legacy-artifact>package-name
 			) 	
 	
 	imports-constraint-error:
@@ -54,18 +54,3 @@ rules
 			)	
 		where
 			module-qname-string :=  <convert-qname(|".")>module-qname
-
-rules
-	 not-declared-legacy-artifact = is-not-declared-global-artifact; is-not-declared-legacy-artifact 
-	 
-	 is-declared-package = where(DeclaredPackage)
-    
-   is-declared-module = where(DeclaredModule)
-    
-   is-not-declared-legacy-artifact = where(not(is-declared-legacy-artifact))
-    
-   is-declared-legacy-artifact = ?name; where(<UsedLegacyArtifacts>(<GetEnclosingPackageName> , name))
-    
-   is-declared-global-artifact = ?name ;  where(<UsedLegacyArtifacts>(Globals(), name)  => Resolved())
-   
-   is-not-declared-global-artifact = where(not(is-declared-global-artifact)) 		

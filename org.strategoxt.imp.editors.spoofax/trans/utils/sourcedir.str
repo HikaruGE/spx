@@ -15,7 +15,6 @@ rules
         ; explode-string(|'/')
         ; take(|<subt> (<length>, ndirs))
         ; implode-string(|'/') => basedir
-        ; rules(SourceDir := basedir)
         
   get-soure-base-dir = get-project-path
           

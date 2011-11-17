@@ -10,6 +10,7 @@ imports
 	common
 	utils/annotations
 	utils/debug	
+	context/resolve-declarations
 imports 
 	analyze/sdf/check 
 	analyze/esv/check
@@ -19,58 +20,77 @@ imports
 imports 
 	utils/contract 	
 	spoofaxlang
+	
 
 rules	
+  
 	//module specific semantic error checking 	
+	
 	module-constraint-error : 
-		Module(attrb* , s@SPXModuleName(modname) , section*) -> (modname, $[Multiple declaration of module '[modname]' ])
-			with
-				package-typed-qname := <get-annotation(get-package-annotation)> s
-				;Module(module-qname)  := <get-module-typed-qname>(package-typed-qname, s)
-			where 
-				require(<bagof-DeclaredModule>module-qname => [_])
-
-
+		def@Module(attrb* , s@SPXModuleName(m) , section*) -> (s, $[Multiple declaration of module '[m]' ])
+		where
+			module-qname := <GetEnclosingModuleName> ;
+			<get-enclosed-modules-of-package><GetEnclosingPackageName>
+			; filter(?module-qname)
+			; is-not-empty-list 
+			; require(ensure-is-unique) // if declaration is not unique, it means that module with this names is declared multiple times in the current package scope
+	
 rules 
 	//analyzes module errors returns it as a touple of errors , warnings and infos 
-	analyze-module-semantics : m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
-	where 
-		<collect-all(module-constraint-error, conc)>m  => merrors'
+	analyze-module-semantics : 
+		m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
+		where 
+			<collect-all(
+				module-constraint-error, 
+				conc)
+			> m  => merrors'
 
 		
 	// analyzes module errors and appened it with the existing problems  
-	append-semantic-problems(s|unziped-issues*):  m@Module(attrb* , modname , section*)  -> semantic-problems*
-	with 
-		<merge-semantic-problems>( <s> m , unziped-issues*) => semantic-problems*
-		
+	append-semantic-problems(s|unziped-issues*):  
+		m@Module(attrb* , modname , section*)  -> semantic-problems*
+		where with-spxverify( 
+			<merge-semantic-problems>( 
+				<s> m , 
+				unziped-issues*
+			)=> semantic-problems*
+		)
 rules
 	
 	analyze-module-definition: 
 		m@Module(attrb* , modname , section*) -> m
-		with
-				package-typed-qname := <GetEnclosingPackageName> 
-				;module-typed-qname  := <GetEnclosingModuleName>
-			<+ 
-				 debug(!"ErrorChecking | Failed to create current scope.")
-				;fail
-		with
-				<debug-analysis>$[ErrorChecking | Analyzing Semantic Problems of [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]]	 
-				;issues* := <map(analyze-section)>section*
-				;unziped-issues* := <unzip-semantic-issuses>issues*
+		where
+		  dbg-analysis(! $[Currently Analyzing : [<print-as-string>m]] | "analyze-module-definition" , <debug-level-INFO>) 
+			; with-spxverify(
+				  	package-typed-qname := <GetEnclosingPackageName> 
+				  ; module-typed-qname  := <GetEnclosingModuleName>
+				  , !"Failed to create current scope @analyze-module-definition"  	
+				  )
+			; dbg-analysis(!$[ErrorChecking | Analyzing Semantic Problems of [<print-as-string> (package-typed-qname,module-typed-qname)]] | "analyze-module-definition" , <debug-level-INFO>)
+			; with-spxverify(
+			  	issues* := <map(analyze-section)>section*
+					; unziped-issues* := <unzip-semantic-issuses>issues*	
+			  )
 		where		 
 				<append-semantic-problems(analyze-module-semantics|unziped-issues*)> m  => unziped-issues'*
-				;current-scope := (package-typed-qname ,module-typed-qname)
-				;rules(
-						GetSemanticProblems :  current-scope  ->unziped-issues'*  
-				)	
+				; current-scope := (package-typed-qname ,module-typed-qname)
+				; with-spxverify(  
+						rules( GetSemanticProblems :  current-scope  ->unziped-issues'*)
+					)	
 		where
-			<debug-compiler>$[ErrorChecking | Found semantic problems for [<pp-aterm-forced> (package-typed-qname,module-typed-qname)]  
-			                                  Problems :[<pp-aterm-forced> unziped-issues*]]
+			dbg-analysis(! $[ErrorChecking | Found semantic problems for [<print-as-string> (package-typed-qname,module-typed-qname)]  
+			                                  Problems :[<print-as-string> unziped-issues*]] |  "analyze-module-definition" , <debug-level-WARNING>)
 							
 rules 
-			 
 	analyze-section = 
-		where(not(?Imports(_)+?SDFSection(_) + ?ESVSection(_) + ?STRSection(_) + ?SDFSectionEH(_, _)))
-		;<debug-analysis>$[ErrorChecking | Ignoring Section: [<pp-aterm>]] 
-		;!([], [], [])		
+		where(
+			not(
+				?Imports(_)
+			+ ?SDFSection(_) 
+			+ ?ESVSection(_) 
+			+ ?STRSection(_) 
+			+ ?SDFSectionEH(_, _))
+			)
+		; dbg-analysis(! $[ErrorChecking | Ignoring Section: [<print-as-string>]]| "analyze-section" , <debug-level-INFO>) 
+		; !([], [], [])		
 

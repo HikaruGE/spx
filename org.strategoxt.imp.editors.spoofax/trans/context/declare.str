@@ -17,62 +17,49 @@ imports
 	utils/contract
 	config
 	common
+	codegen/main
 
-rules
-	declare-spx-global-symbols =
-		contracts(
-			contract-requires(
-				?Package(QName(_))
-			)
-		);
-		get-enclosed-modules;
-		list-loop(
-			{|GetEnclosingModuleName:
-					declare-current-module-scope;
-					get-module-declaration;
-					declare-internal(declare-global-symbols-main)
-			|}	
-		)
-
+rules 
 	
-	delcare-spx-scoped-symbols =  
-		declare-internal(declare-local-symbols-main)
-	
-	declare-local-symbols-main = 
-		declare-spxmodules-all(declare-local-symbols); 
-		update-modified-module-declaration
-
-	declare-global-symbols-main = 
-		declare-spxmodules-all(declare-global-symbols) ;  
-		update-modified-module-declaration
-
-	declare-internal(s) = 
-		origin-track-forced(s)
-	
-	init-declaration = 
-		init-record-signatures ; 
+	init-declarations = 
+		init-record-signatures;
 		init-template-options
-
-
+    
 rules
-
+  declare-spx-global-symbols =
+  		list-loop(
+				{| GetEnclosingModuleName
+				 : 	declare-current-module-scope
+				 		; with-spxverify(
+								get-desugared-module-ast
+								; declare-internal( declare-spxmodules-all( declare-global-symbols))
+						  )
+				|}	
+		  )
+	
+	delcare-spx-scoped-symbols = declare-internal( declare-spxmodules-all(declare-local-symbols))
+	
+	declare-internal(declare-symbols) =  
+			origin-track-forced(declare-symbols) => annotated-moduleDef
+		  ; !annotated-moduleDef => Module(attrb* , modname , section*)  // updating module definitions
+		  ; with-spxverify(
+					 <get-annotation(get-package-annotation)>modname => Package( package-qname)
+				  ; mId := <get-module-typed-qname>(package-qname, modname)
+			  	; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
+	    )  
+	
+rules 
 	declare-spxmodules-all(s):
 		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*)
 		where
 			<alltd(s)>section* => m-sections*
 
-	update-modified-module-declaration:
-		m@Module(attrb* , modname , section*) -> m
-		with
-				Package( package-qname) := <get-annotation(get-package-annotation)>modname
-		with
-			<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  m)
-
-rules
+	
 	declare-local-symbols:
 		SDFSection(definition*) -> SDFSection(declared-definition*)
 		where
-			declared-definition* := <declare-sdf-definition-main>definition*
+			<declare-sdf-definition-main>definition* => declared-definition*  
+				 
 
 	declare-local-symbols:
 		SDFSectionEH(_,definition*) -><declare-local-symbols>SDFSection(definition*)
@@ -80,22 +67,23 @@ rules
 	declare-local-symbols:
 	  STRSection(def*) -> STRSection(m-definition*)
     where
-      m-definition* := <declare-str-definition-main>def*
-
+    	<declare-str-local-definition-main>def* => m-definition*
+       
+      
   declare-local-symbols: ESVSection(def*) -> <id>
 
   // TemplateLang
   declare-local-symbols:
     TemplateSection(definition*) -> TemplateSection(declared-definition*)
     with
-      declared-definition* := <declare-template-definition-main> definition*
+     <declare-template-definition-main> definition* => declared-definition* 
 
   // TemplateLang
   // FIXME: move to spoofax.configuration?
   declare-local-symbols:
   	TemplateOptions(option*) -> TemplateOptions(declared-option*)
   	with
-  	  declared-option* := <declare-template-options-main> option*
+  	  <declare-template-options-main> option* => declared-option* 
 
 rules
 
@@ -106,10 +94,18 @@ rules
 	declare-global-symbols: s@STRSection(def*) -> STRSection(m-definition*)
 	where
 		m-definition* := <declare-stratego-globals-top>def*
-
-	declare-global-symbols: ESVSection(def*) -> ESVSection(declared-definition*)
-	where 
-		declared-definition* := <declare-esv-globals-top>def*
+	
+	
+	declare-global-symbols: 
+		ESVSection(def*) -> ESVSection(declared-definition*)
+		where 
+			declared-definition* := <declare-esv-globals-top>def*;
+			current-package-name := <GetEnclosingPackageName>;
+			with-spxverify(
+				//storing esv section
+				<index-symbol-definition>(current-package-name, ESVSection() ,  declared-definition*)
+				, !$[Failed to index esv section of [current-package-name]] 
+			) 
 	
   // TemplateLang
   declare-global-symbols: TemplateSection(def*) -> <id>
@@ -121,29 +117,42 @@ rules
 
 	// Declaring current scope for further analyze
 	declare-current-scope(| package-typed-qname , module-typed-qname)=
-		with(
-			<declare-current-package-scope>package-typed-qname;
-			<declare-current-module-scope>module-typed-qname
-		)
+		with-spxverify(
+		    <declare-current-package-scope>package-typed-qname
+		   ;<declare-current-module-scope>module-typed-qname 
+    )
 
 	declare-current-package-scope :
 		package-typed-qname -> <id>
-		with
-			rules ( GetEnclosingPackageName      := package-typed-qname)
+		where
+      with-spxverify(
+        rules(GetEnclosingPackageName := package-typed-qname )
+        , !"Failed to declare-current-package-scope"
+      )
 
 	declare-current-module-scope:
 			module-typed-qname -> <id>
-			with
-				rules ( GetEnclosingModuleName      := module-typed-qname)
+			where
+				with-spxverify(
+			 		rules( GetEnclosingModuleName := module-typed-qname)   
+					, !"Failed to declare-current-module-scope"
+				) 
+			
 
 rules
+	declare-legacy-artifact(|resolved-path) : 
+		legacy-content -> legacy-content
+		where
+		   < has-extension(|"sdf") 
+			 + has-extension(|"def")
+			 > resolved-path
+		   ; <alltd(
+		   	   declare-sdf-definition-main) >legacy-content
 
-	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
-	where
-		<has-extension(|"sdf") + has-extension(|"def")>resolved-path;
-		<alltd(declare-sdf-definition-main)>legacy-content
-
-	declare-legacy-artifact(|resolved-path) : legacy-content -> legacy-content
-	where
-		<has-extension(|"str") + has-extension(|"rtree")>resolved-path;
-		<alltd(declare-str-definition-main)>legacy-content
+	declare-legacy-artifact(|resolved-path) : 
+		legacy-content -> legacy-content
+		where
+			 < has-extension(|"str") 
+			 + has-extension(|"rtree")
+			 > resolved-path
+		   ; <declare-legacy-str-imports> legacy-content

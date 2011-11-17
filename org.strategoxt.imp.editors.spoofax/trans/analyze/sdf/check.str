@@ -9,26 +9,32 @@ imports
   context/-
   include/SpoofaxLang
   utils/attributes
-
+rules
+	verify-sdf-symbol-declaration-exists =
+		<verify-symbol-exists>( <id>, SDFDeclaration())
+  <+
+    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<print-as-string>]] 
+                 | "verify-sdf-symbol-declaration-exists" ,<debug-level-WARNING>)
+    ; fail 
+      
 rules
 	analyze-section: SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
 
 	analyze-section:
 		SDFSection(ast) -> <analyze-sdf-errors>ast
 		where
-			<debug-analysis>$[ErrorChecking | SDF Section : [<pp-aterm>]]
+			dbg-analysis(! $[ErrorChecking | SDF Section : [<print-as-string>]] | "analyze-section", <debug-level-INFO>)
 
   analyze-section:
     TemplateSection(ast) -> <analyze-sdf-errors>
     where
-      <debug-analysis>$[ErrorChecking | Template Section : [<pp-aterm>]]
+      dbg-analysis(!$[ErrorChecking | Template Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>)
 
 	analyze-sdf-errors :
 		ast -> (error'*, warning'*, [])
 		where
-			<debug-analysis>$[ErrorChecking | SDF  : [<pp-aterm>]]
-		with
-	    // We only collect-om since we don't want inner warning dupes
+			  dbg-analysis(! $[ErrorChecking | SDF  : [<print-as-string>]] | "analyze-sdf-errors" , <debug-level-INFO>) ; 
+			// We only collect-om since we don't want inner warning dupes
 	    error*   := <flatten-list><collect-om( ?context-free-syntax       (<collect-om(context-free-syntax-error)>)
                                            + ?lexical-syntax            (<collect-om(lexical-syntax-error)>)
 	    																		 + ?context-free-start-symbols(<collect-om(context-free-start-symbols-error)>)
@@ -48,6 +54,7 @@ rules
 	    error'*   := <conc;flatten-list> (serror*, error*);
 	    warning'* := <flatten-list> warning*
 
+				
 	
 strategies
 	
@@ -75,7 +82,7 @@ rules  //global checks
   context-free-syntax-warning:
     sort(x) -> (x, $[No definition for [x]])
     where
-      not(<resolve-sdf-declarations> x)
+      not(<verify-sdf-symbol-declaration-exists> x)
 
   context-free-syntax-sort-error:
     parameterized-sort(_, _) -> [] // not supported

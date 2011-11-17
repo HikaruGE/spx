@@ -11,7 +11,11 @@ imports
   utils/attributes
   utils/contract
   utils/templatelang
-
+	common
+	context/symboltable
+	context/sdf/declare
+	context/declare 
+	
 strategies
 
   test-templatelang-to-esv:
@@ -29,35 +33,33 @@ strategies
   /** @type List(TemplateSection) -> List(Completions) */
   template-sections-to-esv:
     section* -> completion*
-    with
-      contracts(
-        contract-requires(List | section*)
-      )
-    with
+    where with-spxverify(
+      verify(List | section* , "List ::template-sections-to-esv")
+    )
+    where with-spxverify(
       completion* := <filter(template-section-to-esv); concat> section*
-    with
-      contracts(
-        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
-      )
-
+    )
+    where with-spxverify(
+      verify(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion* , "ListOf(?CompletionTemplateEx(_, _, _, _))  ::template-module-to-esv")
+    )
+    
   /** @type TemplateSection -> List(CompletionTemplate) */
   template-section-to-esv:
     TemplateSection(prod*) -> completion*
-    with
-      contracts(
-        // FIXME: remove TemplateProductionWithCons/3 when desugaring is performed before code generation.
-        contract-requires(ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _)) | prod*)
-      )
-    with
+    where 
+    	with-spxverify(
+        verify( ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _)) | prod* , "ListOf(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _))  ::template-section-to-esv")
+    	)
+    where with-spxverify(
       // FIXME: desugaring should have been performed before the current strategy is invoked.
       // FIXME: declaring is here for unit testing only ???
       completion* := <templatelang-desugar-top;
                       declare-template-definition-main;
                       filter(template-to-completion-template)> prod*
-    with
-      contracts(
-        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
-      )
+    )
+    where with-spxverify(
+      verify(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion* , "ListOf(?CompletionTemplateEx(_, _, _, _))  ::template-section-to-esv")
+   	)  
 
   template-section-to-esv:
     SDFSection(lexical-syntax(prod*)) ->
@@ -69,22 +71,22 @@ strategies
 
   sdf-productions-to-completion-templates:
     prod* -> completion*
-    with
-      contracts(
+    where with-spxverify(
         // FIXME: remove SdfProduction/3 and SdfProductionWithCons/3 when desugaring is performed before code generation.
-        contract-requires(ListOf(?prod(_, _, _) + ?SdfProduction(_, _, _) + ?SdfProductionWithCons(_, _, _)) | prod*)
-      )
-    with
+        verify(ListOf(?prod(_, _, _) + ?SdfProduction(_, _, _) + ?SdfProductionWithCons(_, _, _)) | prod* , "ListOf(?prod(_, _, _) + ?SdfProduction(_, _, _) + ?SdfProductionWithCons(_, _, _))  ::sdf-productions-to-completion-templates")
+    )  
+   where 
+   	with-spxverify(
       // FIXME: desugaring should have been performed before the current strategy is invoked.
       // FIXME: declaring is here for unit testing only ???
       completion* := <templatelang-desugar-sdf-top;
                       declare-sdf-definition-main;
                       filter(sdf-production-to-template;
                              template-to-completion-template)> prod*
-    with
-      contracts(
-        contract-requires(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion*)
-      )
+		 )
+		where with-spxverify(
+			verify(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion* , "ListOf(?CompletionTemplateEx(_, _, _, _))  ::sdf-productions-to-completion-templates " )
+    )  
 
 /*internal*/ strategies
 
@@ -97,11 +99,13 @@ strategies
       |[ completion template ~sort : ~prefix = ~*part* ]|
     where
       not(<is-deprecated + is-reject> attrs)
-    with {|Expanded:
-      part* := <map(template-element-to-esv);
+    where with-spxverify( 
+    	{|Expanded:
+      	part* := <map(template-element-to-esv);
                 template-to-completion-template-helper> elem*;
-      prefix := <build-prefix> part*
-    |}
+      	prefix := <build-prefix> part*
+    	|}
+    )	
     where
       <accept-template-parts(|sort)> part*
 
@@ -110,14 +114,16 @@ strategies
       |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
     where
       not(<is-deprecated + is-reject> attrs)
-    with {|Expanded:
-      part* := <map(template-line-to-esv);
+    where with-spxverify( 
+    	{|Expanded:
+      	part* := <map(template-line-to-esv);
                 try(\[[_, Cursor()] | tail] -> tail\); // HACK for Mobl <MetaAnno*>
                 remove-cursor-except-first;
                 separate-by(|String("\n"));
                 template-to-completion-template-helper> line*;
-      prefix := <build-prefix> part*
-    |}
+      	prefix := <build-prefix> part*
+    	|}
+  	)
     where
       <accept-template-parts(|sort)> part*
 
@@ -267,12 +273,12 @@ strategies // Template expansion
   is-template-placeholder:
     Placeholder(_, sort(x), _, _) -> <id>
     where
-      <setof-Declaration; one(?TemplateProduction(_, _, _))> x
+      <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
 
   is-template-placeholder:
     PlaceholderWithSort(_, x) -> <id>
     where
-      <setof-Declaration; one(?TemplateProduction(_, _, _))> x
+      <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
 
   // expand-template-line covers exactly all valid input terms except:
   //  Line([indent @ Layout(_), Placeholder(_, sort(x), <None() + Plus()>, _)]) where <Expanded> x
@@ -315,13 +321,13 @@ strategies // Template expansion
   // helpers
 
   get-template-lines(|indent) =
-    setof-Declaration;
+    setof-Declaration ;
     filter(expand-multi-line-template-production);
     choose-one-expansion;
     map(Line(![indent | <id>]))
 
   get-template-elements =
-    setof-Declaration;
+    setof-Declaration ;
     filter(expand-single-line-template-production);
     choose-one-expansion
 
@@ -349,8 +355,10 @@ strategies // Template expansion
 
   lti = not(gti)
 
-  setof-Declaration =
-    to-package-scoped-symbol;
-    bagof-Declaration; nub; is-not-empty
 
-  is-not-empty = ?[_ | _]
+  setof-Declaration =
+  	activate-scope(
+  		setof-sdf-declarations 
+  		|<GetEnclosingPackageName>
+  	);
+    is-not-empty-list

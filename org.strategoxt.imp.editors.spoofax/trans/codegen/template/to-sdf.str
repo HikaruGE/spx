@@ -18,31 +18,32 @@ strategies
 
   test-templatelang-to-sdf:
     ast -> 'module(unparameterized(modulename), [], [exports(grammars)])
-    with
+    where with-spxverify(
       init-template-options;
       <?CompilationUnit([], [Package(_, [Module(_, SPXModuleName(modulename), sections)])])> ast;
       (options, t-sections) := <partition(?TemplateOptions(<id>))> sections;
       <try([declare-template-options-main])> options;
       <template-sections-to-sdf /*;alltd(quoted(double-quote))*/> t-sections;
       (\[x] -> x\ + \[x, y] -> conc-grammars(x, y)\) => grammars
+    )
 
 strategies
 
   /** @type List(TemplateSection) -> List(grammar) */
   template-sections-to-sdf:
     section* -> sdf-section'*
-    with
-      contracts(
-        contract-requires(ListOf(?TemplateSection(_)) | section*)
+    where 
+    	with-spxverify(
+    		verify(ListOf(?TemplateSection(_)) | section* , "ListOf(?TemplateSection(_)) ::template-sections-to-sdf")
       )
-    with
+    where with-spxverify ( 
       // FIXME: desugaring should have been performed before the current strategy is invoked.
       sdf-section*  := <templatelang-desugar-top; map(template-section-to-sdf)> section*;
       sdf-section'* := <add-contentcomplete; add-lexical-restrictions> sdf-section*
-    with
-      contracts(
-        contract-requires(ListOf(?context-free-syntax(_) + ?lexical-restrictions(_)) | sdf-section'*)
-      )
+    )
+    where with-spxverify ( 
+      verify(ListOf(?context-free-syntax(_) + ?lexical-restrictions(_)) | sdf-section'* , "ListOf(?context-free-syntax(_) + ?lexical-restrictions(_)) ::template-sections-to-sdf")
+    )	
 
 /*internal*/ strategies
 
@@ -52,15 +53,16 @@ strategies
       context-free syntax
         p*
     ]|
-    with
+    where with-spxverify ( 
       // main productions
       // FIXME: declaring should have been performed before the current strategy is invoked.
       p* := <declare-template-definition-main; map(template-production-to-sdf)> prod*
+    )
 
   /** @type List(grammar) -> List(grammar) */
   add-contentcomplete:
     sdf-section* -> [sdf-section*, injections*]
-    with
+    where with-spxverify ( 
       A* := <collect-om(?sort(_)); nub; string-sort-ex> sdf-section*;
       p* := <map(sort-to-contentcomplete)> A*;
       if !p* => [] then
@@ -68,11 +70,12 @@ strategies
       else
         injections* := [context-free-syntax(p*)]
       end
+    )
 
   /** @type List(grammar) -> List(grammar) */
   add-lexical-restrictions:
     sdf-section* -> [sdf-section*, restrictions*]
-    with
+    where with-spxverify(
       let ends-with-identifier-char =
             where(
               explode-string;
@@ -82,53 +85,57 @@ strategies
             )
       in
         A* := <collect-om(lit(ends-with-identifier-char)); nub; string-sort-ex> sdf-section*;
-        r  := <Options> KeywordFollowRestriction();
+        r  := <get-keyword-follow-restriction>;
         if (!A* => []) + (!r => None()) then
           restrictions* := []
         else
           restrictions* := [lexical-restrictions([follow(A*, r)])]
         end
       end
+     ) 
 
   // Used when rewriting `Sort.Cons' in priority sections to a production.
   template-production-to-sdf-no-attrs:
     TemplateProduction(S', t, _) -> p|[ A* -> S' ]|
-    with
+    where with-spxverify ( 
       A* := <template-to-sdf> t
+    )
 
   template-production-to-sdf:
     TemplateProduction(S', t, attrs) -> p|[ A* -> S' attrs' ]|
-    with
+    where with-spxverify ( 
       A* := <template-to-sdf> t;
       attrs' := <attrs(filter(not(?sdf-completion(_)))) <+ no-attrs()> attrs
+    )
 
-  // Single line template.
+	// Single line template.
   //  -OR-
   // Template with only a placeholder. (i.e., injection)
   // The placeholder is at the start AND at the end of the template!
   template-to-sdf:
     < ?SingleLineTemplate(elem*)
     + ?Template([Line(elem* @ [Layout(_), Placeholder(_, _, _, _)])]) > -> A*
-    with
+    where with-spxverify ( 
       A* := <maybe-separating(
       	       filter(template-element-to-sdf-sep <+ template-element-to-sdf),
       	       filter(template-element-to-sdf)
       	     );
              flatten-list> elem*
-
+		)
+		
   // Multi line template.
   template-to-sdf:
     Template(line*) -> A*
-    with
+    where with-spxverify ( 
       A* := <filter(?Line([Layout(_), _ | _]));
              maybe-separating(
              	 !(<id>, 0); thread-map(template-line-to-sdf-sep); ?(<id>, _),
              	 map(template-line-to-sdf)
              );
              flatten-list> line*
-
+		)
   maybe-separating(yes, no) =
-    if <Options> Newlines() => Separating() then yes else no end
+    if <get-template-option> Newlines() => Separating() then yes else no end
 
 rules
 
@@ -174,7 +181,7 @@ rules
   template-line-to-sdf =
     ?Line(<id>);
     if not(?[Layout(_), Placeholder(_, _, _, _)]) then
-      switch <Options> Newlines()
+      switch <get-template-option> Newlines()
         case ?None()     : id
         case ?Leading()  : ![String("\n") | <id>]
         case ?Trailing() : (elem* -> [elem*, String("\n")])
@@ -198,7 +205,7 @@ rules
   template-element-to-sdf:
     Placeholder(_, sort(S), Star(), Options(option*)) -> A|[ { S L }* ]|
     where <one(Separator(not(string-is-layout)))> option*
-    with L := <separator-to-literal> option*
+    where with-spxverify ( L := <separator-to-literal> option*)
 
   template-element-to-sdf:
     Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ S+ ]|
@@ -207,7 +214,7 @@ rules
   template-element-to-sdf:
     Placeholder(_, sort(S), Plus(), Options(option*)) -> A|[ { S L }+ ]|
     where <one(Separator(not(string-is-layout)))> option*
-    with L := <separator-to-literal> option*
+    where with-spxverify( L := <separator-to-literal> option*  )
 
   char-is-layout =
     ' ' + '\t' + '\r' + '\n'

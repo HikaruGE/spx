@@ -21,7 +21,7 @@ rules
 			editor-init;
 		  initialize-configuration
 		with 
-			<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
+			<store-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
 		with 
 			compile-all
 	

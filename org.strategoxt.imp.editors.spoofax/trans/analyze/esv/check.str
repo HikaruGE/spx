@@ -17,40 +17,40 @@ rules
 	analyze-section: 
 		ESVSection(ast) -> (error-esv*, warning-esv* , info-esv*)
   	where
-  		<debug-analysis>$[ErrorChecking | ESV Section : [<pp-aterm>]]
+  		dbg-analysis(! $[ErrorChecking | ESV Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>)
 		where
   		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
   		warning-esv* := <flatten-list><collect-all(constraint-esv-warning, conc)> ast;
   		info-esv*    := []
 
-
 rules
 	constraint-esv-error:
     Sort(x) -> (x, $[Unknown sort "[x]"])
     where
-      require(<resolve-sdf-sort-declaration> x)
-  
+    	require(<verify-sdf-sort-declaration-exists> x)
+    
+ 
   constraint-esv-error:
     Strategy(x) -> (x, $[Unknown strategy "[x]"])
     where
-      require(<is-declared-stratego> x)
-      
+      require(<verify-declared-stratego> x)
+     
   constraint-esv-error:
     SemanticProvider(x) -> (x, $[Must be a generated .ctree or .jar file])
     where
       require(<string-ends-with(|".jar") + string-ends-with(|".ctree")> x)
    		
   constraint-esv-error: 
-   	LanguageName( name ) -> (name, $[ Multiple declarations of language name. Declared in following packages : [<pp-aterm>packages*]])
+   	LanguageName( name ) -> (name, $[ Multiple declarations of language name. Declared in following packages : [<print-as-string>packages*]])
    	where
-   			<get-languagename-declaration-sites> name =>packages*;
-   			is-not-empty-list;
-   			make-set;
-				not(ensure-is-unique)
+   			<get-languagename-declaration-sites> name  		 => packages*
+   			; is-not-empty-list
+   			; not(ensure-is-unique)
 					
 rules
+	
 	constraint-esv-warning:  
-		StartSymbols(sorts*) -> err-messages*
+		sSym@StartSymbols(sorts*) -> err-messages*
 		where
 			s* := <get-sdf-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
 			<filter(unknown-start-symbol-error(|s*))>sorts* => err-messages*;
@@ -72,4 +72,4 @@ rules
 				ensure-is-unique
 		where		
 				not(!packages* => [_])
-   	 		 
+  

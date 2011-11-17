@@ -5,7 +5,7 @@ imports
   include/SpoofaxLang
   utils/attributes
   utils/templatelang
-
+	common
 strategies
 
   templatelang-desugar-sdf-top =
@@ -22,49 +22,55 @@ rules
   templatelang-desugar-sdf:
     SdfProductionWithCons(SortCons(sort, cons), symbol*, attrs(attr*)) ->
       prod(symbol*, sort(sort), attrs(attr'*))
-    with
+    where with-spxverify(
       attr'* := [sdf-cons(<double-quote> cons) | attr*]
+    )
 
   templatelang-desugar-sdf:
     SdfProductionWithCons(SortCons(sort, cons), symbol*, no-attrs()) ->
       prod(symbol*, sort(sort), attrs(attr'*))
-    with
+    where with-spxverify(
       attr'* := [sdf-cons(<double-quote> cons)]
+    )
 
 rules
 
   templatelang-desugar:
     TemplateProduction(sort, template, a) ->
       TemplateProduction(sort, template', attrs(attr*))
-    with
-      template' := <origin-track-forced(templatelang-template-desugar)> template;
-      attr*     := <templatelang-get-attrs> a
+    where 
+    	with-spxverify(
+					template' := <origin-track-forced(templatelang-template-desugar)> template;
+	        attr*     := <templatelang-get-attrs> a
+			)	
 
   templatelang-desugar:
     TemplateProductionWithCons(SortCons(sort, cons), template, a) ->
       TemplateProduction(sort, template', attrs(attr*))
-    with
-      template' := <origin-track-forced(templatelang-template-desugar)> template;
-      attr*     := [sdf-cons(<double-quote> cons) | <templatelang-get-attrs> a]
+    where 
+    	with-spxverify(
+	      template' := <origin-track-forced(templatelang-template-desugar)> template;
+	      attr*     := [sdf-cons(<double-quote> cons) | <templatelang-get-attrs> a]
+			)      
 
   templatelang-get-attrs =
     (no-attrs() -> []) + ?attrs(<id>)
 
   templatelang-template-desugar:
     SingleLineTemplate(elem*) -> SingleLineTemplate(elem'*)
-    with
-      elem'* := <templatelang-element-desugar-top> elem*
+    where with-spxverify(
+      elem'* := <templatelang-element-desugar-top> elem* )
 
   templatelang-template-desugar:
     Template([Line(elem*)]) -> SingleLineTemplate(elem'*)
-    with
-      elem'* := <templatelang-element-desugar-top> elem*
+    where with-spxverify(
+      elem'* := <templatelang-element-desugar-top> elem* )
 
   templatelang-template-desugar:
     Template(line*) -> Template(line'*)
     where
       not(!line* => [_])
-    with
+    where with-spxverify(
       let line-is-empty =
             ?Line([]) + ?Line([Layout(_)])
 
@@ -106,7 +112,7 @@ rules
         map(line-remove-trailing-layout; line-ensure-leading-layout);
         unindent;
         ?line'*
-      end
+      end )
 
   templatelang-element-desugar-top =
     alltd(origin-track-forced(templatelang-element-desugar))
@@ -119,7 +125,7 @@ rules
 
   templatelang-element-desugar:
     Escape(t) -> String(t')
-    with
+    where with-spxverify(
       let parse-unicode =
             {before*, mid, after*:
                split-fetch-keep(not(is-hexnum)) => (before*, mid, after*);
@@ -149,8 +155,10 @@ rules
       in
         t' := <origin-track-forced(unescape)> t
       end
+      )
 
   templatelang-element-desugar:
     Layout(t) -> Layout(t')
-    with
+    where with-spxverify(
       t' := <origin-track-forced(string-replace(|"\t", "  "))> t
+     ) 

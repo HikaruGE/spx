@@ -18,14 +18,15 @@ rules
 			expected 		 := Module( QName(["Test" , "A" , <internal_module_name_string>] ))
 		where 
 			<debug>$[Running Test .... ];
-			actual :=  <get_internal_module_qtname(|package-name)>
+			actual :=  <get_internal_module_qtname>package-name
 		where
 			<debug> $[Verifying Expectaions .... ];
 			!expected  => actual;
 			<debug(!"SUCCESS. Actual and Expected :  ")> [actual, expected]
 		<+ 
 			<debug(!"FAILED. ")> [actual, expected]	
-				
+	
+			        
 	resolving-in-imported-scope-internal-symbol-fail:
 		(selected, position, ast, path, project-path) -> None()
 		where 
@@ -80,7 +81,7 @@ rules
 					);
 					<debug>$[Test1: Resolve Declaration in imported scopes:-----------------];
 					if (result := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1) then 
-						<debug>$[ Resolve Successful. Test Successful . Resolved Symbol : [<pp-aterm>result]]
+						<debug>$[ Resolve Successful. Test Successful . Resolved Symbol : [<print-as-string>result]]
 					end	
 			 |}
 	
@@ -223,7 +224,7 @@ rules
 		scoped-symbol := <to-scoped-symbol>x
 		;rules(Declaration:+  scoped-symbol  -> scoped-symbol)
 	where
-		<debug>$[storing Global declaration [<pp-aterm>scoped-symbol]]
+		<debug>$[storing Global declaration [<print-as-string>scoped-symbol]]
 				
 	setup-declaration: x@(p , m , symbol) ->x
 	with
@@ -235,5 +236,5 @@ rules
 				rules(Declaration:+ scoped-symbol  -> symbol)
 		|} 
 	where
-		<debug>$[storing declaration [<pp-aterm>scoped-symbol]]
+		<debug>$[storing declaration [<print-as-string>scoped-symbol]]
 			

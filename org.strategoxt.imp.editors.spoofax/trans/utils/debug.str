@@ -2,63 +2,97 @@ module utils/debug
 
 imports
 	common
-
-strategies
-	enable-debug-all  = rules ( DebugAll: _ )
-
-	disable-debug-all  = rules ( DebugAll:- _ )
-
-strategies
-
-	enable-stratego-debugging  = rules(DebugStr: x -> x)
-
-	disable-stratego-debugging = rules(DebugStr:- _ )
-
-	debug-str = not(DebugStr) <+ debug
-
-strategies
-
-	enable-sdf-debugging  = rules(DebugSDF: _)
-
-	disable-sdf-debugging = rules(DebugSDF:- _ )
-
-	// Debug switches
-	enable-declaration-debugging  = rules(DebugDeclaration: x -> x)
-
-	disable-declaration-debugging = rules(DebugDeclaration:- _ )
-
-	debug-declaration(| site, type) = not(DebugDeclaration <+ DebugAll)  <+ <debug>$[ $[$ Declaration | [site] | [type] $]$ [<id>]]
+	context/signatures
+	context/symboltable
+	context/scope-tree
+	
+signature 
+	constructors 
+		DegugAllFlag               : Flag 
+		DebugStrFlag               : Flag 
+		DebugSDFFlag               : Flag 
+		DebugDeclarationFlag       : Flag   
+		DebugSymbolTableFlag       : Flag
+		DebugCompilerFlag          : Flag  
+		DebugSemanticAnalysisFlag  : Flag
 
 
+rules
+	debug-level-INFO = !"Info"
+	
+	debug-level-WARNING = !"Warning"
+	
+	debug-level-ERROR  = !"Error" 
+			
+rules 
+	
+	is-debug-enabled : 
+		flag -> <id>
+		where
+				to-index := <get-constructor>flag;
+				<get-declared(|flag)> to-index 
+					  
+	enable-debug-flag : 
+		flag -> <id>
+		where
+			with-spxverify(
+				to-index := <get-constructor>flag;
+				<store-declared(| flag)> ( to-index, to-index)
+		  )   	
+	
+	disable-debug-flag :
+		flag -> <id>
+		where
+			with-spxverify(
+				to-index := <get-constructor>flag;
+				<undef-declared(| flag)> to-index
+		  )
+ 	 
+rules
+	
+	enable-debug-all   = where(!DegugAllFlag() ;  enable-debug-flag)
 
-	// Debug switches  for symbol table
-	enable-symboltable-debugging  = rules(DebugSymbolTable: x -> x)
+	disable-debug-all  = where(!DegugAllFlag() ;  disable-debug-flag) 
 
-	disable-symboltable-debugging = rules(DebugSymbolTable:- _ )
+	DebugAll = where(!DegugAllFlag() ; is-debug-enabled)
+rules
 
-	debug-symboltable = not(DebugSymbolTable <+ DebugAll)  <+ debug(!"[ SymbolTable | ")
+		// Debug switches
+	enable-declaration-debugging  = where(!DebugDeclarationFlag() ;  enable-debug-flag)
 
+	disable-declaration-debugging = where(!DebugDeclarationFlag() ;  disable-debug-flag)
 
-  // Debug switches for semantic analysis
-	enable-semantic-analysis-debugging = rules(DebugSemanticAnalysis: x -> x)
+	dbg-declaration(msg|site, type) = where(not(<is-debug-enabled>DebugDeclarationFlag() <+ DebugAll) <+   <debug>$[ $[$Declaration | [site] | [type] $]$ [<msg>]])
 
-	disable-semantic-analysis-debugging = rules(DebugSemanticAnalysis:- _ )
+rules
+		
+	enable-symboltable-debugging  = where(!DebugSymbolTableFlag() ;  enable-debug-flag)
 
-	debug-analysis = not(DebugSemanticAnalysis <+ DebugAll)  <+ debug(!"[ SemanticAnalysis | ")
+	disable-symboltable-debugging = where(!DebugSymbolTableFlag() ;  disable-debug-flag)
 
+  dbg-symboltable(msg|site, type)  = where(not(<is-debug-enabled>DebugSymbolTableFlag() <+ DebugAll) <+  <debug>$[$[$SymbolTable | [site] | [type] $]$  [<msg>]])
 
- 	// Debug switches for compile
-	enable-compiler-debugging  = rules(DebugCompiler: x -> x)
+rules  
+  enable-semantic-analysis-debugging  = where(!DebugSemanticAnalysisFlag() ;  enable-debug-flag)
 
-	disable-compiler-debugging = rules(DebugCompiler:- _ )
+	disable-semantic-analysis-debugging  = where(!DebugSemanticAnalysisFlag() ;  disable-debug-flag)
 
-	debug-compiler = not(DebugCompiler <+ DebugAll)  <+ debug(!"[ Compiler | ")
+  dbg-analysis(msg|site, type)  = where(not(<is-debug-enabled>DebugSemanticAnalysisFlag() <+ DebugAll) <+  <debug>$[$[$semantic analysis | [site] | [type] $]$  [<msg>]])
 
+rules
 
-  // Debug switches for TemplateLang
-  debug-templatelang = debug(!"[ TemplateLang | ")
+	enable-compiler-debugging    = where(!DebugCompilerFlag() ;  enable-debug-flag)
 
- rules
+	disable-compiler-debugging   = where(!DebugCompilerFlag() ;  disable-debug-flag)
+
+  debug-compiler(msg) = where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler $]$ [<msg>]])  
+
+	dbg-compiler(s) = debug-compiler(s)
+	
+	dbg-compiler(msg|site, type) =  where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler | [site] | [type] $]$ [<msg>]])  
+
+	
+rules
 
  	debug-time(s|msg) =
       where(starttime := <times>)
@@ -72,10 +106,10 @@ strategies
 
 rules
 	throw-unable-read-exception(|message) = debug(!message);fail
+	
 	throw-unable-read-file = debug(!"unable to read file : ")
 
 rules
 	throw-precompile-exception = debug(!"Could not precompile: "); fail
-	throw-invalid-argument-exception(|strategy-name) = <debug>$[invalid argument at [strategy-name] : [<pp-aterm><id>]]; fail
-
-
+	
+	throw-invalid-argument-exception(|strategy-name) = <debug>$[invalid argument at [strategy-name] : [<print-as-string><id>]]; fail

@@ -5,11 +5,17 @@
 
 // This is slightly inspired by sdftools/trans/sdf2ast-conflicts.str
 
+//TODO : Calculate SubTerm Conflicts incrementally. Currently, it is getting  
+// SDF definitions of the whole package and calculating it while it is highly 
+// probable that only few modules has been changed during current session.  
+
 module sdf2conflicts
 imports
   libstratego-lib
   libstratego-sglr
-
+	common
+	utils/debug
+	
 signature
   constructors
     Symbol : String * Int -> Symbol
@@ -21,10 +27,11 @@ strategies
 
   sdf2conflicts-store-sdf:
     ast -> ast
-    with
+    where with-spxverify(
     	rules(
     		Sdf2Conflicts-SdfSection :+= ast
     	)
+    )	
 
   /*
    * sdf2conflicts: Calculate set of conflicts that are filtered out using
@@ -41,20 +48,21 @@ strategies
    */
   sdf2conflicts:
     ast -> ast
-    with
+    where with-spxverify(
       prod-hash := <new-hashtable> // (sym*, sort) => attr*
-    with
+    )
+    where with-spxverify(
       let err(|msg) = debug(!<conc-strings> (msg, ": ")); fail
 
           // push the attributes of a production into prod-hash
           declare-prod =
             \ p@ prod(sym*, sort, attrs(attr*)) -> p
-              with <hashtable-pushlist(|(sym*, sort), attr*)> prod-hash \
+              where with-spxverify(<hashtable-pushlist(|(sym*, sort), attr*)> prod-hash) \
 
           // add all attributes defined anywhere to a production
           lookup-prod = {attr*:
             \ p@ prod(sym*, sort, _) -> prod(sym*, sort, attrs(attr*))
-              with attr* := <hashtable-get(|(sym*, sort)) <+ ![]> prod-hash \
+              where with-spxverify(attr* := <hashtable-get(|(sym*, sort)) <+ ![]> prod-hash) \
           }
 
           priority-section =
@@ -145,13 +153,13 @@ strategies
             ?(lhs, rhs);
             Symbol(_, n) := <Prod2Symbol> lhs;
             <range> (0, n);
-            map(\ arg -> arg with <add-prio(|arg)> (lhs, rhs) \)
+            map(\ arg -> arg where with-spxverify( <add-prio(|arg)> (lhs, rhs) )\)
           }
 
           add-arg-gtr-prio(|indices) = {lhs, rhs:
             ?(lhs, rhs);
             !indices;
-            map(\ arg -> arg with <add-prio(|<arg-for-symbol(|lhs)> arg)> (lhs, rhs) \)
+            map(\ arg -> arg where with-spxverify (<add-prio(|<arg-for-symbol(|lhs)> arg)> (lhs, rhs)) \)
           }
 
           add-left-assoc = {lhs, rhs, n:
@@ -214,7 +222,7 @@ strategies
           }
 
           add-self-associativities =
-            with(
+            with-spxverify(
               <hashtable-getlist> prod-hash;
               list-loop(
                 \ ((sym*, sort), attr*) -> prod(sym*, sort, attrs(attr*)) \;
@@ -241,14 +249,18 @@ strategies
             })
 
           make-transitive =
-            with( \SubtermConflicts/* make-transitive-step )
+            with-spxverify( \SubtermConflicts/* make-transitive-step )
 
           // Debug
           print-SubtermConflicts(|msg) =
-            with(
-              <debug> msg;
-              all-keys-SubtermConflicts;
-              list-loop(debug(!"key: "); bagof-SubtermConflicts; debug(!"values: "))
+            with-spxverify(
+            	dbg-compiler(!$[msg [<print-as-string>]]);
+            	all-keys-SubtermConflicts;
+              list-loop(
+              	dbg-compiler(!$[keys: [<print-as-string>]])
+              	; bagof-SubtermConflicts
+            	  ; dbg-compiler(! $[values: [<print-as-string>]])
+        	    )
             )
 
       in
@@ -263,8 +275,9 @@ strategies
         add-non-transitives;
         add-associativities;
         add-self-associativities
-
         ;print-SubtermConflicts(|"=== FINAL ===")
       end
-    with
+    )
+    where with-spxverify(
       <hashtable-destroy> prod-hash
+	  )

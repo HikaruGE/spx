@@ -19,9 +19,12 @@ imports
 	include/SpoofaxLang
 	utils/path
 	utils/debug
+	utils/contract
+	common
 imports 	
 	libstratego-gpp
 	libstratego-xtc 
+
 rules 
 		
 	build-spoofax-console:
@@ -39,90 +42,166 @@ rules
 				//<override-configured-source-directories><abspath>arg;
 				enable-command-line-mode;  
 				<show-configuration;debug>();     //show configuration for this spx project
-				<build-spoofaxlang>();                     //building all the spx files in the sources directory
-				<debug>$[".................Build-all succeeds................."];
+				build-all;                     //building all the spx files in the sources directory
+				<debug>$["----------------------Build-all succeeds----------------------"];
 				!FILE($[[input]/.shadowdir/Globals/Signatures.str])	 //HACK : just to ensure this strategy is not failing ...
 			<+
 				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 		)
 	
-	
+	report-failure-with-stacktrace = prim("SSL_stacktrace_get_all_frame_names") ; report-failure
+	 
 	//TODO : Improve error reporting. 
   build-spoofaxlang-jvm:
     current-project-location -> <id>
-    with 
-    	<debug(!"current-project-directory : ")>current-project-location 
-    with	
-	  	editor-init; 						         // cleaning up and initializing editors
-			rules(NoDebugInfo: _);           // HACK: disable origin use for now
-			rules(
-				ProjectPath := current-project-location
-				previous-working-dir := <getcwd>
+    where 
+    	<debug(!"current-project-directory : ")>current-project-location; 
+    	with-spxverify(	
+	  		editor-init; 						         // cleaning up and initializing editors
+				rules(NoDebugInfo: _);           // HACK: disable origin use for now
+				previous-working-dir := <getcwd>;
+				rules(
+					ProjectPath := current-project-location
+				);
+				<chdir>current-project-location				// setting current directory to the project location
+			<+
+				report-failure-with-stacktrace 
 			);
-			<chdir>current-project-location				// setting current directory to the project location
-		<+
-			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
+			with-spxverify(	
+				<debug>$[Activating Project Configuration : ];
+				initialize-configuration;        	// initializes configuration and setting up enviroment variables
+				enable-command-line-mode;  
+				<show-configuration;debug>()     //show configuration for this spx project
+			<+
+				report-failure-with-stacktrace 
+			);
+			with-spxverify(
+				<debug>$[SPXLang Build: ];
+				with-spxverify(
+						build-all' //building all the spx files in the sources directory
+						, !"Failed to build all the artifacts"
+				);  
+				<chdir>previous-working-dir; 			// resetting working directory
+				<debug>$[Intermediate artefacts have been generated successfully.]
+			<+
+				report-failure-with-stacktrace 
+			)
+
+			
+rules
 	
-		with	
-			<debug>$[Activating Project Configuration : ];
-			initialize-configuration;        	// initializes configuration and setting up enviroment variables
-			enable-command-line-mode;  
-			<show-configuration;debug>()     //show configuration for this spx project
-		<+
-			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
-
-		with
-			<debug>$[SPXLang Build: ];
-			<build-spoofaxlang'>(); //building all the spx files in the sources directory
-			<chdir><previous-working-dir> 			// resetting working directory
-			<debug>$[Intermediate artefacts have been generated successfully.]
-		<+
-			prim("SSL_stacktrace_get_all_frame_names") ; report-failure
-
-	  
-	build-all-service:
+	editor-build-all-after-cleanup:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			 <debug>$[.................starting compile + build all ..........................]
-		with
-			editor-init	
-		 ;rules(ProjectPath := project-path)
-		 ;initialize-configuration
-		with
-			 enable-compiler-debugging
-	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-	  	;<build-spoofaxlang>()
-	  	;disable-compiler-debugging
+	 		<debug>$[----------------------------starting compile + build all----------------------------];
+			with-spxverify(	
+				editor-init	
+		 		;rules(ProjectPath := project-path)
+		 		;initialize-configuration
+		 		, "Failed to initialize editor" 
+ 		  );
+ 		  clean-spx;
+			with-spxverify(
+				abs-path := <concat-strings>[project-path, "/" ,path]
+				;	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; build-all
+	  	)  
+
+	    //TODO delete all the folder from spxcache
+  editor-clean-and-compile-spx-all : 
+  	(selected, position, ast, path, project-path) -> None()
+  	where 
+  		with-spxverify(
+  			editor-init;
+  			rules(ProjectPath := project-path);
+  			initialize-configuration;
+  			compile-init 
+  			, !$[ Compiler-init is failed.]
+  		)
+  		; clean-spx 
+  	where	
+  		abs-path := <concat-strings>[project-path, "/" ,path]
+	   	; with-spxverify( 
+	  	 	 	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path , ast)	 
+					; <compile-all>(abs-path , ast)
+					, !"compile-spx failed due to error in complile-all"
+			 	) 
+  
+	editor-compile-spx-all-incrementally:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			 <debug>$[------Starting Compile Incrementally------]
+			 ; editor-init
+			 ; rules(ProjectPath := project-path)
+			 ; initialize-configuration
+		   ; abs-path := <concat-strings>[project-path, "/" ,path]
+		   ; with-spxverify( 
+		   	 	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path , ast)	 
+					; <compile-all>(abs-path , ast)
+					, !"compile-spx failed due to error in complile-all"
+				 )
 	
+	editor-clean-spx:  
+		(selected, position, ast, path, project-path) -> None()
+		where
+      compile-init; 
+      clean-spx 
+
+rules 
+		clean-spx = 
+			with-spxverify(
+	  			index-clearall;
+	      	<debug>$[------Index Cleanup is done ------]
+	  	)
+	
+	
+rules
 	
 	build-incrementally-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			 <debug>$[.................starting compile + build all ..........................]
-		with
-			editor-init	
-		 ;rules(ProjectPath := project-path)
-		 ;initialize-configuration
-		with
-	  	 enable-compiler-debugging
-	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-	  	;<build-spoofaxlang-incrementally>()
-	  	;disable-compiler-debugging
-
-		
-		
-rules
-	//Intregation Test of the compile-all is working as expected 
-	compile-spx:
+			not(HasErrors);
+			with-spxverify(
+				editor-init	
+		 		; rules(ProjectPath := project-path)
+		 		; initialize-configuration
+		 		, "Failed to initialized editor "  
+	  	);
+			with-spxverify(
+  			abs-path := <concat-strings>[project-path, "/" ,path]
+				; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; <build-spx-incrementally>(ast, abs-path) 
+	   )
+  	  
+	build-incrementally-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			<debug>$[.................starting compile-all ..........................]
-		with 
-			 editor-init
-			;rules(ProjectPath := project-path)
-		  ;initialize-configuration
-		with 
-			 enable-compiler-debugging
-	  	;<cache-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
-			;<compile-all>()
-	  	;disable-compiler-debugging
+			HasErrors
+		where 
+			<debug> $[Compilation Failed.Please fix the errors before building the artifacts]		
+			
+	
+	editor-build-all:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			not(HasErrors) 
+		where
+	 		<debug>$[----------------------------starting compile + build all----------------------------];
+			with-spxverify(	
+				editor-init	
+		 		;rules(ProjectPath := project-path)
+		 		;initialize-configuration
+		 		, "Failed to initialize editor" 
+ 		  );
+			with-spxverify(
+				abs-path := <concat-strings>[project-path, "/" ,path]
+				;	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; build-all
+	  	)  
+	
+	editor-build-all:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			HasErrors
+		where 
+			<debug> $[Compilation Failed.Please fix the errors before building the artifacts]			  					 

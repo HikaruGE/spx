@@ -1,5 +1,4 @@
 module codegen/generate
-
 imports 
 	codegen/compile
 	codegen/sdf/to-sdf
@@ -7,12 +6,11 @@ imports
 	codegen/str/to-stratego
 	codegen/esv/to-esv
 	codegen/buildscripts
-
 imports 
 	config 
 	common
 imports	
-	lib/editor-common.generated
+	lib/editor-common.generated 
 	include/SpoofaxLang
 imports	
 	context/-
@@ -25,207 +23,171 @@ imports
 	utils/cache
 	analyze/main
 	codegen/generate
-			
-		
-strategies 
-	build-spoofaxlang = build-all(generate-artifacts-all)
 	
-	build-spoofaxlang' = build-all'(generate-artifacts-all)  // for testing purpose. remove it when it is no longer needed. 
-	
-	build-spoofaxlang-incrementally = build-all(generate-artifacts-incrementally)
+
+rules
+	build-all' = 
+		?current-term		
+		; build-all
+		; if HasErrors then 
+		  	error-msg := $[Build Failed! ];
+				fatal-err-msg(|error-msg )
+			end  	
+		; !current-term //restoring current term to avoid side effects
 		 
-	build-all(gen-code) = 
-		?current-term
-		;new-compile-session(
-			list-of-package-qname* := <get-package-list> 
-			;<compile-internal>list-of-package-qname*
-			;<debug>$[-------------------Getting list of errors-------------------]
-			;<get-all-analyzed-problems>() => problems  
-			;if <fail-if-has-errors>problems then
-			 	<debug>$[Compilation succeeded.];
-			 	{| ImportedDef : 
-							<gen-code>() 
-				|}
-			else
-				error-msg := $[Compilation Failed.Please fix the errors before building the artifacts:  [<pp-aterm-forced>problems]];		
-				<debug>error-msg
-			end		 
+	build-all = 
+		new-compile-session(
+				list-of-package-qname* := <get-package-list> 
+				; <compile-internal> list-of-package-qname*
+				; generate-spx-artifacts
 		)
-		;!current-term //restoring current term to avoid side effects  
-
 	
-	build-all'(gen-code) = 
-		?current-term
-		;new-compile-session(
-			list-of-package-qname* := <get-package-list> 
-			;<compile-internal>list-of-package-qname*
-			;<debug>$[-------------------Getting list of errors-------------------]
-			;<get-all-analyzed-problems>() => problems  
-			;if <fail-if-has-errors>problems then
-			 	<debug>$[Compilation succeeded.];
-			 	{| ImportedDef : 
-							<gen-code>() 
-				|}
-				
-			else
-				(errors, warnings , notes) := problems;
-				 error-msg := $[Compilation Failed.Please fix the following [<length>errors] error(s) before building the artifacts:  [<pp-aterm-forced>errors]];		
-			 	fatal-err-msg(|error-msg )
-			 	
-			end		 
-		)
-		;!current-term //restoring current term to avoid side effects
-		 
-	generate-artifacts-all : () -> ()
-		where
-			<debug>$[-------------------Generating artifacts-------------------]
-			;init-code-generation
-		  ;list-of-package-qname* := <get-package-list>   
-			;<debug>$[-------------------Generating artifacts for following ALL spx -------------------]
-			;<list-loop(generate-spx-package)>list-of-package-qname*
-			;<debug>$[-------------------------Generating Build Scipt---------------------]
-			;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
-			;<debug>$[-------------------------Code Generation is done-------------------------] 
-
-
-	generate-artifacts-incrementally : () -> ()
-		where
-			<debug>$[-------------------Generating artefacts-------------------]
-			;init-code-generation
-		  ;seperate-compilable-spx-files := <get-all-modified-compilation-units>
-		  ;if !seperate-compilable-spx-files => [] then 
-		  	<debug>$[-------------------------No Changes found-------------------------] 
-		  else	 
-			  list-of-package-qname* := <get-packages-of-file>seperate-compilable-spx-files   
-				;<debug>$[-------------------Generating artifacts for following spx : [<pp-aterm>seperate-compilable-spx-files]-------------------]
-				;<list-loop(generate-spx-package)>list-of-package-qname*
-				;<debug>$[-------------------------Generating Build Scipt---------------------]
-				;<emit-build-script> <filter(has-language-name-configured)>list-of-package-qname*
-		 	end
-		 	;<debug>$[-------------------------Code Generation is done-------------------------] 
-
-		 			
-	get-packages-of-file = mapconcat(get-packages-of-file) ; make-set 
-				
+	build-spx-incrementally =
+		verify(?(ast, abs-path) |<id> , "?(ast, abs-path) ::build-spx-incrementally" );   
+		compile-packages-of(
+			id, 
+			get-used-by, 
+			generate-spx-artifacts
+		) 
+	
+	generate-spx-artifacts = 
+		if not(HasErrors) then
+			list-of-package-qname* := <get-package-list>
+	 		; debug-time( 
+			  	new-code-generate-session(
+ 					  init-code-generation
+	 				  ; debug-time(
+		  			  	<list-loop(
+			  					generate-spx-package)>list-of-package-qname*
+				  	  | $[--Generating the artifacts for all the modified spx])
+					  ;<filter(
+					    		has-language-name-configured)>list-of-package-qname*
+		    		; emit-build-script 
+					)
+	  		| "--Code Generation done"
+ 		  	) 
+		else
+			<debug>$[Compilation Failed.Please fix the errors before building the artifacts.]		
+		end			
+					
 rules 
+	new-code-generate-session(s) =
+  	dbg-compiler(!$[-----------------::new-code-generate-session::-----------------]);
+		with-spxverify(
+			index-on-init-code-generation;
+  		s;
+  		index-on-complete-code-generation 
+    	, !" new code generated session failed unexpectedly. "  
+    )  
 	
 	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
 
-//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
-//TODO: OPTIMIZE : DR can be used to construct this imports  
-rules 
-	
-	init-code-generation = where(<emit-default-signatures>()) 
-	
-	generate-all = emit-sdf;emit-signatures ; emit-str <+ debug(!" Failed in Generate-all. "); fail
+	//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
+	//TODO: OPTIMIZE : DR can be used to construct this imports  
 
-	generate-main = 
-			?module-qname* ;generate-sdf-main;generate-str-main ; generate-esv-main 
-		<+ 
-			debug(!" Failed in Main Generation. "); fail    
-
-rules
-
-	should-generate-code-this-package = 
-		?package-qname;
-		where(not(<PackageCodeGenerated>package-qname))
-		
 	// generates artifact for spx packages 
 	generate-spx-package: 
 		package-typed-qname@Package(untyped-qname) -> <id>
 		where 
-			<debug-compiler> $[Generate| Generate code for spx-package| Generating Artifacts for following package: [<pp-aterm>]] 
-		with 
-			enclosed-module-typed-qnames := <get-enclosed-modules>package-typed-qname
-		where
-			if should-generate-code-this-package  then 
-				{|GetEnclosingPackageName,GeneratedSignature:
-					 	rules (GetEnclosingPackageName := package-typed-qname);
-						// Generates artifacts from all the modules 	
-						<list-loop(generate-spx-module)>enclosed-module-typed-qnames;
-						<emit-internal-signatures>package-typed-qname;
-						if (language-name  := <get-language-name> package-typed-qname) then
+			dbg-compiler(!$[Generate| Generate code for spx-package| Generating Artifacts for following package: [<print-as-string>]]); 
+			with-spxverify(
+				if not(<get-declared(|CodeGenerated())>package-typed-qname)  then 
+					{|GetEnclosingPackageName:
+							with-spxverify(
+						 		rules (GetEnclosingPackageName := package-typed-qname)
+								, !"Setting GetEnclosingPackageName failed"
+							);  
+							enclosed-module-typed-qnames := <get-enclosed-dirty-modules-to-generate>package-typed-qname;
+							
+							<list-loop(
+									generate-spx-module)>enclosed-module-typed-qnames;// Generates artifacts from all the modules 	
+							
+							<emit-internal-signatures>package-typed-qname;// generating internal signatures 
+							
 							// Since, the language-name is defined for this language 
 							// generate all the main artifacts  for this package
 							// if Language name is not defined for certain packaged, they will not be considered 
 							// as a language , rather will be treated as a langauge library to be reused by other 
 							// languages.
-							
-							{| GetLanguageName : 
-										<debug>$[-------------------------Generating Main Artifacts ---------------------];
-										<debug>$[------------------------------------------------------------------------];
-										rules( GetLanguageName  := language-name);
-										<emit-package-signature-main>();
-										<generate-main> enclosed-module-typed-qnames 
-							|}  
-						end	  
-				|};		
-				where(rules(PackageCodeGenerated: package-typed-qname -> package-typed-qname)) // TODO : delete this rules. probably , it is reduntant 
-			<+
-				<debug-compiler> $[Generate| generate-spx-package > [<pp-aterm>package-typed-qname] Failed. ]
-				;fail
-			end
+							if (<get-language-name> package-typed-qname) then
+									<emit-package-signature-main>();
+									<generate-main> package-typed-qname
+							end
+						|};		
+						with-spxverify( <store-declared(|CodeGenerated())>package-typed-qname , "failed to store CodeGenerated()")
+					end
+					, ! $[Generate| generate-spx-package |[<print-as-string>package-typed-qname] Failed. ]
+				)
 	
-	// generates artifacts fro spx module
 	generate-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
 		where 
-			<debug-compiler> $[Generate|  generate-spx-module> Planning to generate module for semantic problems: [<pp-aterm>]] 
+			dbg-compiler(!$[generate-spx-module::Planning to generate module for semantic problems: [<print-as-string>]]) 
 		where 
-			if not(<ModuleCodeGenerated>module-typed-qname) then
-				<debug-compiler> $[Generate| generate-spx-module| Currently Generating : [<pp-aterm>]]; 
-				module-decl* := <get-original-module-declaration>module-typed-qname;
+			with-spxverify(
+				dbg-compiler (! $[generate-spx-module::Currently Generating : [<print-as-string>]]);
 				{|GetEnclosingModuleName:
-						rules( GetEnclosingModuleName := module-typed-qname);
-						
-								<generate-all> module-decl* 	// generating all the artifacts for the specified module
-				|};
-				module-abs-path := <DeclaredModule>untyped-qname;
-				where(
-					rules(
-						ModuleCodeGenerated:     module-typed-qname -> module-typed-qname
-					)
-				)
-				<+
-				<debug-compiler> $[Generate| generate-spx-module| [<pp-aterm>module-typed-qname] Failed. ]
-				;fail
-			else
-				<debug-compiler> $[Generate| generate-spx-module| Ignored as already in the queue :[<pp-aterm>]] //this package is not compiled before
-			end		
+							// setting the current scope 
+							rules( GetEnclosingModuleName := module-typed-qname);
+					
+							// generating code for the module id
+							<generate-all>module-typed-qname	// generating all the artifacts for the specified module
+				|}
+				, !$[generate-spx-module:: [<print-as-string>module-typed-qname] Failed. ]
+			)
 			
-	get-main-file-name : () ->lang-name 
-	with 
-		lang-name := <GetLanguageName> <+ debug(!"GetLanguageName encountered error. Please verify it is called within the scope defined for the DR")
-
 	
-		
-rules
-	to-generated-artifact-block(adapter, post-coversion-adapter) : list-stmt* -> resultant-block* 
-	with contracts( 
-		contract-requires(is-list |list-stmt*)
-	)
-	where 
-		<adapter>list-stmt*  => adapted-result*; // results are  adapted using the specified adapter
-		<post-coversion-adapter>adapted-result*  => resultant-block*
+	init-code-generation = with-spxverify(<emit-default-signatures>() , "Failed to emit default signatures") 
+	
+	generate-all =
+		with-spxverify( 
+			verify(?m@Module(QName(_)) |<id> , "?Module(QName(_))  ::generate-main")
+			; get-original-module-definition
+			; emit-sdf
+			; emit-signatures 
+		  ; emit-str
+		  , !$[Failed to generate artifacts for module [<print-as-string>]]   
+	  )  
+
+	generate-main =
+		with-spxverify(
+			verify(?Package(QName(_)) |<id> , "?Package(QName(_))  @generate-main")
+			;	get-enclosed-modules
+			; generate-sdf-main
+			; generate-str-main 
+			; generate-esv-main
+			, !$[Failed to generate artifacts for package [<print-as-string>]]
+		)
+	
+	get-main-file-name : p@Package(QName(_)) -> <get-language-name>p
 
 rules
+	to-generated-artifact-block(adapter, post-coversion-adapter) : 
+		list-stmt* -> resultant-block* 
+		where 
+			verify( List | list-stmt* , "List ::to-generated-artifact-block")
+		where 
+			<adapter>list-stmt*  => adapted-result*; // results are  adapted using the specified adapter
+			<post-coversion-adapter>adapted-result*  => resultant-block*
+	
 	// generates the import declaration for the artifacts .  
 	// s is a artifact specific adapted strategy applied to all the import declaration 
 	// to get the artifact-specific import declaration. 
 	to-generated-artifacts-import-declarations(s) =
-		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set; 	where(<debug-compiler>$[Codegen | Imports | Resultant imports :  [<pp-aterm>]]) 
+		?imports*;	map(to-import-declaration(s)); flatten-list;	make-set
+		; dbg-compiler(!$[Codegen | Imports | Resultant imports :  [<print-as-string>]]) 
 		
 	to-import-declaration(s): 
 		i@ImportPackage(package-qname@QName(_)) -> results
 		where 
-			if not(<DeclaredPackage>package-qname) then
+			if not(<get-package-declaration>package-qname) then
 				results := [] // unresolved imports. ignore. 
 			else
 				<get-enclosed-modules>Package(package-qname) => modules*;
 				<map(?Module(<id>) ; qname-to-path ; s)> modules* => results
 			end
 		where
-			<debug-compiler>$[ Codegen | Imports Conversion |  import package Result : [<pp-aterm>results] ]
+			dbg-compiler(!$[Codegen | Imports Conversion |  import package Result : [<print-as-string>results] ])
 	
 	to-import-declaration(s):		
 		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <to-import-declaration(s)>ImportSpxModule(QName([package-name]), SPXModuleName(modname))
@@ -234,7 +196,7 @@ rules
 		ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> result
 		where
 			 module-qname 			 := <get-module-untyped-qname> (package-qname-parts , modname)
-			;if(not(<DeclaredModule>module-qname))  then
+			;if(not(<get-module-uri>Module(module-qname)))   then
 				result := [] // unresolved imports. ignore. 
 			else
 				module-name-path    := <qname-to-path>module-qname
@@ -242,12 +204,12 @@ rules
 				;result := [result']  
 			end
 		where 
-			<debug-compiler>$[ Codegen | Imports Conversion  | import module Result:  [<pp-aterm>result]] 
+			dbg-compiler(!$[Codegen | Imports Conversion  | import module Result:  [<print-as-string>result]]) 
 		 
 	to-import-declaration(s): 
 		ImportPackage(Name(package-name)) -> result
 		where
-			if <DeclaredPackage>QName([package-name]) then
+			if <get-package-declaration>QName([package-name]) then
 				<get-enclosed-modules>Package(QName([package-name])) => modules*
 				;<map(?Module(<id>) ; qname-to-path ; s)> modules*   => result
 			else
@@ -255,16 +217,14 @@ rules
 				 result := <to-import-declaration(s)>ImportLegacyArtifact(Name(package-name))
 			end
 		where 
-			<debug-compiler>$[ Codegen | Imports Conversion  | import pcakage/legacy artifact Result :  [<pp-aterm>result]] 
+			dbg-compiler(!$[Codegen | Imports Conversion  | import pcakage/legacy artifact Result :  [<print-as-string>result]]) 
 	
 	to-import-declaration(s): 
 		ImportLegacyArtifact(Name(modulename)) -> result
 		where 
 				<s>Name(modulename) => result
 		where 
-			<debug-compiler>$[Codegen | Imports Conversion |  import legacy artifact Result : [<pp-aterm>result].]
-	
-	
+			dbg-compiler(!$[Codegen | Imports Conversion |  import legacy artifact Result : [<print-as-string>result].])
 
 rules 
 	save-artifact(s | package-untyped-qname, root-directory,output-path) : 
@@ -279,17 +239,53 @@ rules
 	save-artifact( | package-untyped-qname, root-directory,output-path) : 
 		content -> <save-artifact( save-to-file | package-untyped-qname, root-directory,output-path)>content 
 
-
 rules
 	
 	// Verifies wheter a particular list is empty or not.
-	ensure-list-is-not-empty =  contracts(contract-requires (is-list| <id>)); is-not-empty-list
+	ensure-list-is-not-empty =  verify(is-list| <id> , "List ::ensure-list-is-not-empty"); is-not-empty-list
 		
-	has-language-name-configured = ?Package(QName(_)) ; where(get-language-name)
+	has-language-name-configured = verify(?Package(QName(_)) | <id> , "Package(QName(_)) ::has-language-name-configured") ; where(get-language-name)
+
 	
-	get-all-imported-defs = bagof-ImportedDef
-		
-		
+signature constructors
+	GeneratedPackages : Type 	
+	ImportedDef   : Type
+	CodeGenerated : Flag 
+	 
+rules 
+	index-generated-package-ids = 
+			with-spxverify(
+				? package-qnames 
+				; <get-constructor> GeneratedPackages() => cons-name
+				; activate-global-scope( 
+				  	<undefine-symbol-definitions>(cons-name, GeneratedPackages()); 
+				  	<index-symbol-definition>(cons-name, GeneratedPackages() , package-qnames)
+			  	)
+				, !"Failed index-generated-package-ids"  
+			)  
+			
+		get-generated-package-ids = 
+			<get-constructor>  GeneratedPackages() => key ;  
+			activate-global-scope( 
+				<resolve-symbol-definition>(key,  GeneratedPackages()) => package-qnames*
+			);
+			!package-qnames*
+			
+rules 
 	
-	
-				 
+	index-imported-def-of-package =
+			verify(
+				?(key@Package(QName(_)) , value)
+				|<id> , "?(key@Package(QName(_)) , value) ::index-imported-package-def"
+			); 
+			with-spxverify(
+				<index-symbol-definition>(key, ImportedDef() , value)
+			)  
+			
+	get-imported-defs-of-package = 
+		verify(
+			?p@Package(QName(_)) 
+			|<id> , "?Package(QName(_)) ::get-generated-package-ids"
+		);
+		activate-scope(<resolve-all-symbol-definitions>(<id>,  ImportedDef()) => package-qnames*|p);  
+		!package-qnames*				 

@@ -11,92 +11,113 @@ imports
 	utils/annotations
 	utils/path
 	utils/debug  
+	utils/contract
 
 rules 			
 	
 	// Reference Resolving 
-	resolve-package-references = 
+	resolve-package-references =
 		?list-of-package-tqnames;
 		<list-loop(
-			// Get the list of enclosed modules
-			// and then get module declarations
+			// Get the list of enclosed modules	and gets module definitions
 			// Afterwards, from the declarations, import references are resolved.
-			where(<debug-compiler>$[ resolve-package-references |  Currently working on package : [<pp-aterm>]]);
-			get-enclosed-modules; 
-			get-module-declarations;
-			origin-track-forced(map(store-import-references))
+			dbg-compiler(!$[resolve-package-references |  Currently working on package : [<print-as-string>]]);
+			get-enclosed-dirty-modules; 
+			get-module-definitions;
+			with-spxverify(
+				map(
+				 verify(?Module(_,_,_) | <id> , "Module(_,_,_) @resolve-package-references") 
+				 ; store-module-import-references
+			  )
+			  , !"store-module-import-references failed"
+		  )
 		<+
-			where(<debug-compiler>$[resolve-package-references | Failed to resolve package refernece:[<pp-aterm>]]);fail
+			dbg-compiler(!$[resolve-package-references | Failed to resolve package refernece : [<print-as-string>]])
+			; fail
 		)>list-of-package-tqnames
 		<+ 
-		<debug-compiler>$[resolve-package-references | Failed to resolve package referneces:[<pp-aterm>]];fail
-		
+		dbg-compiler(! $[resolve-package-references | Failed to resolve package referneces:[<print-as-string>]])
+		; fail
 
 
+// TODO IMPROVE : Merge it with normalize-all 
 rules
-	store-import-references: m@Module(attrb*,modname,section*) -> Module(attrb*,modname,resulting-section*)
-		with 
-			!modname => SPXModuleName(<id>);
-			 <debug-symboltable>$[ImportReferenceResolver| store-import-references|Resolving import references for module : [<pp-aterm>]] 
+  store-module-import-references: 
+    m@Module(attr,modname,section*) -> Module(attr,modname,resulting-section*)
+		where 
+			with-spxverify( 
+				!modname => SPXModuleName(<id>)
+				; dbg-symboltable(! $[store-import-declaration| store-import-references|Resolving import references for module : [<print-as-string>]] |"Index" , <debug-level-INFO>) 
+				, !$[Failed to initialize ::store-module-import-references]
+		  )			
 		where
 			Package(package-qname) :=<get-annotation(get-package-annotation)>modname// get package-name from the modname
 		where 
 			{| GetEnclosingPackageName, current-source-directory, GetEnclosingModuleName:
-					rules(
-						GetEnclosingPackageName      := package-qname //TODO refactor: most likely it is no longer needed 
-						GetEnclosingModuleName			 := modname 				
-						current-source-directory     := <get-module-untyped-qname;
-																					   DeclaredModule;
-																					   dirname
-																				    >(package-qname, modname)
+					with-spxverify(
+						rules(
+							GetEnclosingPackageName      := package-qname //TODO refactor: most likely it is no longer needed 
+							GetEnclosingModuleName			 := modname 				
+							current-source-directory     := <get-module-typed-qname; get-module-uri; dirname> (package-qname, modname) 
+						)
 					)
-					;<alltd(store-import-declaration(|<GetEnclosingPackageName>))> section* => resulting-section*
-					;!Module(attrb*,modname,resulting-section*) => modifiedModuleDescription
-					;<store-declaration(|Modules())>(<get-module-untyped-qname>(package-qname, modname),  modifiedModuleDescription) //updating with import reference annotation	 
+					; <alltd(store-import-declaration(|<GetEnclosingPackageName>))> section* => resulting-section*
+					; !Module(attr,modname,resulting-section*) => modifiedModuleDescription
 			|}
 			
 	store-import-declaration(|enclosing-namespace-qname): 
 		i@ImportPackage(qname@QName(package-qname-parts*)) -> annotated-import-decl
 		where
-			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing package reference :[<pp-aterm>]]
+			dbg-symboltable(!$[store-import-declaration| store-import-declaration|storing package reference :[<print-as-string>]] | "Index" , <debug-level-INFO> )
 		where 
-			if <DeclaredPackage>qname then
+			if <get-package-declaration> qname then
 				<store-spx-import-declaration(|enclosing-namespace-qname)> Package(qname)
 				;annotated-import-decl:= i
 			else
 				annotated-import-decl:= <add-annotation(|Unresolved())>i
-				;<debug-symboltable>$[ImportReferenceResolver| store-import-declaratio|Failed to resolve following import : [<pp-aterm>]]	
-	 		end
+				; dbg-symboltable(!$[store-import-declaration|Failed to resolve following import : [<print-as-string>]] | "Index" , <debug-level-WARNING> )
+			end
 	
 	store-import-declaration(|enclosing-namespace-qname) :
 		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> <store-import-declaration(|enclosing-namespace-qname)>ImportSpxModule(QName([package-name]), SPXModuleName(modname)) 
+	
 		 
 	store-import-declaration(|enclosing-namespace-qname) :
 		i@ImportSpxModule(QName(package-qname-parts), SPXModuleName(modname)) -> annotated-import-decl 
 		where 
-			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing module reference : [<pp-aterm>]]
-		with
-			module-qname := <get-module-untyped-qname> (package-qname-parts , modname)			//TODO: construct modules qualified name
+			dbg-symboltable(!$[store-import-declaration|storing module reference : [<print-as-string>]] | "Index" , <debug-level-INFO> )
+			; with-spxverify(
+					 moduleId:= <get-module-typed-qname> (package-qname-parts , modname)
+			 		, "failed to get the module id @store-import-declaration"
+			 	)
 		where 
-			if <DeclaredModule>module-qname then
-					<store-spx-import-declaration(|enclosing-namespace-qname)> Module(module-qname)
+			if <get-module-uri>moduleId then
+			  
+			     // TODO : Remove module import references
+			     // instead, use Package typed qualified name 
+			     //------------------------------------------------------------------------------
+			     // DESIGN ISSUE : initial designed to support more finer grained imports 
+			     // so that language composition conflicts is reduced. But current implementation
+			     // so far does not support it due to simplifying the analysis.   
+			     //-----------------------------------------------------------------------------
+					<store-spx-import-declaration(|enclosing-namespace-qname)> moduleId
 					;annotated-import-decl:= i
 			else
 					annotated-import-decl:= <add-annotation(|Unresolved())>i
-					;<debug-symboltable> $[Store-import-declaration| Warning |Failed to resolve following import : [<pp-aterm>]]	
+					; dbg-symboltable(! $[Store-import-declaration| Warning | Failed to resolve following import : [<print-as-string>]] |"Index" , <debug-level-WARNING>)	
 		 	end		
 		 
 		// Store import references in the 2nd pass of the traversals
 	store-import-declaration(|enclosing-namespace-qname):
 		i@ImportPackage(Name(package-name)) -> annotated-import-decl
 		where 
-			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing reference : [<pp-aterm>]]
+			dbg-symboltable(! $[store-import-declaration| store-import-declaration|storing reference : [<print-as-string>]] |"Index" , <debug-level-INFO>)
 		where 
-			if <DeclaredPackage>QName([package-name]) then
+			if <get-package-declaration> QName([package-name]) then
 				<store-spx-import-declaration(|enclosing-namespace-qname)> Package(QName([package-name]))
 				;annotated-import-decl:= i 			
 			else
-				// Seems like package-name is not declared as a SPX package 
+				// It seems like package-name is not declared as a SPX package 
 				// Hence, looking for it in the file system as any external/legacy
 				// artifact.   
 				result:= <store-import-declaration(|enclosing-namespace-qname)>ImportLegacyArtifact(Name(package-name))
@@ -110,46 +131,37 @@ rules
 				end	  
 			end 
 
-	store-import-declaration(|enclosing-namespace):
+  // All the legacy imports are scoped to pacakge level . With one exception for libstratego-lib which is included in global level. I.e. 
+  // all the packaged in the current project can use it without even importing it . 
+  // To specify more such global imports , mention it in compile-legacy-artifacts in compile.str
+  // Todo : plan is to make it configurable in config file so that user can also configure it. 
+  store-import-declaration(|enclosing-namespace):
 		i@ImportLegacyArtifact(Name(modulename))  -> annotated-import-decl 
 		where 
-			<debug-symboltable>$[ImportReferenceResolver| store-import-declaration|storing leagacy/external artifact reference : [<pp-aterm>]]
+			dbg-symboltable(! $[store-import-declaration| store-import-declaration|storing leagacy/external artifact reference : [<print-as-string>]] |"Index" , <debug-level-INFO>)
 		where 
 			resolved-path := <resolve-legacy-import-path(|<current-source-directory>)>modulename
-			;if (!resolved-path => Unresolved()) then 
-				<debug-symboltable>$[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<pp-aterm>i]]
-				;annotated-import-decl :=  <add-annotation(|Unresolved())>i
-				;ns := Globals() // TODO :  Make it consistent. currently some DR is using Typed QName , others using UnTyped 
+			; if (!resolved-path => Unresolved()) then 
+			 		dbg-symboltable(! $[SymbolTable|storing enclosing imports reference| FAIL <UsingLegacyArtifacts>: [<print-as-string>i]] |"Index" , <debug-level-WARNING>)
+			  	; annotated-import-decl :=  <add-annotation(|Unresolved())>i
+					; ns := Package(enclosing-namespace)  
 			else
-				ns := Package(enclosing-namespace); // TODO :  Make it consistent. currently some DR is using Typed QName , others using UnTyped
-				annotated-import-decl :=  i
+				ns := Package(enclosing-namespace) 
+				; annotated-import-decl :=  i
 			end	
-		with
-			rules(
-					UsedLegacyArtifacts:   (ns , modulename) -> resolved-path
-					UsingLegacyArtifacts:+  enclosing-namespace	   -> (ns, Module(Name(modulename)), resolved-path)    
-				)
-			;<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <UsingLegacyArtifacts>: [<pp-aterm>enclosing-namespace]-> [<pp-aterm>(Globals(), Module(Name(modulename)), resolved-path)]]
+			; with-spxverify(
+			  	<index-import>(ns,[(ns, Module(Name(modulename)), resolved-path)])
+			  	; dbg-symboltable(! $[store-import-declaration| storing enclosing imports reference| <UsingLegacyArtifacts>: [<print-as-string>enclosing-namespace]-> [<print-as-string>(Globals(), Module(Name(modulename)), resolved-path)]] |"Index" , <debug-level-INFO>)
+	    	)
+		    
 			
 	store-spx-import-declaration(|importedby-package): 
-		imported -> imported
+		imported-typed-namespace -> imported-typed-namespace
 		where 
-			!importedby-package => QName(_)
-		where 
-			module-untyped-qname := <get-module-untyped-qname>(importedby-package , <GetEnclosingModuleName>);
-			rules (
-				UsedBy:+ imported   -> importedby-package  
-				Using :+ (importedby-package, module-untyped-qname) -> imported 
-			)
+			!importedby-package => QName(_);
+			ns := <get-module-typed-qname> (importedby-package , <GetEnclosingModuleName>) ;
+		  <index-import>(ns, [imported-typed-namespace])
 		where
-			<debug-symboltable>$[ImportReferenceResolver| storing enclosing imports reference| <Using>: ([<pp-aterm>importedby-package] , [<pp-aterm>module-untyped-qname])-> [<pp-aterm>imported]]
-		
-rules 
-	record-legeacy-global-import-is-resolved =
-		?(ns,  modulename);
-		if  <UsedLegacyArtifacts>(ns,  modulename) => Unresolved() then
-			with(
-				rules( UsedLegacyArtifacts:(ns, modulename) -> Resolved())
-			)				
-		end
-	
+			dbg-symboltable(! $[store-import-declaration| storing enclosing imports reference| <Using>: ([<print-as-string>importedby-package] , [<print-as-string><GetEnclosingModuleName>])-> [<print-as-string>]]|"Index" , <debug-level-INFO>)
+
+

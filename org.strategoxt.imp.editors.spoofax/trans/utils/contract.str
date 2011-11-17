@@ -3,8 +3,35 @@ imports
 	common
 	utils/debug
 
+rules 
+  
+  with-verify(s, on-fail-exec , msg) = where(verify-stratego(s, on-fail-exec, !$["Internal error: with clause failed unexpectedly. More : [<msg>]]))
+  
+  with-verify(s, on-fail-exec) = where(verify-stratego(s, on-fail-exec, !"Internal error: with clause failed unexpectedly"))
+  
+  verify-stratego(s,on-fail-exec,message) =
+    s
+  <+
+    on-fail-exec;
+    log(|Critical(), <as-string(message)>, <id>);
+    prim("SSL_stacktrace_get_all_frame_names");
+    report-failure
 
+  
+  as-string(s) = s; as-string <+ !"<?>"
+
+  as-string = is-string <+ write-to-string
+
+
+    
 //Draft of code contracts for stratego
+rules 
+  verify(s | arg , expected) = contracts(contract-requires(s| arg , expected))
+  
+  verify(s | arg) = contracts(contract-requires(s| arg))
+  
+  verify(s) = contracts(contract-requires(s))
+ 
 rules
 
 	contract-requires ( s , on-fail | arg , expected) =
@@ -14,10 +41,10 @@ rules
 
 
 	contract-requires ( s | arg , expected) =
-			where(<s>arg)
+			where(<s> arg)
 		<+
-			<debug> $[Contract | Requires Failed - actual :[<pp-aterm>arg] expected : [expected]]
-			;fail
+			dbg-analysis(! $[Requires Failed. Reason : actual :[<print-as-string>arg] expected : [expected]] | "Contract" , <debug-level-WARNING> ) 
+			; fail
 
 
 	contract-requires ( s | arg ) = <contract-requires (s)> arg
@@ -26,8 +53,8 @@ rules
 	contract-requires (s) =
 			where(s)
 		<+
-			<debug> $[Contract | Requires Failed - argument :[<pp-aterm>] ]
-			;fail
+			dbg-analysis(! $[Requires Failed - argument :[<print-as-string>] ]  | "Contact" , <debug-level-WARNING>) 
+			; fail
 
 
 	contracts ( s ) =  where(s) <+ fail

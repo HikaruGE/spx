@@ -26,8 +26,58 @@ signature constructors
 	SDFSection								: Symbol
 	
 	Unresolved								: Symbol
-	Resolved									: Symbol
+	Resolved								: Symbol
+
+
+signature constructors 
+
+    OperationSignature : Type 
+    OperationDeclaration : Type 
+    
+ 
+signature constructors
+	DeclaredEnclosedModuleQName : Type
+ 	   
+signature constructors 
+	// symbol types
+		
+	ModuleType				: Type
+	PackageType				: Type
+	SDFType				  	: Type
+	 
 	
-	ModuleType								: Type
-	PackageType								: Type
-	SDFType										: Type
+	
+	STRDef                    : Type
+	STRCookie                 : Type
+	STRSignature              : Type
+	SortDeclaration           : Type
+
+	SDFDeclaration            : Type  
+	NamespaceSortDeclaration  : Type
+	SDFUsage 									:	Type
+	//templatelang 
+	TemplateOptions   : Type
+	CanNotBeBlankFlag : Type   
+	
+	BooleanType : Type
+	True : BooleanType
+	False : BooleanType
+	
+	Flag : Type  
+
+signature constructors 
+
+	CompileFlag : Flag 
+	
+	CurrentlyCompilingFlag : CompileFlag
+	
+	CompiledModuleFlag : CompileFlag 
+	
+	AnalyzedPackageFlag : CompileFlag
+	
+	AnalyzedModuleFlag : CompileFlag
+	
+	ReinitCompileSessionFlage : CompileFlag
+	
+	ResolvedExternalArtifactFlag : Namespace ->  CompileFlag 		 
+		

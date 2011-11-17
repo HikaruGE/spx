@@ -50,7 +50,7 @@ rules
   editor-resolve:
     (sort(x), position, ast, path, project-path) -> target
     where
-      target := <Declaration> x
+      target := <resolve-atleast-one-sdf-declaration> x
  
  /*  TODO : Fix Editor Resolve 
   editor-resolve:

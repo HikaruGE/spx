@@ -1,6 +1,5 @@
 module normalize/to-spx
 
-
 imports 
 	include/SpoofaxLang
 	utils/contract
@@ -15,15 +14,12 @@ rules
 	to-spx-main-internal : legacy-artifact-details@(namespace, Module(Name(modulename)) , resolving-path) -> spx-content
 	where 
 		spx-content := ""
-	
-	
-	
 	sdf-to-spx(| package-type-qname, resolved-path) : sdf-content -> <id>	
-	with 
-		<has-extension(|"sdf") + has-extension(|"def")>resolved-path
-	with 
-		<contracts(
-			contract-requires(?Package(QName(_)))
-		)>package-type-qname
+		where with-spxverify( 
+			<has-extension(|"sdf") + has-extension(|"def")>resolved-path;
+
+			<contracts(
+				contract-requires(?Package(QName(_)))
+			)>package-type-qname
 		
-		 
+		)		 

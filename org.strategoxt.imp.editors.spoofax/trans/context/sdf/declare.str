@@ -1,47 +1,72 @@
 module context/sdf/declare
 imports
-  libstratego-sdf
+	libstratego-sdf
   lib/editor-common.generated
-  include/SpoofaxLang
+	include/SpoofaxLang
 imports
-  context/-
-  codegen/-
-  analyze/main
-  normalize/signatures
+	context/-
+	context/esv/declare
+	codegen/-
+	analyze/main
+	normalize/signatures
+	context/sdf/declare-signature
 imports
-  common
-  utils/debug
-  utils/annotations
-  utils/attributes
+	common
+	utils/debug
+	utils/annotations
+	utils/attributes
+	utils/contract
 imports
-  context/sdf/declare-signature
-imports
-  libstratego-sdf
+	libstratego-sdf
   lib/editor-common.generated
-  include/SpoofaxLang
+	include/SpoofaxLang
+	
 
 rules
-  resolve-sdf-declarations =
-    ?symbol;
-     <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol
-   <+
-     <debug-analysis> $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<pp-aterm>]];
-     fail
+  index-sdf-usage: 
+  	(key, value)  -> <id> 
+  	where
+  		with-spxverify(
+  			verify( ?Module(QName(_)) | <GetEnclosingModuleName> , "Module(QName(_))  ::index-sdf-usage")
+  			,!"Error : ModuleScope is expected to define sdf usage."
+  		);
+	  	with-spxverify(
+	  		<index-symbol-definition>( key, SDFUsage() , value)
+	  		,!"Indexing SDF Usage"
+	  	)
+  
+  get-sdf-usages = <resolve-all-symbol-definitions>( <id>, SDFUsage() )
 
-  resolve-unique-sdf-declaration =
-     ?symbol;
-     <resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol
-   <+
-     <debug-analysis> $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<pp-aterm>]];
-     fail
+rules
+	
+	setof-sdf-declarations = resolve-sdf-declarations
+	
+	bagof-sdf-declarations = <resolve-all-symbol-definitions-with-duplicates>(<id>, SDFDeclaration())
+			  		
+  resolve-sdf-declarations =
+    <resolve-all-symbol-definitions>(<id>, SDFDeclaration())
+    
+  <+
+    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<print-as-string>]] | "resolve-sdf-declarations" ,<debug-level-WARNING>); 
+    fail
+	
+	
+       
+  resolve-atleast-one-sdf-declaration =
+    <resolve-symbol-definition>( <id>, SDFDeclaration())
+  <+
+    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<print-as-string>]] 
+                 | "resolve-atleast-one-sdf-declaration" ,<debug-level-WARNING>)
+    ; fail
 
   resolve-NamespaceSort-declaration =
-     ?symbol;
-     <resolve-symbol-unique-declaration(all-keys-NamespaceSort , bagof-NamespaceSort)><to-scoped-symbol>symbol
-   <+
-     <debug-analysis> $[ErrorChecking| FAIL| Failed to retrive NamespaceSort declaration for symbol [<pp-aterm>]];
-     fail
+    <resolve-symbol-definition>( <to-scoped-symbol>, NamespaceSortDeclaration())
+  <+
+    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive NamespaceSort declaration for symbol [<print-as-string>]] 
+                 | "resolve-NamespaceSort-declaration" , <debug-level-WARNING>)
+    ; fail
 
+     
 
 rules
  // Traverse AST and declare sdf definition
@@ -49,24 +74,24 @@ rules
  // now it is declared in a particular Scope.
  // Here scope is defined by (Package-QName, Module-QName)
  declare-sdf-definition-main=
-      alltd(declare-sdf-definition)
+    	alltd(declare-sdf-definition)
 
 rules
-  declare-sdf-definition :
-    context-free-start-symbols(s*) -> <id>
-    with
-      <declare-sdf-definition-main>s*
-    with
-      store-context-free-start-symbols(|<GetEnclosingPackageName>)
+	declare-sdf-definition :
+		context-free-start-symbols(s*) -> <id>
+		with
+			<declare-sdf-definition-main>s*
+		with
+			store-context-free-start-symbols(|<GetEnclosingModuleName>)
 
 rules
-  declare-sdf-definition:
+	declare-sdf-definition:
     renamings(y) -> <id>
     where
       <all(try(?symbol(_, <id>); declare-sdf-simple-definition))> y
 
 
-  declare-sdf-definition:
+	declare-sdf-definition:
     parameterized(x, y) -> parameterized(x, y)
     where
       <declare-sdf-definition> unparameterized(x);
@@ -77,123 +102,134 @@ rules
   declare-sdf-definition:
     prod @ prod(lhs, sort, attrs) -> <id>
     where
-      <declare-sdf-definition-internal> (prod, lhs, sort, attrs)
+    	<declare-sdf-definition-internal> (prod, lhs, sort, attrs)
 
+  
   declare-sdf-definition-internal:
-    (prod, lhs, sort, attrs) -> <id>
+    p@(prod, lhs, sort, attrs) -> <id>
     where
-      x:= <get-rhs-sort-name>sort;
-      qualified-sort-name := <to-scoped-symbol> x;
-      package-qualified-sort-name := <to-package-scoped-symbol> x
-     with
-       // enable-declaration-debugging;
-      // reject productions shouldn't generate signatures ever
-      if not(<attrs(fetch(?reject()))> attrs) then
-        <store-operation-declaration>prod
-      end
-    with
-      <topdown(try(store-namespace-def))> lhs
-    with
-      if <fetch-cons-name> attrs => cons then
-        package-qualified-cons-name := <to-package-scoped-symbol> cons;
-        // DR fails if this tuple is placed in-line ...
-        tuple := (package-qualified-sort-name, package-qualified-cons-name);
-        rules(
-          // Needed for Sort.Cons references to the production.
-          Declaration :+ tuple -> prod
-        )
-      end
-    with
-      // in SPT tests, file may be unavailable
-      if (GetEnclosingModuleName;get-module-abs-filepath <+ LegacyModuleResolvedPath) => file then
-        rules( DeclarationFile: qualified-sort-name -> file )
-      end;
-      rules(
-        Declaration :+ qualified-sort-name -> prod
-        Declaration :+ package-qualified-sort-name -> prod
+  	  dbg-declaration(! $[declaring sdf : [<print-as-string>p]]| "SDF" , <debug-level-INFO> ); 
+      x:= <get-rhs-sort-name>sort
+    where  
+      with-spxverify(
+	   		// reject productions shouldn't generate signatures ever
+	      if not(<attrs(fetch(?reject()))> attrs) then
+	        <store-operation-declaration>prod
+	      end
+      , !$[declare-sdf-definition-internal | Failed while trying to store operation declaration with following production [<print-as-string> prod]]
+      )
+  	where
+  	  with-spxverify(
+        <topdown(try(store-namespace-def))> lhs
+       ,!"declare-sdf-definition-internal | Failed while storing namespace-def "
       );
-      <debug-declaration(| "SDF" , "Info" )> $[Storing Declaration : [<pp-aterm>qualified-sort-name]  -> [<pp-aterm>prod]]
-    with
-      <alltd(declare-sdf-usage)> lhs
-     // ;disable-declaration-debugging
-
+      with-spxverify(
+	      if <fetch-cons-name> attrs => cons then
+	      	// DR fails if this tuple is placed in-line ...
+          tuple := (x, cons);
+	       	//TODO : check why it is needed 
+          // Needed for Sort.Cons references to the production.
+          <index-symbol-definition>(tuple , SDFDeclaration() , prod )
+	      end
+	    	, !"declare-sdf-definition-internal | Failed while storing sort.cons references "      
+      )
+    where
+      with-spxverify(
+        	<index-symbol-definition>(x , SortDeclaration(),x );
+    	  	<index-symbol-definition>(x, SDFDeclaration(),prod );
+    	  	dbg-declaration(! $[Storing Declaration : [<print-as-string>x]  -> [<print-as-string>prod]]
+      	                     | "SDF" , <debug-level-INFO> ) 
+        , !"declare-sdf-definition-internal | Failed while storing production in symbol table"
+      ) 
+   where
+     <alltd(declare-sdf-usage)> lhs      
+    
 
   store-namespace-def:
     namespacedef(name, sort) -> <id>
-    with
-      scoped-name  := <to-scoped-symbol> name
+    where with-spxverify(
+    	scoped-name  := <to-scoped-symbol> name
+  	)
     where
-      rules(NamespaceSort: scoped-name  -> sort)
+      <index-symbol-definition>(scoped-name, NamespaceSortDeclaration(),sort)
 
   declare-sdf-definition:
-    lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
-    with{| IsInsideLexicalSyntaxBlock:
-              mark-as-lexical-syntax-block;
-              <declare-sdf-definition-main> lex-defintions
-        |}
+		lex-syntax@lexical-syntax(lex-defintions) ->lex-syntax
+		where 
+			with-spxverify(
+				{| IsInsideLexicalSyntaxBlock:
+								mark-as-lexical-syntax-block;
+								<declare-sdf-definition-main> lex-defintions
+				|}
+			)
 
 
-  declare-sdf-definition:
-    parameterized(x, y) -> parameterized(x, y)
-    where
-      <declare-sdf-definition> unparameterized(x);
-      <alltd(declare-sdf-simple-definition)> y
+	declare-sdf-definition:
+		parameterized(x, y) -> parameterized(x, y)
+  	where
+			<declare-sdf-definition> unparameterized(x);
+  		<alltd(declare-sdf-simple-definition)> y
 
-  declare-sdf-definition:
-    'sorts(_) -> <id>
-    with
-       alltd(declare-sdf-usage)
+	declare-sdf-definition:
+		'sorts(_) -> <id>
+		where with-spxverify(alltd(declare-sdf-usage))
 
-  declare-sdf-definition:
-    context-free-start-symbols(_) -> <id>
-    with
-      alltd(declare-sdf-usage)
-
-  declare-sdf-definition:
-    lexical-start-symbols(_) -> <id>
-    with
-      alltd(declare-sdf-usage)
+	declare-sdf-definition:
+		context-free-start-symbols(_) -> <id>
+		where with-spxverify(
+    	alltd(declare-sdf-usage)
+    )	
 
   declare-sdf-definition:
+		lexical-start-symbols(_) -> <id>
+	  where with-spxverify(
+	  	alltd(declare-sdf-usage)
+  	)
+
+	declare-sdf-definition:
     kernel-start-symbols(_) -> <id>
-    with
+    where with-spxverify(
       alltd(declare-sdf-usage)
+    )
 
-  declare-sdf-simple-definition:
-    sort(x) -> <id>
-    with
-      scoped-x:= <to-scoped-symbol>x;
-      rules(Declaration :+ scoped-x -> x)
-    where
-      <debug-declaration(| "SDF" , "Info" )>$[Storing Declaration [<pp-aterm>scoped-x] -> [<pp-aterm>x]]
+	declare-sdf-simple-definition:
+		sort(x) -> <id>
+		where with-spxverify(
+	  	scoped-x:= <to-scoped-symbol>x;
+	  	<index-symbol-definition>(scoped-x , SDFDeclaration(),x )
+  	)
+		where
+			dbg-declaration(!$[Storing Declaration [<print-as-string>scoped-x] -> [<print-as-string>x]] | "SDF" , <debug-level-INFO> )
+
 
 rules
 
-  declare-sdf-usage:
+	declare-sdf-usage:
     sort(x) -> <id>
-    with
-      x-with-scope := <to-scoped-symbol>x
-      ;rules(Usage: (scope, x)-> x)
+    where with-spxverify(
+    	<index-sdf-usage>( x , x)
+  	)
 
-  declare-sdf-usage:
+	declare-sdf-usage:
     parameterized-sort(x, y) -> <id>
     where
       if !y => [sort(y')]; <is-string> x; <is-string> y' then
         text := ${{x}[[{y'}]]};
-        text-with-scope := <to-scoped-symbol>text;
-        rules(Usage: text-with-scope -> text)
+       	<index-sdf-usage>( text , text)
       end
 
 rules
 
-  propose-completion:
+	propose-completion:
     sort(COMPLETION(x)) -> [decl*, use*]
-    with
-      decl* := <all-keys-Declaration> <to-scoped-symbol> x;
-      use*  := <all-keys-Usage> <to-scoped-symbol>x
+    where with-spxverify(
+      decl* := <setof-sdf-declarations> x;
+      use*  := <get-sdf-usages> x
+    )
 
-  propose-completion:
+	propose-completion:
     NOCONTEXT(COMPLETION(x)) -> [decl*, use*]
-    with
-      decl* := <all-keys-Declaration> <to-scoped-symbol>x;
-      use*  := <all-keys-Usage> <to-scoped-symbol> x
+    where with-spxverify(
+      decl* := <setof-sdf-declarations> x;
+      use*  := <get-sdf-usages> x
+    )

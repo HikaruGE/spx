@@ -26,7 +26,7 @@ rules
 			not(<get-language-name>package-typed-qname)
 	
 	package-constraint-error :
-		package-typed-qname@Package(untyped-qname) -> (package-typed-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<pp-aterm>configure-lang-names]])
+		package-typed-qname@Package(untyped-qname) -> (package-typed-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<print-as-string>configure-lang-names]])
 		where 
 			<get-all-language-name>package-typed-qname => configure-lang-names;
 			is-not-empty-list;
@@ -42,8 +42,8 @@ rules
 		warnings* := <collect-all(package-constraint-warning, conc)>p  ;
 		infos*    := []
 	where 	
-		rules(GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*))
-	where
-			<debug-compiler>$[ErrorChecking | Found semantic problems for ([<pp-aterm-forced> current-scope])  
-			                                  Problems :[<pp-aterm-forced> ( errors* , warnings*, infos*)]]
+		rules(
+			GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
+		)
+		; dbg-compiler(!$[ErrorChecking | Found semantic problems for ([<print-as-string> current-scope]) Problems :[<print-as-string> ( errors* , warnings*, infos*)]])
 		 

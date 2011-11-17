@@ -4,99 +4,82 @@ imports
 imports 
 	context/signatures 
 	context/resolve-symbols
+	context/symboltable
 	normalize/signatures
 imports 	
 	common
-	utils/debug 
+	utils/debug
+	utils/contract
 
+rules
+	store-declared (| namespace) = where(not(?(_,_))) ; <store-declared(|namespace)>(<id> ,<id>)
 	
-//TODO OPTIMIZE : eliminate redundant dynamic rules. Declared with package definition most likely is a redundant DR
+	store-declared(| namespace) : 
+		(x,d) -> <id>
+		where
+			rules( Declared :+ (namespace,x) -> d )
+			
+	get-declared(|namespace) = !(namespace, <id>);  Declared  		 
+	
+	get-all-declared(|namespace) = !(namespace, <id>);  bagof-Declared
+	
+	get-all-declared-by-type(|namespace) = all-keys-Declared ; filter(?(namespace, _));	mapconcat(bagof-Declared)
 
-rules 
-
-	// Scope Tree implementation using Dynamic Rules
-	store-package-abspath: 
-		(package-untyped-qname , abspath) -> <id>
-		with 
-			rules( 
-				DeclaredPackage   :+ package-untyped-qname -> abspath
-				PackagesDeclaredIn:+ abspath -> package-untyped-qname 
-			)
-		where 
-			<debug-symboltable>$[ScopeTree|storing abs path | DeclaredPackage: [<pp-aterm>package-untyped-qname]-> [<pp-aterm>abspath]]
-	
-	store-module-abspath: 
-		(module-untyped-qname, abspath) -> <id>
-		with 
-			rules(
-				DeclaredModule:+ module-untyped-qname -> abspath
-			)
-		where 
-			<debug-symboltable>$[ScopeTree|storing abs path| DeclaredModule: [<pp-aterm>module-untyped-qname]-> [<pp-aterm>abspath]]
-	
-	store-declaration(|ScopedSymbol): ( untyped-qname , definition) -> <id>
-		with 
-			rules( Declared : (ScopedSymbol, untyped-qname ) -> definition) 
-		where	
-			<debug-symboltable>$[ScopeTree|storing declaration| Declared: [<pp-aterm>untyped-qname]-> [<pp-aterm>definition]] 
-	
-	store-original-declaration(|ScopedSymbol): ( untyped-qname , definition) -> <id>
-		with 
-			rules( DeclaredOriginal : (ScopedSymbol, untyped-qname ) -> definition) 
-		where	
-			<debug-symboltable>$[ScopeTree|storing declaration| Declared: [<pp-aterm>untyped-qname]-> [<pp-aterm>definition]] 
-	
-	
-	store-scope-reference: (typed-qname, typed-qname-ofparent) -> <id>
-		with 
-			rules( 
-				GetEnclosingScope :+  typed-qname 				 -> typed-qname-ofparent
-				GetEnclosedScope  :+  typed-qname-ofparent -> typed-qname 
-			)				
-		where	
-			<debug-symboltable>$[ScopeTree|storing enclosing namespace reference| GetEnclosingNamespace: [<pp-aterm>typed-qname]-> [<pp-aterm>typed-qname-ofparent]]
-	
-	
-	store-declaration(|Type): 
+	undef-declared (|namespace) :
 		x -> x
 		where
-			scoped-x := <to-scoped-symbol>x;
-			// DR fails if this tuple is placed in-line ...
-			tuple := (Type, scoped-x);
-			rules( Declaration :+ tuple -> x)
+			all-keys-Declared;
+			filter(?(namespace, x));
+			map(\y -> <rules(Declared :- y)>\)
+
+	undef-declared (|namespace) :
+		() -> ()
 		where
-			<debug-symboltable>$[ScopeTree|Storing Declaration [<pp-aterm>(Type, scoped-x)] -> [<pp-aterm>x]]	
+			all-keys-Declared;
+			filter(?(namespace, _));
+			map(\y -> <rules(Declared :- y)>\)
 	
-	// Stores langauge name. It keeps mapping of package name and its defined language-names
-	// extended dynamic rules are used to verify that language name is not declare multple times 
-	// in a package scope. Additional checks will be added to verify a language-name is unique 
-	// in a project scope. 
-	store-langauge-properties(|package-typed-qname) : 
-		LanguageName(name) -> <id>
-		with 
-			rules( DeclaredLangaugeName :+ package-typed-qname -> name);
-			rules( DeclaredLangaugeNameInScope :+ name -> package-typed-qname )
-		where
-			<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language name : [<pp-aterm>name]]
+rules
 	
-	// Stores Language ID. 
-	store-langauge-properties(|package-typed-qname) : 
-		LanguageId(id-string) -> <id> 
-		with 
-			rules( DeclaredLangaugeId :+ package-typed-qname -> id-string)
-			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following language Id : [<pp-aterm>id-string]]
-	 
-	 
-	store-context-free-start-symbols(|package-typed-qname) : 
-	 	StartSymbols(sorts*) -> <id>
-	 	with 
-			rules( DeclaredESVStartSymbols :+ package-typed-qname -> sorts*)
-			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following start symbols found from ESV language description: [<pp-aterm>sorts*]]
-	 	
-	 	 
-	store-context-free-start-symbols(|package-typed-qname) : 
-	 	context-free-start-symbols(sorts*) -> <id>
-	 	with 
-			rules( DeclaredSDFStartSymbols :+ package-typed-qname -> sorts*)
-			;<debug-symboltable> $[ ScopeTree| [<pp-aterm>package-typed-qname] storing  following start symbols : [<pp-aterm>sorts*]]
-	 		 		
+	add-to-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @add-to-compile-queue ") ; store-declared(|CurrentlyCompilingFlag())
+	
+	is-in-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @is-in-compile-queue") ;  get-declared(|CurrentlyCompilingFlag())
+	
+	should-compile-this-package = not(is-in-compile-queue)
+	
+	add-to-compiled-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) @add-to-compiled-modules") ;   store-declared(|CompiledModuleFlag() )	
+
+	is-a-compiled-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) @is-a-compiled-module") ;  get-declared(|CompiledModuleFlag())
+	
+	add-to-analyzed-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) @add-to-analyzed-modules") ;   store-declared(|AnalyzedModuleFlag() )	
+
+	is-a-analyzed-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) @is-a-analyzed-module") ;  get-declared(|AnalyzedModuleFlag())
+
+	get-all-analyzed-modules-locations =  get-all-declared-by-type(|AnalyzedModuleFlag()) ; make-set
+	
+	add-to-analyzed-packages-queue = 	verify(?Package(QName(_))  |<id> , "Package(QName(_)) @add-to-compile-queue ") ; store-declared(|AnalyzedPackageFlag())
+	
+	is-in-analyzed-packages-queue  = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @is-in-compile-queue") ;  get-declared(|AnalyzedPackageFlag())
+	
+	set-already-reinitialized =  <store-declared(|ReinitCompileSessionFlage())> <get-constructor>ReinitCompileSessionFlage()
+	
+	is-already-reinitialized =  <get-declared(|ReinitCompileSessionFlage())> <get-constructor>ReinitCompileSessionFlage()	
+	
+	is-legacy-artifact-resolved = verify( ?(ns,modulename,resolved-path) | <id> , "(ns,modulename,resolved-path) @is-legacy-artifact-resolved");  !(modulename,resolved-path) ; get-declared(|ResolvedExternalArtifactFlag(ns))
+	
+	add-legacy-artifact-as-resolved = verify( ?(ns , modulename, path) | <id> , "(ns , modulename, path)  @add-legacy-artifact-as-resolved") ; !((modulename,path), path) ; store-declared(|ResolvedExternalArtifactFlag(ns)) 
+
+signature constructors 
+	LibInGlobalNamespace : Flag 
+
+rules 
+	index-lib-in-global-cache = 
+		? module-name
+		; <index-symbol-definition>(module-name, LibInGlobalNamespace(),  module-name)
+	  
+	  
+	is-lib-exists-in-global-cache= 
+		? module-name
+		; <resolve-symbol-definition>(module-name, LibInGlobalNamespace())
+
+

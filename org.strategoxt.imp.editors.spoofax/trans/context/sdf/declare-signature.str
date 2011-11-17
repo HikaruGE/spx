@@ -7,31 +7,61 @@ imports
 	libstrc
 	utils/attributes
 	utils/debug
+	utils/contract
+	
 imports
 	context/-
 imports
 	context/sdf/declare
 	context/signatures
+	
 
 
 // TODO : refactor common functionily in seperate rules/strategy
 // FIXME: DON'T like several things about this implementation. Need to refactor/re-implement.
 // TODO : write a pretty printer to convert Get-Operation-Declaration to Signatures' Aterm
+rules 
+	  
+  is-declared-signature(|actual-arity)=
+    one(
+        ( ?<id>
+        + ?SVar(<id>))
+        ; verify-declared-constructor(|actual-arity)
+    )
+
+  verify-declared-constructor(| arity) = 
+  	?opName
+  	;	candidate-op-signatures := <getOperationSignatures>opName
+    ;	dbg-analysis(! $[operation name : [<print-as-string>opName] . Associated Signatures Found :  [<print-as-string> candidate-op-signatures]] | "verify-declared-constructor" , <debug-level-WARNING>)
+    ;	<assert-eq-opname-arity(|opName, arity)>candidate-op-signatures
+    ; !opName
+  
+      
+  assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)= 
+    ?[hd|tl]
+    ;((expected-op-name , expected-no-of-arguments) := hd 
+      ; actual-opname := expected-op-name 
+      ; actual-no-of-arguments := expected-no-of-arguments
+  	<+ 
+    	<assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)>tl
+    )   
 
 rules
+
 	getOperationSignatures =
-		?opname;
- 		<resolve-symbol-declarations(all-keys-Get-Operation-Signature, bagof-Get-Operation-Signature)><to-scoped-symbol>opname
- 	<+
- 		<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive OperationSignatures for opname[<pp-aterm>]. Returning  empty list . ];
- 		![]
+	  ?opsig-key
+	  ;<resolve-all-symbol-definitions>( <id>, OperationSignature())
+	 	<+
+ 		dbg-declaration(!$[Failed to retrive OperationSignatures for opname[<print-as-string>]. Returning  empty list . ]|"Signature" , "Warning") 
+ 		; ![]
+ 		
 
  	get-operation-declarations =
-		?opname;
- 		<resolve-symbol-declarations(all-keys-Get-Operation-Declaration, bagof-Get-Operation-Declaration)><to-scoped-symbol>opname
+ 	  ?opdecl-key
+ 	  ; <resolve-all-symbol-definitions>(<id>, OperationDeclaration())
  	<+
- 		<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive OperationDeclarations for opname[<pp-aterm>]. Returning  empty list . ];
- 		![]
+ 		dbg-declaration(!$[Failed to retrive OperationDeclaration for opname[<print-as-string>]. Returning  empty list ] | "Signature" , "Warning") 
+ 		; ![]
 
 strategies
 	// Returns right hand side of the production. In case of A -> B, it retunrs B.
@@ -69,7 +99,7 @@ rules
   	with
 			rules (get-op-name: _ -> opname)
   	where
-  		<debug-declaration(|"Signature" , "Info")> $[Operation Name :  [opname]]
+  		dbg-declaration(! $[Operation Name :  [opname]] |"Signature" , <debug-level-INFO>) 
 
 
 	store-operation-declaration:
@@ -104,7 +134,7 @@ rules
   						lhs-operands-types := <reverse><bagof-lhs-sort>
   						;create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)
   					else
-  						<debug-declaration(|"Signature" , "Warning")> $[Failed to retrive Operation Name . Hence Ignoring : [<pp-aterm> p].]
+  						dbg-declaration(!$[Failed to retrive Operation Name . Hence Ignoring : [<print-as-string> p].] |"Signature" , "Warning")
   					end
   		  |}
 
@@ -188,68 +218,84 @@ rules
 
  	get-sort-decl:
  		p@parameterized-sort(x, _) ->p
-		with
-			rules( lhs-sort :+ _ -> x)
+		where 
+			with-spxverify(
+  			rules( lhs-sort :+ _ -> x)
+			)
 
   get-sort-decl:
   	s@sort(x) -> s
-  	with
-  		rules( lhs-sort :+ _ -> x)
+  	where 
+  		with-spxverify(
+  			rules( lhs-sort :+ _ -> x)
+			)
 
 	get-sort-decl:
 		o@opt(parameterized-sort(x, _)) -> o
-  	with rules( lhs-sort :+ _ -> $[Option([x])])
+  	where 
+  		with-spxverify(
+  			rules( lhs-sort :+ _ -> $[Option([x])])
+			)
 
 	get-sort-decl:
 		opt(sort(x)) -> opt(sort(x))
-  	with rules( lhs-sort :+ _ -> $[Option([x])])
+  	where 
+  		with-spxverify(
+  			rules( lhs-sort :+ _ -> $[Option([x])])
+			)
 
 	get-sort-decl:
 		i@iter-star-sep(operand1, operand2) -> i
- 		with {|lhs-sort:
-			 					 <find-sorts>operand1
-		 					  ;<find-sorts>operand2
-		 					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
-				  |}
-				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
-  				;rules ( lhs-sort :+ _ -> ret-string)
-
+ 		where 
+ 			with-spxverify( 
+				{|lhs-sort:
+ 					 <find-sorts>operand1
+ 					  ;<find-sorts>operand2
+ 					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
+			  |}
+			 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
+				;rules ( lhs-sort :+ _ -> ret-string)
+			)
+			
 	get-sort-decl:
 		i@iter-sep(operand1, operand2) -> i
-		with {|lhs-sort:
-			 					 <find-sorts>operand1
-		 					  ;<find-sorts>operand2
-		 					  ;inner-sorts-tostring
-		 					   		:= <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
-				  |}
-				 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
-  				;rules ( lhs-sort :+ _ -> ret-string)
+		where 
+			with-spxverify(
+				{|lhs-sort:
+	 					 <find-sorts>operand1
+ 					  ;<find-sorts>operand2
+ 					  ;inner-sorts-tostring
+				   		:= <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
+			  |}
+			 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
+				;rules ( lhs-sort :+ _ -> ret-string)
+		 )
 
   // TemplateLang
   get-sort-decl:
     Placeholder(_, sort(x), None(), _) -> <id>
-    with rules( lhs-sort :+ _ -> x )
+    where with-spxverify (rules( lhs-sort :+ _ -> x ))
 
   get-sort-decl:
     Placeholder(_, sort(x), <?Plus() + ?Star()>, _) -> <id>
-    with rules( lhs-sort :+ _ -> $[List([x])] )
+    where with-spxverify( rules( lhs-sort :+ _ -> $[List([x])] ))
 
   get-sort-decl:
     Placeholder(_, sort(x), Option(), _) -> <id>
-    with rules( lhs-sort :+ _ -> $[Option([x])] )
+    where with-spxverify (rules( lhs-sort :+ _ -> $[Option([x])] ))
 
 strategies
 
 	assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)=
-			?[hd|tl]
-			;(expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
-			;(
-			 			 operation-name := expected-op-name
-						;opernand-sorts* := expected-op-sorts*
-						;resultant-sort := ex-resultant-sort
-				  <+
-						<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
-				)
+		? [hd|tl]
+		; (expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
+		; (
+				operation-name := expected-op-name
+				;opernand-sorts* := expected-op-sorts*
+				;resultant-sort := ex-resultant-sort
+		  <+
+				<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
+			)
 
 	/**
 	* Creates a dynamic rule that mapes operation name to the operation declaration.
@@ -262,21 +308,20 @@ strategies
 	*
 	*/
 	create-opname2opdecl-mapping(|operation-name, opernand-sorts*, resultant-sort , production) =
-		where (<debug-declaration(|"DeclareSignature" , "Info")> $[Storing Signature for following production: [<pp-aterm> production]])
-		;available-opdecl* := <get-operation-declarations>operation-name
-		;scoped-operation-name := <to-scoped-symbol>operation-name
-		;if( (!available-opdecl* => []) <+ not(<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*) )then
-			record-operation-definition(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort)
- 		else
- 			//enable-declaration-debugging;
+		dbg-declaration(!$[Storing Signature for following production: [<print-as-string> production]] |"DeclareSignature" , <debug-level-INFO>) 
+		; available-opdecl*     := <get-operation-declarations>operation-name
+		; scoped-operation-name := <to-scoped-symbol>operation-name
+		; if( (!available-opdecl* => []) <+ not(<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>available-opdecl*) )then
+		   	record-operation-definition(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort)
+ 		  else
  		 	record-duplicate-operation-definition(|scoped-operation-name  , operation-name  , opernand-sorts* , resultant-sort);
- 		 	<debug-declaration(|"Signature" , "Warning")>
+ 		 		dbg-declaration(!
  		 			$[
- 		 				There is an existing operation declaration of production: [<pp-aterm> production] as the following : [<pp-aterm>(operation-name, opernand-sorts* , resultant-sort)]
- 		 				--scoped-op-name [<pp-aterm>scoped-operation-name].
+ 		 				There is an existing operation declaration of production: [<print-as-string> production] as the following : [<print-as-string>(operation-name, opernand-sorts* , resultant-sort)]
+ 		 				--scoped-op-name [<print-as-string>scoped-operation-name].
  		 			 ]
- 		 	//;disable-declaration-debugging
-		end
+ 		 			 | "Signature" , "Warning")
+ 		  end
 
 
 	create-opname2opdecl-mapping(|operation-name, resultant-sort , production): alt-sort -> alt-sort
@@ -287,19 +332,20 @@ strategies
 
 	record-operation-definition ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
 		where (
-			arg-length := <length>operand-sort*;
-			rules(
-					Get-Operation-Signature  :+  scoped-op-name   -> (opname  , arg-length )
-				 	Get-Operation-Declaration:+  scoped-op-name   -> (opname  , operand-sort* , resultant-sort)
-				)
-
-			;<debug-declaration(|"Signature" , "Info")> $[Stored operation declaration : [<pp-aterm> ( opname , operand-sort* ,  resultant-sort) ].]
-			;<debug-declaration(|"Signature" , "Info")> $[Stored operation signature   : [<pp-aterm> scoped-op-name] -> [<pp-aterm> (opname, <length>operand-sort*)].]
-	)
+	  	arg-length := <length>operand-sort*
+			;<index-symbol-definition>(scoped-op-name  , OperationSignature(),(opname  , arg-length ))
+      ;<index-symbol-definition>(scoped-op-name  , OperationDeclaration(),(opname  , operand-sort* , resultant-sort)) 
+      ;dbg-declaration(!$[Stored operation declaration : [<print-as-string> ( opname , operand-sort* ,  resultant-sort) ].]
+       		             |"Signature" , <debug-level-INFO>) 
+			;dbg-declaration(! $[Stored operation signature   : [<print-as-string> scoped-op-name] -> [<print-as-string> (opname, <length>operand-sort*)].] 
+			                 | "Signature" , <debug-level-INFO>) 
+		)
 
 	record-operation-definition-at-global-scope ( | opname , operand-sort* ,  resultant-sort) =
-		where ( <to-global-symbol> opname => scoped-op-name);
-		record-operation-definition( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort)
+		activate-global-scope(
+			<to-global-symbol> opname => scoped-op-name;
+			record-operation-definition( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort)
+		)
 
 
 	record-duplicate-operation-definition( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
@@ -309,13 +355,30 @@ strategies
 			rules(
 					has-duplicate-opeartion-definition:+ scoped-rhs-sort   -> (opname  , arg-length, resultant-sort)
 			)
-			;<debug-declaration(|"Signature" , "Info")> $[Stored duplicate  operation signature  : [<pp-aterm> scoped-op-name].]
+			;dbg-declaration(! $[Stored duplicate  operation signature  : [<print-as-string> scoped-op-name].]
+			                  | "Signature" , <debug-level-INFO>) 
 		)
 
-rules
 	init-record-signatures =
+		if not(is-operation-signature-initialized) then 
 			record-operation-definition-at-global-scope ( |"None", [] 		,"Option(a)");
 			record-operation-definition-at-global-scope ( |"Some", ["a"] ,"Option(a)");
 			record-operation-definition-at-global-scope ( |"Cons", ["a","List(a)"] ,"List(a)");
 			record-operation-definition-at-global-scope ( |"Nil", [] ,"List(a)");
-			record-operation-definition-at-global-scope ( |"Conc", ["List(a)" , "List(a)"] ,"List(a)")
+			record-operation-definition-at-global-scope ( |"Conc", ["List(a)" , "List(a)"] ,"List(a)");
+			index-operation-signature-flag	
+		end
+
+signature constructors 
+	OperationSignatureFlag : Flag 
+
+rules 
+	
+	index-operation-signature-flag = 
+		<get-constructor> OperationSignatureFlag() => cons-name;
+		<index-symbol-definition>(cons-name, OperationSignatureFlag(),  cons-name)
+		
+	is-operation-signature-initialized = 
+		<get-constructor> OperationSignatureFlag() => key ;  
+		<resolve-symbol-definition>(key, OperationSignatureFlag())   
+		

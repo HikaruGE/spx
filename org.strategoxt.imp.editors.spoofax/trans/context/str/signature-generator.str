@@ -2,6 +2,7 @@ module context/str/signature-generator
 
 imports 
 	include/SpoofaxLang
+	utils/contract
 imports
 	lib/editor-common.generated
 
@@ -62,4 +63,21 @@ rules
       else
         s' := s
       end
+rules 
+  
+  signature-to-declaration-id = 
+      ?(<id> ,_ ,_)
+    + ?(<id> ,_ )  
+    + ?<id>
+    ; verify(String | <id> , "String @signature-to-declaration-id")     
+  
+  
+  signature-to-str-args-length = 
+    ?(_ ,<id> ,_)    <+  !0
+  
+  
+  signature-to-term-args-length = 
+    ?(_ ,_ ,<id>) + ?(_ , <id>) <+ !0
+  
+    
   

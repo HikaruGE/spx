@@ -27,37 +27,33 @@ rules
 		<+ 
 			<debug>$[FAILED...]	
 	
-
-	
-	
 	test-path:
 		(selected, position, ast, path, project-path) -> selected
 		where
 			<debug>$[=============Test 1: Get-Output-Path ============]
 			;result := <get-output-path(|"sdf")>( "c:/test" , QName(["a" , "b" , "c"]))
-			;<debug>$[[<pp-aterm-forced>result]] 
+			;<debug>$[[<print-as-string>result]] 
 		where
 			<debug>$[=============Test 2: Get-Output-Path with empty qname ============]
 			;result2 := <get-output-path(|"sdf")>( "c:/test" , QName([]))
-			;<debug>$[[<pp-aterm-forced>result2]] 	 
+			;<debug>$[[<print-as-string>result2]] 	 
 		where
 			<debug>$[=============Test 3: convert-qname ============]
 			;result3 := <convert-qname(|"-")>QName([])
-			;<debug>$[[<pp-aterm-forced>result3]] 	 
+			;<debug>$[[<print-as-string>result3]] 	 
 		where
 			<debug>$[=============Test 4: convert-qname ============]
 			;result4 := <convert-qname(|"-")>QName(["package" , "Name"])
-			;<debug>$[[<pp-aterm-forced>result4]] 	 
+			;<debug>$[[<print-as-string>result4]] 	 
 		where 
 			<debug>$[=============Test 5: get-main-file-name ============]
 			;result5 := <get-main-file-name>QName(["package" , "Name"])
-			;<debug>$[[<pp-aterm-forced>result5]]
+			;<debug>$[[<print-as-string>result5]]
 		where 
 			<debug>$[=============Test 6: get-main-file-path ============]
 			;result6 := <get-main-output-path(|"sdf")> ("c:/test" , QName(["package" , "Name"]))
-			;<debug>$[[<pp-aterm-forced>result6]]	
+			;<debug>$[[<print-as-string>result6]]	
 		where 
 			<debug>$[=============Test 7: get-output-path with prefix ============]
 			;result7 := <get-output-path(|"main", "sdf")> ("c:/test" , QName(["package" , "Name" , "A"]))
-			;<debug>$[[<pp-aterm-forced>result7]]	
-				 
+			;<debug>$[[<print-as-string>result7]]	

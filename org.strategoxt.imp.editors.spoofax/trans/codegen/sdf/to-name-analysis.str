@@ -7,6 +7,7 @@ imports
   include/SpoofaxLang
   analyze/sdf/check
   utils/attributes
+  common
 
 rules
 
@@ -26,12 +27,14 @@ rules
       , annotate-names-rules
       ])
     ])
-    with
-      namespaces           := <collect-all(fetch-namespace); flatten-list> sdf;
-      namespace-sigs       := <map(namespace-to-signature)> namespaces;
-      scope-rules          := <collect-all(fetch-scope-rule)> sdf;
-      get-def-rules        := <collect-all(fetch-get-def-rules)> sdf;
-      annotate-names-rules := <collect-all(fetch-annotate-names-rule)> sdf
+    where with-spxverify(
+      namespaces           := <collect-all(fetch-namespace); flatten-list> sdf
+      ; namespace-sigs       := <map(namespace-to-signature)> namespaces
+      ; scope-rules          := <collect-all(fetch-scope-rule)> sdf
+      ; get-def-rules        := <collect-all(fetch-get-def-rules)> sdf
+      ; annotate-names-rules := <collect-all(fetch-annotate-names-rule)> sdf
+      , ! "failed @ generate-name-analysis" 
+    )
 
 rules
 
@@ -62,10 +65,11 @@ rules
       scopes := <collect-all(fetch-scope-names)> a*;
       not(!scopes => []);
       cons := <getfirst(fetch-cons-name)> a*
-    with
-      scopes'     := <make-set> <flatten-list> scopes;
-      p'*         := <filter(non-terminal-to-wld)> p*;
-      scope-terms := <map(![NoAnnoList(Op(<id>, []))])> scopes'
+    	; with-spxverify(
+		      scopes'     := <make-set> <flatten-list> scopes;
+		      p'*         := <filter(non-terminal-to-wld)> p*;
+		      scope-terms := <map(![NoAnnoList(Op(<id>, []))])> scopes'
+      )
 
   fetch-get-def-rules:
     prod(p*, _, attrs(a*)) ->
@@ -105,10 +109,11 @@ rules
     )
     where
       cons := <getfirst(fetch-cons-name)> a*
-    with
-      p'*            := <filter(is-non-terminal)> p*;
-      vars           := <map(non-terminal-to-new-var)> p'*;
-      annotated-vars := <zip(add-namespace-anno-1 <+ add-namespace-anno-2)> (p'*, vars)
+    	; with-spxverify(
+	      p'*            := <filter(is-non-terminal)> p*;
+	      vars           := <map(non-terminal-to-new-var)> p'*;
+	      annotated-vars := <zip(add-namespace-anno-1 <+ add-namespace-anno-2)> (p'*, vars)
+      )
 
 rules
 

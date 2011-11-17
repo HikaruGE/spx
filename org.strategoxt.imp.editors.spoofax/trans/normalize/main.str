@@ -3,6 +3,7 @@ module normalize/main
 imports
   libstratego-lib
   libstrc
+  lib/editor-common.generated
 imports
 	normalize/stratego
 	normalize/signatures
@@ -13,15 +14,15 @@ imports
 	utils/annotations
 	utils/debug
 	utils/cache
-imports
-	common
+imports 
+	common 
 	config
 imports
 	context/-
-
+	utils/contract
+	context/signatures
 
 rules 
-
 	 normalize:
     (selected, position, ast, path, project-path) -> (filename, result)
     with 
@@ -31,144 +32,177 @@ rules
    				filename := <guarantee-extension(|"aterm.desugared")> path;
     		  result   := <normalize-all> ast // returning desugared AST
 	  |}
-       
-
-	
-strategies
-
-//TODO FIX :
-// Design issues :
-//	1. Package Common Imports are only for the current spx file at this moment
-//		 It could be kept as it is or make it common in the whole package. 
-//	2. When done with fixing origin tracking , normalize Import Statements
-
-	normalize-all = desugar-compilation-unit
-
+	 
+	 normalize-all = desugar-compilation-unit
 rules
-
+	
 	desugar-compilation-unit:
 		CompilationUnit(moduledef*) -> 	<desugar-compilation-unit>CompilationUnit([] , [appended-default-package-declaration])
 		where
 			 appended-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
 
-
-
 	desugar-compilation-unit:
-		CompilationUnit(import* , package*) -> 	CompilationUnit( import* , modified-packages)
-		with
+		c@CompilationUnit(import* , package*) -> 	CompilationUnit( import* , modified-packages)
+		where 
+				with-spxverify(
+					<index-compilation-unit>(<currently-precompiling-spx-abspath>, c)
+					, !" Failed to index compilation unit"
+				)
+		where
 			{| PackageCommonImports:
-						<alltd(desugar-imports)> import*;
-						<alltd(desugar-spx-package)> package* => modified-packages
+						<alltd(origin-track-forced(desugar-imports))> import*;
+						<alltd(origin-track-forced(desugar-spx-package))> package* => modified-packages
 			|}
 
-	// desugaring package-wide imports
-	// TODO  :  Consider as  Deprecate 
+	//TODO Implement : update desugared compilation unit in the index . 
+	// TODO  FIX : mark deprecated. remove it from existing implementation
 	desugar-imports:
 		i@Imports(import*) -> i
-		with
-			rules(
-				PackageCommonImports:+ _ -> i
-			)
-
+		where	
+			rules( PackageCommonImports:+ _ -> i )
+			
+			
 rules
-
+	
 	desugar-spx-package:
-		Package(Name(package-name) , modules* ) -> normalized-package-definition
-		with
-			<debug-compiler>$[Desugaring Packages [<pp-aterm>package-name]]
+		Package(Name(package-name) , modules* ) -> 
+			normalized-package-definition
 		where
-			!QName([package-name]) 																=> package-qname;
+			dbg-compiler(!$[Desugaring Packages [<print-as-string>package-name]])
+		where 
+			!QName([package-name]) => package-qname;
 			<desugar-spx-package>Package(package-qname, modules*) => normalized-package-definition
 
-
 	desugar-spx-package:
-		p@Package(package-qname , modules* ) -> modifiedPackageDescription
-		with
+		p@Package(package-qname , modules* ) -> 
+			modifiedPackageDescription
+		where
 			!package-qname => QName(_);
-				<debug-compiler>$[Desugaring Packages [<pp-aterm>package-qname]]
-		with
-			{| EnclosingNamespace :
-			   	rules(
-						EnclosingNamespace := Package(package-qname)
-			   	);
-			   	<alltd(desugar-spx)> modules*  => desugared-modules*
+			dbg-compiler(!$[Desugaring Packages [<print-as-string>package-qname]]);
+			with-spxverify(
+				<index-package-declaration>(Package(package-qname) , <currently-precompiling-spx-abspath>)
+				, !"Indexing Package Declaration failed"
+			)			
+		where
+			{| GetEnclosingPackageName:
+			   	rules(GetEnclosingPackageName := Package(package-qname));
+			   	<alltd(origin-track-forced(desugar-spx))> modules*  => desugared-modules*
 			|}
-		with
+		where
 			currently-precompiling-spx-abspath  					=> package-abs-path;
 			!Package( package-qname , desugared-modules*) => modifiedPackageDescription
-		where
-        <store-package-abspath>(package-qname ,package-abs-path)
-
-		/* it seems not to be needed at this moment. hence, commenting this code.
-		where
-			if <get-package-declaration> package-qname => Package(package-qname, module-def*) then
-				modifiedPackageDescription' 						 := Package(package-qname, <conc>(module-def* , desugared-modules*))
-			else
-				modifiedPackageDescription' 						 := modifiedPackageDescription
-			end;
-			<store-declaration(|Packages())>	(package-qname,  modifiedPackageDescription')
-		*/
-
+	  
 rules
 
 	desugar-spx:
 		m@Module(attrb* , modname , section*) -> modifiedModuleDescription
-		with
-			<debug-compiler>$[Desugaring Modules : [<pp-aterm>modname]]
 		where
-			EnclosingNamespace      								=>  package;
-			modname-with-annotation 					      :=  <add-annotation(|package)>modname;
-		  !modname-with-annotation				      	=>  SPXModuleName(mod-name-string);
-		  !package							  								=>  Package(QName( package-name-part*));
-		  enclosing-module-name   								:=  [package-name-part*| [mod-name-string]];
-		  enclosing-module-qname   								:=  QName(enclosing-module-name)
+			dbg-compiler(!$[Desugaring Module [<print-as-string>m]])
 		where
-			{| EnclosingNamespace, EnclosingParentNamespace:
-			  	rules(
-						EnclosingNamespace 								:= 	Module(enclosing-module-qname)
-						EnclosingParentNamespace					:= package
-					);
-					sections' := <conc>(<reverse><bagof-PackageCommonImports>, <alltd(desugar-spx)>section*)
-					;<debug-symboltable> $[ Storing enclosing namespace : [<pp-aterm>enclosing-module-qname]]
+			with-spxverify(
+				GetEnclosingPackageName      								=>  package;
+				modname-with-annotation 					      :=  <add-annotation(|package)>modname;
+				!modname-with-annotation				      	=>  SPXModuleName(mod-name-string);
+				!package							  								=>  Package(QName(package-name-part*));
+				enclosing-module-name   								:=  [package-name-part*| [mod-name-string]];
+				enclosing-module-qname   								:=  QName(enclosing-module-name)
+		  	, !"Failed to initialize desugar-spx at Module level"
+		  )
+		where 
+			{| GetEnclosingModuleName : 	
+				 	with-spxverify(
+						 	rules(GetEnclosingModuleName := Module(enclosing-module-qname))
+							, !"Failed to create GetEnclosingModuleName rule"
+					)
+					; sections' := <conc>(<reverse><bagof-PackageCommonImports>, <alltd( origin-track-forced(desugar-spx))>section*)
+					; dbg-symboltable(! $[ Storing enclosing namespace : [<print-as-string>enclosing-module-qname]] | "desugar-spx" , "Info")
+					; with-spxverify(
+							currently-precompiling-spx-abspath  	=> package-abs-path
+							; !Module(attrb* , modname-with-annotation , sections') => modifiedModuleDescription
+							; <index-module-definition>(
+									Module(enclosing-module-qname), 
+									<currently-precompiling-spx-abspath>,
+									package,
+									m,
+									modifiedModuleDescription
+								)
+								, !"Indexing Module Declaration failed . " 		
+							)
+					  ; with-spxverify( <index-enclosed-modules>(package , Module(enclosing-module-qname)), !" Failed to index enclosed moduled")   
 			|}
-		with
-			currently-precompiling-spx-abspath  												=> package-abs-path;
-			!Module(attrb* , modname-with-annotation , sections')				=> modifiedModuleDescription
-		where
-			<store-module-abspath> (enclosing-module-qname, package-abs-path);
-			<store-declaration(|Modules())>(enclosing-module-qname,  modifiedModuleDescription);
-			<store-scope-reference>(Module(enclosing-module-qname),  package);
-			<store-original-declaration(|Modules())>(enclosing-module-qname,  m) // also storing original AST.
+				
 rules
 
 	//Desugaring SDF Sections
 	desugar-spx : 
-		SDFSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> SDFSection( sectionDef' )
-		with
+		SDFSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSection( sectionDef' )
+		where
 			<templatelang-desugar-sdf-top> sectionDef => sectionDef'
 	
 		
   // TODO: Maybe SDFSectionEH can be desugared into SDFSection.
 	desugar-spx : 
-		SDFSectionEH ( eh, sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> SDFSectionEH( eh, sectionDef' )
-		with
+		SDFSectionEH ( eh, sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSectionEH( eh, sectionDef' )
+		where
     	<templatelang-desugar-sdf-top> sectionDef => sectionDef'
   
 rules
 	//Desugaring STR sections
 	desugar-spx : 
-		STRSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> STRSection ( sectionDef' )
-		with
+		STRSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> STRSection ( sectionDef' )
+		where
 			<basic-stratego-desugar-top> sectionDef => sectionDef'
 				
 rules
 	//Desugaring ESV Sections
 	desugar-spx : 
-		ESVSection ( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> <id>
+		ESVSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> <id>
 		
 rules
 	//Desugaring template sections
   desugar-spx : 
-  	TemplateSection( sectionDef ) -> <add-annotation(|<EnclosingNamespace>)> TemplateSection( sectionDef' )
-  	with
+  	TemplateSection( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> TemplateSection( sectionDef' )
+  	where
   		<templatelang-desugar-top> sectionDef => sectionDef'
+  		
+  		
+strategies 
+	
+	get-analyzed-ast = origin-track-forced(analyzed-ast)
+	
+rules
+	analyzed-ast:
+		CompilationUnit(moduledef*) -> 	
+			<analyzed-ast>CompilationUnit([] , [appended-default-package-declaration])
+		where
+			 appended-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
+
+	analyzed-ast:
+		c@CompilationUnit(import* , package*) -> 	
+			CompilationUnit( import* , modified-packages)
+		where
+				<alltd(origin-track-forced(analyzed-package-ast))> package* => modified-packages
+			
+	analyzed-package-ast:
+    Package(Name(package-name) , modules* ) -> result
+    where
+        !QName([package-name]) => package-qname;
+        <analyzed-package-ast>Package( package-qname , modules* ) => result            
+        
+	analyzed-package-ast:
+    p@Package(package-qname@QName(_) , modules* ) -> 
+    	Package(package-qname, modulesdef' )
+    where
+        !package-qname => QName(_);
+        {| GetEnclosingPackageName
+         :	rules(GetEnclosingPackageName := Package(package-qname))
+         		; <alltd(origin-track-forced(analyze-module-ast))>modules* => modulesdef'
+        |}
+	analyze-module-ast:
+			m@Module(attrb* , modname , section*) -> 
+				modifiedModuleDescription
+      where
+        GetEnclosingPackageName  =>  Package(QName(package-name-part*))
+        ; !modname => SPXModuleName(mod-name-string)
+        ; enclosing-module-qualified-typed-name :=  Module(QName([package-name-part*| [mod-name-string]]))
+      	; <get-analyzed-module-ast>enclosing-module-qualified-typed-name  => modifiedModuleDescription                      		

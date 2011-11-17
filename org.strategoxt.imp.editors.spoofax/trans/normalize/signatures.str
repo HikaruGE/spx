@@ -20,3 +20,10 @@ signature
 		Package					 : QName -> Namespace
 		Module					 : QName -> Namespace
 	
+	
+	constructors
+		
+		PackageDef : Package * String  -> Def
+		 
+		ModuleDef : Module * String * Package * Term * Term -> Def
+	

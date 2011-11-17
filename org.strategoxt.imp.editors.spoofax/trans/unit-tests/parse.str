@@ -27,7 +27,7 @@ rules
 		where
 			<debug> $[Verifying Expectaions .... ];
 			not(!actual => "");
-			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
 		<+ 
 			<debug>$[FAILED...]
 			
@@ -41,7 +41,7 @@ rules
 		where
 			<debug> $[Verifying Expectaions .... ];
 			not(!actual => "");
-			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
 		<+ 
 			<debug>$[FAILED...]		
 				
@@ -56,7 +56,7 @@ rules
 		where
 			<debug> $[Verifying Expectaions .... ];
 			not(!actual => "");
-			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
 		<+ 
 			<debug>$[FAILED...]		
 			
@@ -70,7 +70,7 @@ rules
 		where
 			<debug> $[Verifying Expectaions .... ];
 			not(!actual => "");
-			<debug>$[SUCCESS.... ParsedContent : [<pp-aterm>actual]]
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
 		<+ 
 			<debug>$[FAILED...]			
 

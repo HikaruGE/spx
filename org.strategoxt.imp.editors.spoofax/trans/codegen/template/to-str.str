@@ -11,6 +11,7 @@ imports
   utils/attributes
   utils/sdf2conflicts
   utils/templatelang
+	common
 
 strategies
 
@@ -40,7 +41,7 @@ strategies
 
         pp-option(s) = \None() -> ""\ + \Some(t) -> <s> t\
         pp-list(s|t) = map(s); separate-by(|t); concat-strings
-        // ih = indent helper, t = indent string
+ 				// ih = indent helper, t = indent string
         pp-ih-1(|t) = ?"" <+ prefix-lines(|t); <conc-strings> (<id>, "\n")
         pp-ih-2(|t) = ?"" <+ prefix-lines(|t); <conc-strings> ("\n", <id>)
 
@@ -49,27 +50,35 @@ strategies
       strategies // all other sorts used in placeholders
 
         [strategy*]]
-    with
-      section'*  := <templatelang-desugar-top> section*;
-      section''* := <filter(template-section-to-stratego-string);
-                     separate-by(|"\n\n")> section'*
-    with
-      // All sorts used in pp minus all sorts for which a pp strategy has been
-      // created will get a `prettyprint-sort = is-string' default strategy.
-      sorts-used-in-pp := <collect-om(sort-used-in-prettyprinting); nub> section'*; // FIXME: global data
-      sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*; // FIXME: global data
-      sorts-without-pp := <diff> (sorts-used-in-pp, sorts-decl-in-pp);
-      strategy* := <map(sort-to-prettyprint-strategy); separate-by(|"\n\n")> sorts-without-pp
+    where
+    	with-spxverify(
+	      section'*  := <templatelang-desugar-top> section*;
+	      section''* := <filter(template-section-to-stratego-string);
+	                     separate-by(|"\n\n")> section'*
+     		, !"Failed to desugar "
+     	);
+    	with-spxverify(
+	      // All sorts used in pp minus all sorts for which a pp strategy has been
+	      // created will get a `prettyprint-sort = is-string' default strategy.
+	      sorts-used-in-pp := <collect-om(sort-used-in-prettyprinting); nub> section'*; // FIXME: global data
+ 	      sorts-decl-in-pp := <collect-om(sort-decl-in-prettyprinting); nub> section'*; // FIXME: global data
+              sorts-without-pp := <diff> (sorts-used-in-pp, sorts-decl-in-pp);
+	      strategy* := <map(sort-to-prettyprint-strategy); separate-by(|"\n\n")> sorts-without-pp
+	      , !"Failed to generate sort-to-pretty-print strategy"
+      )
 
   template-section-to-stratego-string:
     TemplateSection(prod*) ->
     $[strategies
 
         [strategy*]]
-    with
-      strategy* := <declare-template-definition-main;
-                    map(template-to-prettyprint-strategy);
-                    separate-by(|"\n\n")> prod*
+    where 
+    	with-spxverify(
+	      strategy* := <declare-template-definition-main;
+	                    map(template-to-prettyprint-strategy);
+	                    separate-by(|"\n\n")> prod*
+      	, !"Failed to pretty-print template to strategy"
+      )
 
 /*internal*/ strategies
 
@@ -77,14 +86,14 @@ strategies
     sort -> $[prettyprint-[sort] = is-string]
 
   sort-decl-in-prettyprinting:
-    TemplateProduction(sort, _, _) -> sort
+	  TemplateProduction(sort, _, _) -> sort
 
   sort-used-in-prettyprinting:
     Placeholder(_, sort(sort), _, _) -> sort
 
 rules
 
-  // Single line template with only Layout and String elements.
+ // Single line template with only Layout and String elements.
   template-to-prettyprint-strategy:
     TemplateProduction(sort, SingleLineTemplate(elem*), attrs) ->
     $[prettyprint-[sort]:
@@ -104,13 +113,14 @@ rules
           [<template-element-to-prettyprint> p{"a"}]]
     where
       < ?SingleLineTemplate([p @ Placeholder(_, _, _, _)])
-      + ?Template([Line([Layout(_), p @ Placeholder(_, _, _, _)])]) > template
-    with
-      if cons := <fetch-cons-name> attrs then
-        input := $[[cons](a)]
-      else
-        input := "a"
-      end
+      + ?Template([Line([Layout(_), p @ Placeholder(_, _, _, _)])]) > template;
+    	with-spxverify(
+	      if cons := <fetch-cons-name> attrs then
+	        input := $[[cons](a)]
+	      else
+	        input := "a"
+	      end
+      )
 
   template-to-prettyprint-strategy:
     TemplateProduction(sort, SingleLineTemplate(elem*), attrs) ->
@@ -121,12 +131,14 @@ rules
     where
       not(<map(?Layout(_) + ?String(_))> elem*);
       not(!elem* => [Placeholder(_, _, _, _)])
-    with
-      (elem'*, _)    := <thread-map(try(rename-template-element))> (elem*, 0);
-      elem''*        := <map(template-element-to-stratego)> elem'*;
-      arg*           := <filter(template-element-to-cons-arg)> elem'*;
-      let*           := <filter(template-element-to-prettyprint)> elem'*;
-      (input, let'*) := <template-common> (let*, elem''*, attrs, arg*)
+    where 
+    	with-spxverify(
+	      (elem'*, _)    := <thread-map(try(rename-template-element))> (elem*, 0);
+	      elem''*        := <map(template-element-to-stratego)> elem'*;
+	      arg*           := <filter(template-element-to-cons-arg)> elem'*;
+	      let*           := <filter(template-element-to-prettyprint)> elem'*;
+	      (input, let'*) := <template-common> (let*, elem''*, attrs, arg*)
+      )
 
   template-to-prettyprint-strategy:
     TemplateProduction(sort, Template(line*), attrs) ->
@@ -134,12 +146,13 @@ rules
         [input] -> zz
         where
           [let'*]]
-    with
+    where with-spxverify(
       (line'*, _)    := <thread-map(rename-template-line)> (line*, 0);
       (line''*, _)   := <thread-map(template-line-to-stratego)> (line'*, 0);
       arg*           := <mapconcat(template-line-to-cons-arg)> line'*;
       let*           := <mapconcat(template-line-to-prettyprint)> line'*;
       (input, let'*) := <template-common> (let*, <concat> line''*, attrs, arg*)
+    )
 
   template-common:
     (let*, elem*, attrs, arg*) -> (input, let'*)
@@ -188,14 +201,16 @@ rules
 
   rename-template-line:
     (Line(elem*), index) -> (Line(elem'*), index')
-    with
+    where with-spxverify(
       (elem'*, index') := <thread-map(try(rename-template-element))> (elem*, index)
+    )
 
   rename-template-element:
     (Placeholder(a, b, c, d), index) -> (Placeholder(a, b, c, d){name'}, index')
-    with
+    where with-spxverify(
       name'  := <implode-string> [<addi> ('a', index)];
       index' := <inc> index
+    )
 
 rules
 
@@ -250,12 +265,13 @@ rules
 
   template-element-to-prettyprint:
     Placeholder(_, sort(x), <Star() + Plus()>, Options(opt*)){name} -> t
-    with
+    where with-spxverify(
       if sep := <getfirst(?Separator(<id>))> opt* then
         t := $[[name]' := <pp-list(prettyprint-[x]|"[<templatelang-escape> sep]")> [name]]
       else
         t := $[[name]' := <pp-list(prettyprint-[x]|" ")> [name]]
       end
+   )   
 
   template-element-to-prettyprint:
     Placeholder(_, sort(x), Option(), _){name} -> $[[name]' := <pp-option(prettyprint-[x])> [name]]

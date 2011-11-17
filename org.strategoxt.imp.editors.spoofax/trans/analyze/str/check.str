@@ -1,94 +1,81 @@
 module analyze/str/check
 
 imports
-	 libstratego-lib
- 	 libstrc
+   libstratego-lib
+   libstrc
 imports 
-	common
-	lib/editor-common.generated
-	include/SpoofaxLang
+  common
+  lib/editor-common.generated
+  include/SpoofaxLang
 imports
-	utils/debug 
+  utils/debug 
 imports  
-	context/sdf/declare-signature
-	context/str/declare
-	context/str/signature-generator
+  context/sdf/declare-signature
+  context/str/declare
+  context/str/signature-generator
 
 rules
   analyze-section: 
-		STRSection(ast) -> ( errors, warnings, [])
-		where
-  		<debug-analysis>$[ErrorChecking | STR Section : [<pp-aterm>]]
-		with
-    	errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast;
-      warnings := <collect-all(stratego-constraint-warning, conc)> ast
-      
+    STRSection(ast) -> ( errors, warnings, [])
+    where
+       dbg-analysis(! $[ErrorChecking | STR Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>) 
+	     ; with-spxverify(
+			       {|IsNoConflict
+			       : errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast
+			       ; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
+			       |}
+	       )
+	     
 rules 
-	//TODO : Use new Is-declared in other cases where needed. 		
-  is-declared( |actual-no-of-arguments)=
-  	one(
-    		(?opName + ?SVar(opName))
-    		;candidate-op-signatures := <getOperationSignatures>opName
-    		;<debug-analysis>$[operation name : [<pp-aterm>opName] . Associated Signatures Found :  [<pp-aterm> candidate-op-signatures]]
-    		;<assert-eq-opname-arity(|opName, actual-no-of-arguments)>candidate-op-signatures
-    		;!opName 
-      )
-  	   
   is-declared =
-    	one(?_{cookie} + ?SVar(_{cookie}))
-	
-	assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)= 
-			?[hd|tl]
-			;((expected-op-name , expected-no-of-arguments) := hd 
-				;	actual-opname := expected-op-name 
-				; actual-no-of-arguments := expected-no-of-arguments
-			  <+ <assert-eq-opname-arity(|actual-opname , actual-no-of-arguments)>tl
-				)	  
+      one(?_{cookie} + ?SVar(_{cookie}))
        
 rules // Constraints
 
   stratego-global-constraint-error:
     CallT(SVar(x), s*, t*) -> (x, $[Strategy or rule '[x]' not defined])
     where
-      //require(is-declared)
-			require(
-				 is-declared 
-			<+ is-declared(|<length> t*))
-			
+      require(
+         is-declared 
+      )
+      
   stratego-global-constraint-error:
     Op(x, t*) -> (x, $[Constructor [x]/[<length> t*] not declared])
     where
-    	require(
-    		 is-declared 
-    	<+ is-declared(|<length> t*))
+      require(
+         is-declared 
+      <+ is-declared-signature(|<length> t*)
+    	)
 
-  constraint-error:
+  stratego-global-constraint-error:
     Var(x) -> (x, $[Variable '[x]' is not declared])
     where
-      require(is-declared)
-      
-  stratego-global-constraint-error:
-    Import(x) -> (x, $[Unable to import '[x]'])
-    where
-      require(not(<IsImportedFailed> x))
-
+      require(
+    	   is-declared
+    	)
+   
   stratego-global-constraint-error:
     DynRuleScopeId(x) -> (x, $[Dynamic rule '[x]' not defined])
     where
-      require(is-declared)
+      require(
+    	   is-declared
+    	)
 
   stratego-global-constraint-error:
     LabeledDynRuleId(x, _) -> (x, $[Dynamic rule '[x]' not defined])
     where
-      require(is-declared)
+      require(
+      	 is-declared
+    	)
 
   stratego-constraint-error:
     AnnoDef(a*, sdef @ SDefT(x, _, _, _)) -> (a*, $[No external strategy or rule '[x]'])
-    with
+    where with-spxverify(
       if not(!a* => []) then
         sig := <signature-of> sdef;
         rules(IsNoConflict: sdef)
       end
+    )  
     where
       require(
         !a* => []
@@ -100,16 +87,20 @@ rules // Constraints
     SDefT(x{cookie}, s*, t*, s) -> (x, $[Conflicts with external definition of '[x]'])
     where
       require(
-         <getStrDeclaration> cookie => SDefT(_, _, _, _)
+         <resolve-str-declaration> cookie => SDefT(_, _, _, _)
       <+ IsNoConflict
       )
-
+	
+	
+	//signature-of => str-sig ; is-declared-stratego(?str-sig)
+	
+	
   // FIXME: name sdefs after constructors to fix constructor conflict errors 
   stratego-constraint-error:
     OpDecl(x{cookie}, s*) -> [(x, $[Conflicts with strategy '[y_name]']),
                               (y, $[Conflicts with constructor [x]/[<length> s*]])]
     where
-      require(not(<getStrDeclaration> cookie => y @ SDefT(y_name, _, _, _)))
+      require(not(<resolve-str-declaration> cookie => y @ SDefT(y_name, _, _, _)))
 
   stratego-constraint-error:
     Build(t) -> <stratego-constraint-error-bad-build> t
@@ -154,13 +145,15 @@ rules // Constraints
       map(!(<id>, "Build symbol in match pattern")) => builds;
       require([])
   
-  //TODO FIX : origin tracking is not working 
+  //TODO FIX : origin-equal
+  /*
   stratego-constraint-warning:
-    Assign(v @ Var(x), _) -> (x, $[Variable '[x]' may be bound already])
+    a@Assign(v @ Var(x), _) -> (x, $[Variable '[x]' may be bound already])
     where
       Var(x') := <declaration-of> v;
-      require(<origin-equal(|x)> x')
-
+      require(<origin-equal(|x)> x');
+    */
+	
   stratego-constraint-warning:
     Var(x) -> (x, $[Unparenthesized constructor: use '[x]()' instead])
     where
@@ -173,23 +166,6 @@ rules // Constraints
 
   stratego-constraint-warning:
     Import("Java-15") -> (<id>, "Use 'import libjava-front' instead")
-
-  /*
-  stratego-constraint-warning:
-    Module(x, _) -> (x, $[Module name should be qualified with a path relative to the import path])
-    where
-      not(NoAnalysis);
-      {| SourceDir:
-        rules(SourceDir :- _);
-        <eq> (<base-filename> x, <remove-extension> <base-filename> <CurrentFileFullPath>);
-        require(<resolve-import-path> $[[x].str] + <resolve-import-path> $[[x].rtree])
-      |}
-  */
-
-  stratego-constraint-warning:
-    Module(x, _) -> (x, $[Module name does not correspond to file name])
-    where
-      require(<eq> (<base-filename> x, <remove-extension> <base-filename> <CurrentFileFullPath>))
 
   stratego-constraint-warning:
     Import(f) -> (f, $[Relative path in import])

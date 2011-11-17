@@ -1,24 +1,24 @@
 module editor/main
 
 imports
-  lib/editor-common.generated
-  codegen/compile
-imports
-  common
-  config
-  utils/cache
-  utils/debug
-  editor/resolve/-
+	lib/editor-common.generated
+	codegen/compile
+imports 
+	common
+	config
+	utils/cache	
+	utils/debug
+	editor/resolve/-
+	normalize/main
 
 rules
-  // Resolves a reference when the user control-clicks or presses F3 in the editor.
+	// Resolves a reference when the user control-clicks or presses F3 in the editor.
   editor-resolve:
     (node, position, ast, path, project-path) -> elem
+    where 
+    	debug(!"inside editor resolve : ")
     where
-      <editor-resolve> node => elem
-
-
-
+    	<editor-resolve> node => elem	
 
   // Returns "hover help" information for a particular node in the editor.
   // For references, this rule is invoked using the resolved term.
@@ -30,23 +30,27 @@ rules
   // (the completion identifier in the AST provides additional context information)
   editor-complete:
     (node, position, ast, path, project-path) ->[]
-
+  
 
 rules
-  // editor-analyze
-  editor-analyze:
-    (ast, path, project-path) -> (ast, errors, warnings, infos) // TODO : ast -> get the analyzed AST
-    with
-       editor-init
-      ;rules(ProjectPath := project-path)
-      ;if <string-ends-with(|".spt")> path then
-         // executed when testing
-         !([], [], []) => (errors, warnings, infos)
-       else
-         // not executed when testing
-         initialize-configuration
-        ;abs-path := <concat-strings;string-replace(|"\\", "/")>[project-path, "/" ,path]
-        ;<debug>$[Compiling following SPX file: [<pp-aterm>abs-path]]
-        ;<cache-currently-analyzing-ast>(abs-path  , ast)
-        ;<compile-packages-of> abs-path  => ( errors, warnings, infos)
-      end
+	editor-analyze: 
+ 		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos) 
+    where
+    	with-spxverify(
+				editor-init
+				; rules(ProjectPath := project-path)
+				; initialize-configuration
+				, !"Failed to initialize. "  
+		  )
+		where
+			abs-path := <concat-strings>[project-path, "/" ,path];
+			dbg-compiler(!$[ ------------------------------------------------
+			  	Compiling following SPX file: [<print-as-string>abs-path]
+		  	]); 
+			with-spxverify(
+	    	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path  , ast);
+	    	<compile-packages-of> (ast, abs-path)  => (analyzed-ast , issues)
+	    	, !"Failed to compile-package-of"
+	    );  
+		  !issues => ( errors, warnings, infos)
+		  
