@@ -18,7 +18,13 @@ exports
 	    
 	    "projectreferences" ":" ProjectName* 	-> ConfigSection {cons("SpxProjects")}
 	    
-	    "debug" ":" {DebugOption ","}* 	-> ConfigSection {cons("Debug")}
+	    "log" ":" {DebugOption ","}* 	-> ConfigSection {cons("Debug")}
+	    
+	    "templatelang" ":" TemplateLangOption 	-> ConfigSection {cons("TemplateLang")}
+	    
+	    "enabled"																	-> TemplateLangOption{cons("TemplatelangEnabled")}
+  		"disabled"																-> TemplateLangOption{cons("TemplatelangDisabled")}	
+	    
 	    
 	    "compiler" -> DebugOption{cons("DebugCompiler")}
 	    "declaration" -> DebugOption{cons("DebugDeclaration")}
@@ -33,6 +39,7 @@ exports
 
 	    "ctree"																	-> STROutputMode{cons("CTree")}
 	    "jar"																		-> STROutputMode{cons("Jar")}	
+	    
 	    "|" "**"	 															->   IncludeOption{cons("All")}
 	    "|" "."												  				->   IncludeOption{cons("ThisOnly")}
 

@@ -6,8 +6,11 @@ colorer
   //                                                                  
   // See the imported file for a brief introduction and examples.
   colorer 
+  	
   	DebugOption._ : 0 0 0  italic
   	STROutputMode._: 0 0 0  italic
+  	TemplateLangOption._: 0 0 0  italic
+  	
   colorer Default, token-based highlighting
                                   
 	  keyword    : 255 69 0         

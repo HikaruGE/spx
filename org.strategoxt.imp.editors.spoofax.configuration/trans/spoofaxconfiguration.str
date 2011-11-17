@@ -35,6 +35,12 @@ rules // Main editor interface (defined by editor/SpoofaxConfiguration-Builders 
     with
       filename := <guarantee-extension(|"aterm")> path;
       result   := <normalize>selected	// we just return the input term;
+  		; get-templatelang-options
+  		; debug 	
+  
+  get-templatelang-options
+		= collect-all(?TemplateLang(<id>), conc) ;	flatten-list
+	
         
   // Resolves a reference when the user control-clicks or presses F3 in the editor.
   // Only succeeds for nodes of the form Type(_) for which GetEntity is defined.
