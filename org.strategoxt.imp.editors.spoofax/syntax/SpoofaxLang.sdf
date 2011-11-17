@@ -123,9 +123,11 @@ exports
     "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
     StrCon[[SDF]]               -> Constructor
 
-
-
   %% for testing only. playing with code-contracts in spoofax lang.
   context-free syntax
+    
+    "internal" "strategies" Def[[STR]]*     -> Decl[[STR]] {cons("InternalStrategies")}
+    "internal" "rules"      Def[[STR]]*     -> Decl[[STR]]{cons("InternalRules")}
+    
 		Var[[STR]] "as" ID -> Var[[STR]] {avoid, cons("VarWithType")}
 

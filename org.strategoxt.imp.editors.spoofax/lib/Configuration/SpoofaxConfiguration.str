@@ -2,19 +2,29 @@ module SpoofaxConfiguration
 
 signature
   constructors
-    ThisOnly        : IncludeOption
-    All             : IncludeOption
-    Jar             : STROutputMode
-    CTree           : STROutputMode
-    STROutputMode   : STROutputMode -> CodeGenDefinition
-    OutputDirectory : RelativePath -> CodeGenDefinition
-    Source          : RelativePath * IncludeOption -> IncludeDefinition
-    CodeGeneration  : List(CodeGenDefinition) -> ConfigSection
-    SpxProjects     : List(ProjectName) -> ConfigSection
-    Includes        : List(IncludeDefinition) -> ConfigSection
-    Configuration   : List(ConfigSection) -> Start
-                    : String -> RelativePath
-                    : String -> ProjectName
+    ThisOnly             : IncludeOption
+    All                  : IncludeOption
+    Jar                  : STROutputMode
+    CTree                : STROutputMode
+    STROutputMode        : STROutputMode -> CodeGenDefinition
+    OutputDirectory      : RelativePath -> CodeGenDefinition
+    DebugNone            : DebugOption
+    DebugAll             : DebugOption
+    DebugSymbolTable     : DebugOption
+    DebugAnalysis        : DebugOption
+    DebugDeclaration     : DebugOption
+    DebugCompiler        : DebugOption
+    TemplatelangDisabled : TemplateLangOption
+    TemplatelangEnabled  : TemplateLangOption
+    Source               : RelativePath * IncludeOption -> IncludeDefinition
+    CodeGeneration       : List(CodeGenDefinition) -> ConfigSection
+    TemplateLang         : TemplateLangOption -> ConfigSection
+    Debug                : List(DebugOption) -> ConfigSection
+    SpxProjects          : List(ProjectName) -> ConfigSection
+    Includes             : List(IncludeDefinition) -> ConfigSection
+    Configuration        : List(ConfigSection) -> Start
+                         : String -> RelativePath
+                         : String -> ProjectName
 
 
 signature
