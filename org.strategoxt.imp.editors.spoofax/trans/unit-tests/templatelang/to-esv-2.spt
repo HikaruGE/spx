@@ -17,7 +17,7 @@ target setup [[
 test directed expansion (prefer) [[
   A.F = "foo"
   A.B = "bar" {completion(prefer)}
-  B = <<x: <A>>>
+  B = <x: <A>>
 ]]
 run test-templatelang-to-esv to [[
   completion template A: "foo" = "foo"
@@ -28,7 +28,7 @@ run test-templatelang-to-esv to [[
 test directed expansion (avoid) [[
   A.F = "foo" {completion(avoid)}
   A.B = "bar"
-  B = <<x: <A>>>
+  B = <x: <A>>
 ]]
 run test-templatelang-to-esv to [[
   completion template A: "foo" = "foo"
@@ -40,7 +40,7 @@ test deprecated templates [[
   A.F = "foo" {deprecated}
   A.FF = "ffoo" {deprecated("don't panic")}
   A.B = "bar"
-  B = <<x: <A>>>
+  B = <x: <A>>
 ]]
 run test-templatelang-to-esv to [[
   // WRONG: completion template A: "foo" = "foo"
@@ -51,13 +51,13 @@ run test-templatelang-to-esv to [[
 ]]
 
 test Mobl module [[
-  QId = <<<ID>>>
-  QId.QId = <<<QId>::<ID>>>
-  Start.Module = <<
+  QId = <<ID>>
+  QId.QId = <<QId>::<ID>>
+  Start.Module = <
     module <QId>
 
     <Definition*; separator="\n">
-  >>
+  >
 ]]
 run test-templatelang-to-esv to [[
   completion template QId: "ID::ID" = <ID:QId> "::" <ID:ID>
@@ -66,22 +66,22 @@ run test-templatelang-to-esv to [[
 ]]
 
 test Mobl types [[[[
-  QId = <<<ID>>>
-  QId.QId = <<<QId>::<ID>>>
-  NFType.SimpleType = <<<QId>>>
-  NFType.GenericType = [[[QId]<[Type*; separator=", "]>]]
-  NFType.TupleType = <<(<Type*; separator=", ">)>>
-  NFType.ArrayType = <<[<Type>]>>
-  NFType.DynamicType = <<?>>
-  Type = <<<NFType>>>
-  Type.FunctionType = [[[NFType+; separator=" * "] -> [NFType]]] {avoid}
+  QId = <<ID>>
+  QId.QId = <<QId>::<ID>>
+  NFType.SimpleType = <<QId>>
+  NFType.GenericType = [[QId]<[Type*; separator=", "]>]
+  NFType.TupleType = <(<Type*; separator=", ">)>
+  NFType.ArrayType = <[<Type>]>
+  NFType.DynamicType = <?>
+  Type = <<NFType>>
+  Type.FunctionType = [[NFType+; separator=" * "] -> [NFType]] {avoid}
 
-  FunctionDef.Function = <<
+  FunctionDef.Function = <
     <MetaAnno*; separator="\n">
     function <QId>(<FArg*; separator=", ">) : <Type> {
       <Statement*; separator="\n">
     }
-  >>
+  >
 ]]]]
 run test-templatelang-to-esv to [[
   completion template QId: "ID::ID" = <ID:QId> "::" <ID:ID>
@@ -95,7 +95,7 @@ run test-templatelang-to-esv to [[
 ]]
 
 test template-character-count
-  !(String("foo"), Placeholder(Text("f"), "Sort", None(), Options([])), [Layout("bar"), String("baz")]);
+  !(String("foo"), Placeholder("Sort", None(), Options([Placeholder("f")])), [Layout("bar"), String("baz")]);
   template-character-count => 10
 
 test substring(1, -1)

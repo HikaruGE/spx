@@ -54,11 +54,9 @@ exports
     ID "." ID -> SortCons {cons("SortCons")}
 
     %% placeholders
-    PlaceholderPrefix1 PlaceholderSort PlaceholderSuffix PlaceholderOptions ">" -> TemplatePart1 {cons("Placeholder")}
-    PlaceholderPrefix2 PlaceholderSort PlaceholderSuffix PlaceholderOptions "]" -> TemplatePart2 {cons("Placeholder")}
-
-    "<" -> PlaceholderPrefix1 {cons("None")}
-    "[" -> PlaceholderPrefix2 {cons("None")}
+    "<" Placeholder ">" -> TemplatePart1 {bracket}
+    "[" Placeholder "]" -> TemplatePart2 {bracket}
+    PlaceholderSort PlaceholderSuffix PlaceholderOptions -> Placeholder {cons("Placeholder")}
 
     %% constructor identical to SDF sort to simplify some transformations
     ID -> PlaceholderSort {cons("sort")}
@@ -74,12 +72,9 @@ exports
     "wrap"                 -> PlaceholderOption {cons("Wrap")}
     "anchor"               -> PlaceholderOption {cons("Anchor")}
     "separator" "=" STRING -> PlaceholderOption {cons("Separator")}
+    "text" "=" STRING      -> PlaceholderOption {cons("Placeholder")}
 
   syntax
-    %% placeholders (layout between "<", the text and ":" should be captured)
-    "<" <PlaceholderText1-LEX> ":" -> <PlaceholderPrefix1-CF> {cons("Text")}
-    "[" <PlaceholderText2-LEX> ":" -> <PlaceholderPrefix2-CF> {cons("Text")}
-
     %% template parts
     "<" {<TemplateLine1-CF> "\n"}+ ">" -> <Template-CF> {cons("Template")}
     "<<" {<TemplateLine1-CF> "\n"}+ ">>" -> <Template-CF> {cons("Template"), avoid, deprecated("Use single brackets to delimit the template")}
@@ -100,14 +95,6 @@ exports
     <TemplateStringQ-LEX> -> <TemplatePartQ-CF> {cons("String")}
     <TemplateEscapeQ-LEX> -> <TemplatePartQ-CF> {cons("Escape")}
     <TemplateLayout-LEX>  -> <TemplatePartQ-CF> {cons("Layout")}
-
-  lexical syntax
-    ~[\<\>\:]+ -> PlaceholderText1
-    ~[\[\]\:]+ -> PlaceholderText2
-
-  lexical restrictions
-    PlaceholderText1 -/- ~[\:]
-    PlaceholderText2 -/- ~[\:]
 
   lexical syntax
   	[\r][\n] -> "\n"

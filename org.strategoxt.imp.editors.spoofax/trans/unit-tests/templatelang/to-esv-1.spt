@@ -14,54 +14,54 @@ target setup [[
   completions
 ]]
 
-test empty [[ X.Y = <<>> ]]
+test empty [[ X.Y = <> ]]
 run test-templatelang-to-esv to [[ ]]
 
-test placeholder [[ X.Y = <<foo <Z> bar>> ]]
+test placeholder [[ X.Y = <foo <Z> bar> ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo Z bar" = "foo " <Z:Z> " bar"
 ]]
 
-test placeholder (text) [[ X.Y = <<foo < display text : Z> bar>> ]]
+test placeholder (text) [[ X.Y = <foo <Z; text=" display text "> bar> ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo display text bar" = "foo " < display text :Z> " bar"
 ]]
 
-test placeholder (option) [[ X.Y = <<foo <Z?> bar>> ]]
+test placeholder (option) [[ X.Y = <foo <Z?> bar> ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo bar" = "foo " <:Z> " bar"
 ]]
 
-test placeholder (plus) [[ X.Y = <<foo <Z+> bar>> ]]
+test placeholder (plus) [[ X.Y = <foo <Z+> bar> ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo Z bar" = "foo " <Z:Z> " bar"
 ]]
 
-test placeholder (star) [[ X.Y = <<foo <Z*> bar>> ]]
+test placeholder (star) [[ X.Y = <foo <Z*> bar> ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo bar" = "foo " <:Z> " bar"
 ]]
 
 test n placeholders => one (cursor)-directive [[
-  X.Y = <<
+  X.Y = <
     foo
       <A?>
       <B?>
       <C?>
     bar
-  >>
+  >
 ]]
 run test-templatelang-to-esv to [[
   completion template X: "foo bar" = "foo\n\t" (cursor) "\nbar" (blank)
 ]]
 
 test if then statement [[
-  Statement.IfThen = <<
+  Statement.IfThen = <
     <MetaAnno*; separator="\n">
     if <Exp> then
       <Statement*; separator="\n">
     end
-  >>
+  >
 ]]
 run test-templatelang-to-esv to [[
   completion template Statement: "if Exp then end" =

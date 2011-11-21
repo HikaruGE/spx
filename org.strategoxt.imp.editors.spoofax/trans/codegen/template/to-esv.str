@@ -149,13 +149,17 @@ strategies
 rules
 
   template-line-to-esv:
-    Line([Layout(x), Placeholder(None(), _, <Option() + Star()>, _)]) ->
+    Line([Layout(x), Placeholder(_, <Option() + Star()>, option*)]) ->
       <spaces-to-tabs> [String(x), Cursor()]
+      where
+        <not(one(?Placeholder(_)))> option*
 
   template-line-to-esv:
-    line @ Line([Layout(_), Placeholder(None(), _, <None() + Plus()>, _)]) ->
+    line @ Line([Layout(_), Placeholder(_, <None() + Plus()>, option*)]) ->
       // ?t and not(?t) are cycle breaker
       <?t; expand-template-line; not(?t); map(template-line-to-esv)> [line]
+      where
+        <not(one(?Placeholder(_)))> option*
 
   template-line-to-esv:
     Line(elem*) -> <map(template-element-to-esv); spaces-to-tabs> elem*
@@ -165,13 +169,17 @@ rules
 
   // Any placeholder with title results in a placeholder with that title.
   template-element-to-esv:
-    Placeholder(Text(name), sort(sort), _, _) ->
-      PlaceholderWithSort($[<[name]:], sort)
+    Placeholder(sort(sort), _, option*) ->
+      PlaceholderWithSort($[<[text]:], sort)
+      where
+        <one(?Placeholder(text))> option*
 
   // A and A+ result in a placeholder containing the shortest expansion of A.
   template-element-to-esv:
-    placeholder @ Placeholder(None(), sort(sort), <None() + Plus()>, _) ->
+    placeholder @ Placeholder(sort(sort), <None() + Plus()>, option*) ->
       PlaceholderWithSort($[<[text]:], sort)
+    where
+      <not(one(?Placeholder(_)))> option*
     where
       text := <expand-template-element;
                map(template-element-to-string);
@@ -180,7 +188,7 @@ rules
 
   // A? and A* result in a 0-length placeholder.
   template-element-to-esv:
-    Placeholder(None(), sort(sort), <Option() + Star()>, _) ->
+    Placeholder(sort(sort), <Option() + Star()>, _) ->
       PlaceholderWithSort("<:", sort)
 
   template-element-to-esv:
@@ -198,13 +206,19 @@ rules
 rules // TemplateLang / completion template element to string
 
   template-element-to-string:
-    Placeholder(Text(t), _, _, _) -> t
+    Placeholder(_, _, option*) -> text
+    where
+      <one(?Placeholder(text))> option*
 
   template-element-to-string:
-    Placeholder(None(), sort(sort), <None() + Plus()>, _) -> sort
+    Placeholder(sort(sort), <None() + Plus()>, option*) -> sort
+    where
+      <not(one(?Placeholder(_)))> option*
 
   template-element-to-string:
-    Placeholder(None(), _, <Option() + Star()>, _) -> ""
+    Placeholder(_, <Option() + Star()>, option*) -> ""
+    where
+      <not(one(?Placeholder(_)))> option*
 
   template-element-to-string:
     Placeholder(t) -> t
@@ -271,7 +285,7 @@ strategies // Template expansion
       line'* := <listbu(expand-template-line)> line*
 
   is-template-placeholder:
-    Placeholder(_, sort(x), _, _) -> <id>
+    Placeholder(sort(x), _, _) -> <id>
     where
       <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
 
@@ -281,10 +295,10 @@ strategies // Template expansion
       <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
 
   // expand-template-line covers exactly all valid input terms except:
-  //  Line([indent @ Layout(_), Placeholder(_, sort(x), <None() + Plus()>, _)]) where <Expanded> x
+  //  Line([indent @ Layout(_), Placeholder(sort(x), <None() + Plus()>, _)]) where <Expanded> x
 
   expand-template-line:
-    [t @ Line([indent @ Layout(_), Placeholder(_, sort(x), <None() + Plus()>, _)]) | tail] -> [line* | tail]
+    [t @ Line([indent @ Layout(_), Placeholder(sort(x), <None() + Plus()>, _)]) | tail] -> [line* | tail]
     where
       <not(Expanded)> x
     where
@@ -293,7 +307,7 @@ strategies // Template expansion
   expand-template-line:
     [t @ Line(elem*) | tail] -> [Line(elem'*) | tail]
     where
-      not(!elem* => [Layout(_), Placeholder(_, _, <None() + Plus()>, _)])
+      not(!elem* => [Layout(_), Placeholder(_, <None() + Plus()>, _)])
     where
       elem'* := <listbu(expand-template-element)> elem*
 
@@ -301,10 +315,10 @@ strategies // Template expansion
     [] -> <id>
 
   // expand-template-element covers exactly all valid input terms except:
-  //  Placeholder(_, sort(x), <None() + Plus()>, _) where <Expanded> x
+  //  Placeholder(sort(x), <None() + Plus()>, _) where <Expanded> x
 
   expand-template-element:
-    [t @ Placeholder(_, sort(x), <None() + Plus()>, _) | tail] -> [elem* | tail]
+    [t @ Placeholder(sort(x), <None() + Plus()>, _) | tail] -> [elem* | tail]
     where
       <not(Expanded)> x
     where
@@ -313,7 +327,7 @@ strategies // Template expansion
   expand-template-element:
     [t | tail] -> [t | tail]
     where
-      not(!t => Placeholder(_, sort(x), <None() + Plus()>, _))
+      not(!t => Placeholder(sort(x), <None() + Plus()>, _))
 
   expand-template-element:
     [] -> <id>
@@ -350,7 +364,7 @@ strategies // Template expansion
   template-character-count =
     ?String(<string-length>)
     <+ ?Layout(<string-length>)
-    <+ ?Text(<string-length>)
+    <+ ?Placeholder(<string-length>)
     <+ crush(!0, addi, template-character-count)
 
   lti = not(gti)
