@@ -1,8 +1,6 @@
 module context/symboltable
- 
 imports 
-  include/spoofaxlang
-
+	include/SpoofaxLang
 imports 
   common
   utils/contract
