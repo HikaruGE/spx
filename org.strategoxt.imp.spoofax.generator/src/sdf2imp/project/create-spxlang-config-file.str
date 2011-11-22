@@ -29,8 +29,9 @@ $[configuration
 	// By default, it includes all the directories ( and their subdirectories) of the project during build. Hence, It is  
 	// always recommended to explicitly specify the sources to include. 							  
 	src:
-		src|**
+		src | **
 		
+	
 				
 	codegen:
 		// todir refers to the project directory where intermediate generated 
@@ -43,9 +44,11 @@ $[configuration
 		//stroutputmode : jar
 	
 	// Other project references are specified in this configuration section.
-	// Specify the name of the project from current workspace to include 
-	// Tested only with projects located in the local file system. 
 	//projectreferences:
-	//	 
-	//		<project-name>* 
+	//		org.strategoxt.imp.editors.spoofax.configuration   
+	
+	// options : compiler , analysis , symboltable,  declaration, none, all 
+	log : none
+	
+	templatelang : enabled 
 ]
