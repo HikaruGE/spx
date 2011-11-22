@@ -50,7 +50,13 @@ rules
 		)
 	
 	report-failure-with-stacktrace = prim("SSL_stacktrace_get_all_frame_names") ; report-failure
-	 
+	
+	editor-build-spoofaxlang-jvm :
+		(selected, position, ast, path, project-path) -> None()
+		where
+			 <build-spoofaxlang-jvm>project-path
+			 
+			 
 	//TODO : Improve error reporting. 
   build-spoofaxlang-jvm:
     current-project-location -> <id>

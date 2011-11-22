@@ -54,7 +54,6 @@ rules
 	
 	get-unique-language-name = get-all-language-name; ?[<id>]
 	
-	// TODO FIX : temporary turning it off since current index does not support it. 
 	get-languagename-declaration-sites = get-package-qnames-by-langname
 
 rules

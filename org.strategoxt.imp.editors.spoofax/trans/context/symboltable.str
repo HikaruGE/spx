@@ -523,13 +523,7 @@ rules
   get-related-files-of-packages = prim("SPX_index_get_related_files_of_packages", <get-project-path> , <id>)
   
   
-  /**
-  * Returns langauge Descriptor of the specified package  
-  *
-  * @type package-qname -> LanguageDescriptor(_,_,_,_,_)
-  */  
-  get-indexed-language-descriptor =  verify(?Package(QName(_)) | <id>, "Package(QName(_)) @get-indexed-language-descriptor "); prim("SPX_index_get_language_descriptor", <get-project-path> , <id>) 
-
+  
 rules 
 
   get-indexed-module-definition(adapter) =   get-indexed-module-definition ; dbg-symboltable(!$[Following definition found : [<print-as-string>]] |"Index" , <debug-level-INFO>) ; adapter 
@@ -593,7 +587,6 @@ rules
   	; !(<id>, <DIRTY>, ToCodeGenerate())	
     ; get-indexed-module-declarations'
     
-  
   get-indexed-language-descriptor = 
   	verify(
   		?Package(QName(name)) 

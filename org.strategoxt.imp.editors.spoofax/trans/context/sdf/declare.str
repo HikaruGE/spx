@@ -27,10 +27,6 @@ rules
   	(key, value)  -> <id> 
   	where
   		with-spxverify(
-  			verify( ?Module(QName(_)) | <GetEnclosingModuleName> , "Module(QName(_))  ::index-sdf-usage")
-  			,!"Error : ModuleScope is expected to define sdf usage."
-  		);
-	  	with-spxverify(
 	  		<index-symbol-definition>( key, SDFUsage() , value)
 	  		,!"Indexing SDF Usage"
 	  	)
