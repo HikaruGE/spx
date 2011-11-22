@@ -7,7 +7,7 @@
         <property name="metasdfmodule" value="Stratego-SpoofaxLang"/>
         <property name="esvmodule" value="SpoofaxLang"/>
         <property name="strmodule" value="spoofaxlang"/>
-				<property name="str.package-name" value="org.strategoxt.imp.editors.spoofax.trans"/>
+		<property name="str.package-name" value="org.strategoxt.imp.editors.spoofax.generated"/>
         
 				<!-- Project directories -->
         <property name="trans" location="trans"/>
@@ -100,78 +100,77 @@
           <antcall target="meta-sdf2table.helper" />
         </target>
 	
-  			<!-- Target Stratego to Java compiler -->
+		<!-- Target Stratego to Java compiler -->
         <target name="spx.stratego.jar" depends="rtg2sig,utils-files">
-        	<mkdir dir= "${src-gen}/org/strategoxt/imp/editors/spoofax/trans" />
-      		<property name="src-gen2" location="${src-gen}/org/strategoxt/imp/editors/spoofax/trans"/>
+        	<mkdir dir= "${src-gen}/org/strategoxt/imp/editors/spoofax/generated" />
+      		<property name="src-gen2" location="${src-gen}/org/strategoxt/imp/editors/spoofax/generated"/>
                 	
       		<dependset>
-  	        <srcfileset dir="${basedir}">
-	            <include name="**/*.str"/>
-              <include name="**/*.astr"/>
-              <exclude name="lib/*.generated.str"/>
-            </srcfileset>
-            <targetfileset file="${src-gen2}/${strmodule}.java"/>
+  	        	<srcfileset dir="${basedir}">
+	            	<include name="**/*.str"/>
+              		<include name="**/*.astr"/>
+              		<exclude name="lib/*.generated.str"/>
+            	</srcfileset>
+            	<targetfileset file="${src-gen2}/${strmodule}.java"/>
 	        </dependset>
-          <antcall target="copy-jar"/>
-        	<antcall target="spx.stratego.jvm.helper">
-	          <param name="build.stratego.outputfile" value="${src-gen2}/${strmodule}.java"/>
-            <param name="build.stratego.extraargs" value="-la java-front ${java.jar.import}"/>
-          </antcall>
+        	
+          	<antcall target="copy-jar"/>
+        		<antcall target="spx.stratego.jvm.helper">
+	          	<param name="build.stratego.outputfile" value="${src-gen2}/${strmodule}.java"/>
+            	<param name="build.stratego.extraargs" value="-la java-front ${java.jar.import}"/>
+          	</antcall>
         
-	    		<javac 
-	        	classpath="utils/strategoxt.jar:${src-gen}${externaljarimport1}${externaljarimport2}${java.jar.classpath}" 
+			<javac 
+        		classpath="utils/strategoxt.jar:${src-gen}${externaljarimport1}${externaljarimport2}${java.jar.classpath}" 
 	        	srcdir="${src-gen}" 
-	        	includes="org/strategoxt/imp/editors/spoofax/trans/**" 
+	        	includes="org/strategoxt/imp/editors/spoofax/generated/**" 
 	        	destdir="${build}" 
 	        	source="1.5" 
 	        	target="1.5" 
 	        	debug="on"/>
         	
-          <!-- copy imported terms -->
-          <copy todir="${build}/org/strategoxt/imp/editors/spoofax/trans/">
-  	        <fileset dir="${src-gen2}" excludes="**/*.java"/>
-          </copy>
+  			<!-- copy imported terms -->
+  			<copy todir="${build}/org/strategoxt/imp/editors/spoofax/generated/">
+				<fileset dir="${src-gen2}" excludes="**/*.java"/>
+  			</copy>
           
-      		<jar basedir="${build}" includes="org/strategoxt/imp/editors/spoofax/trans/**" destfile="${include}/${strmodule}.tmp.jar"/>
+			<jar basedir="${build}" includes="org/strategoxt/imp/editors/spoofax/generated/**" destfile="${include}/${strmodule}.tmp.jar"/>
         	
-      	  <move file="${include}/${strmodule}.tmp.jar" tofile="${include}/${strmodule}.jar"/>
-          <delete>
-          	<fileset dir="${build}" includes="org/strategoxt/imp/editors/spoofax/trans/**"/>
-          </delete>
-        </target>
+  	  		<move file="${include}/${strmodule}.tmp.jar" tofile="${include}/${strmodule}.jar"/>
+      		<delete>
+    	  		<fileset dir="${build}" includes="org/strategoxt/imp/editors/spoofax/generated/**"/>
+      		</delete>
+    </target>
 	 			
 				
-				<target name="spx.stratego.jar.deletehelper">
-  	      <delete>
-	          <fileset dir="${src-gen}" includes="org/strategoxt/imp/editors/spoofax/trans/**"/>
-            <fileset dir="${build}" includes="org/strategoxt/imp/editors/spoofax/trans/**"/>
-	        </delete>
-        </target>
+	<target name="spx.stratego.jar.deletehelper">
+	  <delete>
+        	<fileset dir="${src-gen}" includes="org/strategoxt/imp/editors/spoofax/generated/**"/>
+	    	<fileset dir="${build}" includes="org/strategoxt/imp/editors/spoofax/generated/**"/>
+		</delete>
+    </target>
 	
-				<target name="spx.stratego.jvm.helper" unless="strc-java.available" if="build.stratego.enabled">
-  	      <echo> Main Class  : ${build.stratego.outputfile}</echo>
-					<echo> PackageName : ${str.package-name}</echo>
-					
-					<antcall target="spx.stratego.jar.deletehelper"/>
-					
-					<delete file="${include}/${strmodule}.rtree" failonerror="false"/>
-          <java classname="org.strategoxt.strj.Main" failonerror="true">
-            <arg value="-i"/>
-            <arg value="${trans}/${strmodule}.str"/>
-            <arg value="-o"/>
-            <arg value="${build.stratego.outputfile}"/>
-            <arg value="-p"/>
-            <arg value="${str.package-name}"/> <!-- Added package Name. TODO: Consider to persist this changes for all the Spoofax projects -->
-            <arg value="--library"/>
-            <arg value="--clean"/>
-            <arg line="${build.stratego.args}"/>
-            <arg line="${build.stratego.extraargs}"/>
-            <arg line="${externaljarflags}"/>
-            <arg line="${externaldefimport}"/>
-            <arg line="-I &quot;${lib}&quot; -I &quot;${include}&quot; --cache-dir &quot;${basedir}/.cache&quot;"/>
-          </java>
-          <delete file="${include}/${strmodule}.rtree" failonerror="false"/>
-          <mkdir dir="${build}/org/strategoxt/imp/editors/spoofax/trans"/>
-        </target>
+	<target name="spx.stratego.jvm.helper" unless="strc-java.available" if="build.stratego.enabled">
+        <echo> Main Class  : ${build.stratego.outputfile}</echo>
+		<echo> PackageName : ${str.package-name}</echo>
+		<antcall target="spx.stratego.jar.deletehelper"/>
+		<delete file="${include}/${strmodule}.rtree" failonerror="false"/>
+  		<java classname="org.strategoxt.strj.Main" failonerror="true">
+			<arg value="-i"/>
+			<arg value="${trans}/${strmodule}.str"/>
+			<arg value="-o"/>
+			<arg value="${build.stratego.outputfile}"/>
+			<arg value="-p"/>
+			<arg value="${str.package-name}"/> <!-- Added package Name. TODO: Consider to persist this changes for all the Spoofax projects -->
+			<arg value="--library"/>
+			<arg value="--clean"/>
+			<arg line="${build.stratego.args}"/>
+			<arg line="${build.stratego.extraargs}"/>
+			<arg line="${externaljarflags}"/>
+			<arg line="${externaldefimport}"/>
+			<arg line="-I &quot;${lib}&quot; -I &quot;${include}&quot; --cache-dir &quot;${basedir}/.cache&quot;"/>
+		</java>
+  		<delete file="${include}/${strmodule}.rtree" failonerror="false"/>
+  		<mkdir dir="${build}/org/strategoxt/imp/editors/spoofax/generated"/>
+	</target>
 </project>
