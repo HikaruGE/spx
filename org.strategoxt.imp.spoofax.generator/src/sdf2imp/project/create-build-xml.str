@@ -51,9 +51,19 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
 		 	<arg value="${basedir}"/>
 	  </java>
   </target>
-	
+  
+  <target name="refresh-src" if="eclipse.running">        
+		<eclipse.convertPath fileSystemPath="${basedir}" 			property="projectdir"/>
+        <eclipse.convertPath fileSystemPath="${basedir}/src"  		property="projectdir.src"/>
+  
+        <eclipse.refreshLocal resource="${projectdir}"     depth="infinite"/>
+        <eclipse.refreshLocal resource="${projectdir.src}" depth="infinite"/>
+  </target>
+
+
   <!-- Main target -->
   <target name="all" depends="buildinit">
+  	<antcall target = "refresh-src"/>
   	<antcall target = "build-spx-packages"/>
   </target>
 </project>]

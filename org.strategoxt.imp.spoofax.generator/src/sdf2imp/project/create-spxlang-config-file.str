@@ -36,7 +36,7 @@ $[configuration
 	codegen:
 		// todir refers to the project directory where intermediate generated 
 		// output is stored for further processing. 
-		todir			 		: .shawdowdir
+		todir			 		: .shadowdir
 		
 		// STR outputmode can be configured as follows : jar | ctree.
 		// Based on this value, ctree or jar file generated for the packages
