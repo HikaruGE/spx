@@ -324,37 +324,35 @@ rules
 				end
 						
 	compile-legacy-artifact:
-		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , Unresolved()) -> legacy-artifact-details
+		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , Unresolved()) -> <id>
 		where
+			debug(!"Test");
 			dbg-compiler(!$[compile-legacy-artifact:: planning to compile following legacy artifact: [<print-as-string>]])
 		where
 			// check to see if already taken care off.
 			if not( <is-legacy-artifact-resolved>(namespace, modulename, Unresolved())) then 
 				// we are only supporting legacy STR lib at this moment which are not located in the file system .
-	      // Hence, it is unresolved , we are giving it a try to resolve it as a lib and store its symbols 
-	      // in global namespace so that it can be used by all  other packages in the project.
-        // checking whether lib exists in cache. If it is , that means it is there in symbol-table. 
-        // hence, it is not required to read and declare all the symbols again.
+	      		// Hence, it is unresolved , we are giving it a try to resolve it as a lib and store its symbols 
+	      		// in global namespace so that it can be used by all  other packages in the project.
+        		// checking whether lib exists in cache. If it is , that means it is there in symbol-table. 
+        		// hence, it is not required to read and declare all the symbols again.
           
-        //Design Decision : Symbols of legacy str libs are stored in the global namespace. It is decided to increase 
-        // performance of indexing. Since, legacy STR libs do not changes frequently, if we store it in global-cache
-        // it could be reused for a long time.   
-        dbg-compiler(!$[compile-legacy-artifact:: Declaring Legacy ModuleName  [<print-as-string>modulename]]) 
-  			; if not(<lib-exists-in-cache>modulename) then
-	          // checking whether lib exists in global namespace. if it is, then doing nothing. 
-	          // invalidate global cache is possible via clearing whole index or calling invalidate primitive
-	          // hence, if lib changes which is quite unlikely, clearing index will re-read it back  
-	         	if not(<is-lib-exists-in-global-cache>modulename ) then 
-		          	with-spxverify(
-		          			<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports> modulename // storing legacy import declaration
-	 					 			 , !"Failed to import legacy artifact(lib)"
-	 					 		)
-	 					 		; <index-lib-in-global-cache> modulename 
-	 					end
- 					end  
-	    		// Setting flag to denote that lib with modulename is resolved
-					; <record-legacy-global-import-is-resolved>(namespace , modulename)
-					; <add-legacy-artifact-as-resolved> (namespace, modulename,Unresolved())  
-  			 <+
-					dbg-compiler(!$[compile-legacy-artifact::  Error :  failed to resolve])
+	    		//Design Decision : Symbols of legacy str libs are stored in the global namespace. It is decided to increase 
+	    		// performance of indexing. Since, legacy STR libs do not changes frequently, if we store it in global-cache
+	    		// it could be reused for a long time.   
+    			dbg-compiler(!$[compile-legacy-artifact:: Declaring Legacy ModuleName  [<print-as-string>modulename]]) 
+  				; if not(<lib-exists-in-cache>modulename) then
+	          	// checking whether lib exists in global namespace. if it is, then doing nothing. 
+	          	// invalidate global cache is possible via clearing whole index or calling invalidate primitive
+	          	// hence, if lib changes which is quite unlikely, clearing index will re-read it back  
+	         		if not(<is-lib-exists-in-global-cache>modulename ) then 
+	          			<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports>modulename // storing legacy import declaration
+			 			; <index-lib-in-global-cache> modulename 
+					end
+			  	end  
+    			// Setting flag to denote that lib with modulename is resolved
+				; <record-legacy-global-import-is-resolved>(namespace , modulename)
+				; <add-legacy-artifact-as-resolved> (namespace, modulename,Unresolved())  
+		 	<+
+				dbg-compiler(!$[compile-legacy-artifact::  Error :  failed to resolve folloiwng import ast : [<print-as-string>legacy-artifact-details]])
 			end

@@ -71,17 +71,20 @@ rules
 	get-cached-lib-ast(read-lib) : 
 		name -> ast
 		where 
-			with-spxverify(
-				<spx-lib-cache-path> name => cache-path
-				; if <file-exists> cache-path then
-				 	 	<ReadFromFile> cache-path => ast
-				 		; dbg-compiler(! $[Caching | Found ast [name].] |"get-cached-lib-ast","info")
-					else
-						<read-lib>name => ast
-						; <WriteToBinaryFile> (cache-path, ast) 
-					end
-			, !"Failed to get cached lib-ast"
-			)
+			<spx-lib-cache-path> name => cache-path;
+			if <file-exists> cache-path then
+		 	 	<ReadFromFile> cache-path => ast ;
+		 		dbg-compiler(! $[Caching | Found ast [name].] |"get-cached-lib-ast","info")
+			else
+				<read-lib>name => ast ;
+				<WriteToBinaryFile> (cache-path, ast) ;
+				dbg-compiler(! $[Caching | Not Found in Cache. Caching & processing [name] legacy artifact.] |"get-cached-lib-ast","info") 
+			end
+		<+
+			// Gracefully failing this strategy if it is not found in cache and in the library. 
+			// It is considered as invalid import during error analysis.
+			dbg-compiler(! $[Caching | Failed to get (& read) [name].] |"get-cached-lib-ast",<debug-level-WARNING>) ;
+			fail
 			     
 signature constructors 
 	CachedParseAstDef : Def
