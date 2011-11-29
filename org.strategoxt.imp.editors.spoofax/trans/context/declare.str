@@ -27,26 +27,34 @@ rules
     
 rules
   declare-spx-global-symbols =
-  		list-loop(
-				{| GetEnclosingModuleName
-				 : 	declare-current-module-scope
-				 		; with-spxverify(
-								get-desugared-module-ast
-								; declare-internal( declare-spxmodules-all( declare-global-symbols))
-						  )
-				|}	
-		  )
+	dbg-compiler(!$[----Declaring global Symbols for: [<print-as-string>]]);
+	list-loop(
+			{| GetEnclosingModuleName
+			 : 	declare-current-module-scope;
+		 		with-spxverify(
+					get-desugared-module-ast;
+					declare-internal( declare-spxmodules-all( declare-global-symbols))
+			  	)
+			|}	
+	)
 	
-	delcare-spx-scoped-symbols = declare-internal( declare-spxmodules-all(declare-local-symbols))
+	delcare-spx-scoped-symbols = 
+		dbg-compiler(!$[----Declaring local Symbols for: [<print-as-string>]]);
+		declare-internal(
+			declare-spxmodules-all(
+				declare-local-symbols
+			)
+		)
+	
 	
 	declare-internal(declare-symbols) =  
-			origin-track-forced(declare-symbols) => annotated-moduleDef
-		  ; !annotated-moduleDef => Module(attrb* , modname , section*)  // updating module definitions
-		  ; with-spxverify(
-					 <get-annotation(get-package-annotation)>modname => Package( package-qname)
-				  ; mId := <get-module-typed-qname>(package-qname, modname)
-			  	; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
-	    )  
+		origin-track-forced(declare-symbols) => annotated-moduleDef
+		; !annotated-moduleDef => Module(attrb* , modname , section*)  // updating module definitions
+		; with-spxverify(
+			 <get-annotation(get-package-annotation)>modname => Package( package-qname)
+			  ; mId := <get-module-typed-qname>(package-qname, modname)
+			  ; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
+    	  )  
 	
 rules 
 	declare-spxmodules-all(s):
@@ -131,12 +139,12 @@ rules
       )
 
 	declare-current-module-scope:
-			module-typed-qname -> <id>
-			where
-				with-spxverify(
-			 		rules( GetEnclosingModuleName := module-typed-qname)   
-					, !"Failed to declare-current-module-scope"
-				) 
+		module-typed-qname -> <id>
+		where
+			with-spxverify(
+		 		rules( GetEnclosingModuleName := module-typed-qname)   
+				, !"Failed to declare-current-module-scope"
+			) 
 			
 
 rules

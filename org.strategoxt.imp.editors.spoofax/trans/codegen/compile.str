@@ -26,18 +26,19 @@ imports
 rules
 	// Starting a new compilation session
 	new-compile-session(s) =
-      {| 	GetSemanticProblems, Declared
-			 		
-			 :  dbg-compiler(!$[-----------------::new-compile-session::-----------------]);
-					with-spxverify(
-				  	compile-init  // initializing compiler session
-				  	; s 
-				    ; compile-unload
-				    , !" new compile session failed unexpectedly. "  
+  		{| 	GetSemanticProblems, Declared:  
+			dbg-compiler(!$[-----------------::new-compile-session::-----------------]);
+			with-spxverify(
+				compile-init  
+		  		; s 
+		    	; compile-unload
+		    	, !" new compile session failed unexpectedly. "  
 	        )  
 	   |}
 
 rules				
+	
+		
 	// Compiler initialization
 	compile-init =
 		index-init;
@@ -56,8 +57,8 @@ rules
 	  
 	//closes any underlying connection 
 	compile-unload = 
-	  //closes and saves current state of symbol table.
-    index-close  
+  		//closes and saves current state of symbol table.
+		index-close
 
 	// Pre-compilation before starting up actual compilation
 	// Before starting primary compilation,
@@ -96,7 +97,7 @@ rules
 						);
 						additional-qnames* := [];
 						<debug(!"----Errors in current AST: ")>issues* 	  // get errors for this file only
-					else
+				else
 						// compiling additional packages 
 						// where current packages are imported to ( forward references) 
 						// Lazy/Incremental compilation is employed.
@@ -109,8 +110,8 @@ rules
 						else
 							additional-qnames* := []	
 						end	
-					end
-				;	<get-analyzed-ast>ast => ast'
+				end
+				; <get-analyzed-ast>ast => ast'
 				; <get-related-files-of-packages><conc>(list-of-package-qname , additional-qnames*)
 				; mark-issues-of-file
 				; generate-code		
@@ -192,16 +193,16 @@ rules
 				; <get-all-usings>package-typed-qname=> depending-typedqname*
 				; dbg-compiler(!$[--Compiling SPX Packages:: List of dependending-on packages/modules : [<print-as-string>depending-typedqname*]  ])
 			  
-			  // Start Compiling the dependent Spx Artifacts
+			  	// Start Compiling the dependent Spx Artifacts
 				; <list-loop(compile-depending-spx)>depending-typedqname*
 				;{| GetEnclosingPackageName 
-				  : <declare-current-package-scope> package-typed-qname
+				  : 	<declare-current-package-scope> package-typed-qname
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
 						; modules-to-compile* := <get-enclosed-dirty-modules>package-typed-qname
-						; <declare-spx-global-symbols>modules-to-compile* 
 						; dbg-compiler(!$[--Compiling SPX Packages:: compiling following modules(dirty) : [<print-as-string>modules-to-compile*]])
+						; <declare-spx-global-symbols>modules-to-compile* 
 						; <list-loop(compile-spx-module)>modules-to-compile*
         |}
 		  else
@@ -263,7 +264,7 @@ rules
 		package-tqnames* -> package-tqnames*
 		where
 			<make-set>package-tqnames* => upackages
-			; dbg-compiler(!$[compile-legacy-artifacts:: List: [<print-as-string>upackages]])
+			; dbg-compiler(!$[compile-legacy-artifacts of :: [<print-as-string>upackages]])
 		where
 			//TODO : Make it configurable which lib to include by default. Hence remove following hardcoding.
 	    <compile-legacy-artifact>(Globals() , Module(Name("libstratego-lib")) ,Unresolved())
@@ -309,13 +310,15 @@ rules
 									<is-string>resolving-path
 								;	<has-known-extensions>resolving-path 
 								; {| GetEnclosingModuleName 
-			    				 : 	<declare-current-module-scope> <get_internal_module_qtname> <GetEnclosingPackageName>;
-											// Known Extension found. Handling it.
-											// Parsing the legacy content.
-											// Recoding the declarations for further analysis.
-											dbg-compiler(!$[compile-legacy-artifact:: Compiling following legacy artifacts : [<print-as-string>resolving-path] for package:[<GetEnclosingPackageName;print-as-string>]]);
-											<declare-legacy-artifact(|resolving-path)><parse-legacy-artifact>resolving-path;
-											<add-legacy-artifact-as-resolved> (namespace, modulename,resolving-path)
+								  
+			    				   : 	internal-module-qualified-name := <get_internal_module_qtname> <GetEnclosingPackageName>;
+			    				   		<declare-current-module-scope>internal-module-qualified-name ;
+										// Known Extension found. Handling it.
+										// Parsing the legacy content.
+										// Recoding the declarations for further analysis.
+										dbg-compiler(!$[compile-legacy-artifact:: Compiling following legacy artifacts : [<print-as-string>resolving-path] for package:[<GetEnclosingPackageName;print-as-string>]]);
+										<declare-legacy-artifact(|resolving-path)><parse-legacy-artifact>resolving-path;
+										<add-legacy-artifact-as-resolved> (namespace, modulename,resolving-path)
 				 					|}
 						|} 
 					 	<+
@@ -326,7 +329,6 @@ rules
 	compile-legacy-artifact:
 		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , Unresolved()) -> <id>
 		where
-			debug(!"Test");
 			dbg-compiler(!$[compile-legacy-artifact:: planning to compile following legacy artifact: [<print-as-string>]])
 		where
 			// check to see if already taken care off.

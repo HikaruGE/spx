@@ -166,16 +166,17 @@ rules
 	build-incrementally-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			not(HasErrors);
+			not(HasErrors)
+		where 
 			with-spxverify(
 				editor-init	
 		 		; rules(ProjectPath := project-path)
 		 		; initialize-configuration
-		 		, "Failed to initialized editor "  
-	  	);
+		 		, !"Failed to initialized editor "  
+	  		);
 			with-spxverify(
   			abs-path := <concat-strings>[project-path, "/" ,path]
-				; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+			; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
 	  		; <build-spx-incrementally>(ast, abs-path) 
 	   )
   	  

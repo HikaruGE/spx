@@ -207,11 +207,9 @@ rules
   // it actually overrides current module scope and activate 
   // internal scope to store internal strategies and rules 
   activate-stratego-internal-scope(s) =
-    with-spxverify(
-    	activate-internal-scope( 
-        declare-rules(s)
-      ) 
-    )
+	activate-internal-scope( 
+    	declare-rules(s)
+  	) 
       
 strategies 
 	
@@ -224,18 +222,12 @@ rules
   declare-str-definition : 
     InternalStrategies(str-defs*) -> InternalStrategies(analyzed-str-defs*)
     where 
-      <activate-stratego-internal-scope(
-          declare-stratego-globals-top
-        )
-      >str-defs*  =>analyzed-str-defs*
+      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
 
   declare-str-definition : 
     InternalRules(str-defs*) -> InternalRules(analyzed-str-defs*)
     where 
-      <activate-stratego-internal-scope(
-          declare-stratego-globals-top
-        )
-      >str-defs*  =>analyzed-str-defs*
+      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
 
   declare-str-definition : 
     Rules(str-defs*) -> Rules(analyzed-str-defs*)
@@ -368,7 +360,7 @@ rules
       >str-defs*  =>analyzed-str-defs*
              
   declare-bodies: 
-    Rules(str-defs*) -> InternalRules(analyzed-str-defs*)
+    Rules(str-defs*) -> Rules(analyzed-str-defs*)
     where 
       <declare-rules(declare-bodies-top)>str-defs*  =>analyzed-str-defs* 
 

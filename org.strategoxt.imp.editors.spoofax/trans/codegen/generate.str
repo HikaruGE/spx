@@ -42,10 +42,12 @@ rules
 				; generate-spx-artifacts
 		)
 	
+	should-compile-forward-references = id
+	
 	build-spx-incrementally =
 		verify(?(ast, abs-path) |<id> , "?(ast, abs-path) ::build-spx-incrementally" );   
 		compile-packages-of(
-			id, 
+			should-compile-forward-references, 
 			get-used-by, 
 			generate-spx-artifacts
 		) 
@@ -75,9 +77,9 @@ rules
   	dbg-compiler(!$[-----------------::new-code-generate-session::-----------------]);
 		with-spxverify(
 			index-on-init-code-generation;
-  		s;
-  		index-on-complete-code-generation 
-    	, !" new code generated session failed unexpectedly. "  
+  			s;
+  			index-on-complete-code-generation 
+    		, !" new code generated session failed unexpectedly. "  
     )  
 	
 	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 

@@ -33,15 +33,16 @@ rules
   
 
 rules
+	
 	editor-analyze: 
- 		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos) 
-    where
-    	with-spxverify(
-				editor-init
-				; rules(ProjectPath := project-path)
-				; initialize-configuration
-				, !"Failed to initialize. "  
-		  )
+ 		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos)
+ 		where
+	    	with-spxverify(
+					editor-init
+					; rules(ProjectPath := project-path)
+					; initialize-configuration
+					, !"Failed to initialize. "  
+			  )
 		where
 			abs-path := <concat-strings>[project-path, "/" ,path];
 			dbg-compiler(!$[ ------------------------------------------------
