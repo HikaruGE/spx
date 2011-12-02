@@ -77,7 +77,7 @@ rules
 
 	disable-semantic-analysis-debugging  = where(!DebugSemanticAnalysisFlag() ;  disable-debug-flag)
 
-  dbg-analysis(msg|site, type)  = where(not(<is-debug-enabled>DebugSemanticAnalysisFlag() <+ DebugAll) <+  <debug>$[$[$semantic analysis | [site] | [type] $]$  [<msg>]])
+  dbg-analysis(msg|site, type)  = where(not(<is-debug-enabled>DebugSemanticAnalysisFlag() <+ DebugAll) <+  <debug>$[$[$Analysis| [site] | [type] $]$  [<msg>]])
 
 rules
 
@@ -85,11 +85,11 @@ rules
 
 	disable-compiler-debugging   = where(!DebugCompilerFlag() ;  disable-debug-flag)
 
-  debug-compiler(msg) = where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler $]$ [<msg>]])  
+  	debug-compiler(msg) = where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler$]$ [<msg>]])  
 
 	dbg-compiler(s) = debug-compiler(s)
 	
-	dbg-compiler(msg|site, type) =  where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler | [site] | [type] $]$ [<msg>]])  
+	dbg-compiler(msg|site, type) =  where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler|[site]|[type]$]$ [<msg>]])  
 
 	
 rules

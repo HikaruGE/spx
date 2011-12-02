@@ -26,11 +26,11 @@ imports
 
 rules 
   //several events regarding the current compiler session. 
-  with-spxverify(s) = with-verify( s ,  compile-unload <+ fail)  
+  with-spxverify(s) = with-verify( s ,  compile-unload )  
   
   //with-spxverify(s, get-msg) = with-verify( s ,compile-unload<+ fail|msg )
   
-  with-spxverify(s , msg) = with-verify( s ,(compile-unload <+ fail) ,  msg)
+  with-spxverify(s , msg) = with-verify( s , compile-unload ,  msg)
 	
 rules 
 	get-project-path = (ProjectPath <+ project-path)

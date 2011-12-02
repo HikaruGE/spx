@@ -78,14 +78,16 @@ rules
   
   //module-annotated-ast-and-location = ?ModuleDef( _ , location,_, _,anno-ast) ; !(anno-ast, location)
      
-rules 
-// Index Manage Commands 
+rules
+	 
+// Index Manage Commands
+// TODO : add this inside with clause. FAIL instantly if init fails 
     
-	index-init      = prim("SPX_exec_index_manage_command"  , <get-project-path> , "INIT")
+	index-init  = prim("SPX_exec_index_manage_command"  , <get-project-path> , "INIT")  
 	  
-	index-close     = prim("SPX_exec_index_manage_command", <get-project-path>,  "CLOSE")
+	index-close = prim("SPX_exec_index_manage_command", <get-project-path>,  "CLOSE")
 	
-	index-save      = prim("SPX_exec_index_manage_command" , <get-project-path>,  "SAVE")
+	index-save  = prim("SPX_exec_index_manage_command" , <get-project-path>,  "SAVE")
 	  
 	index-clearall  = prim("SPX_exec_index_manage_command" , <get-project-path> ,"CLEAR")
       
@@ -96,6 +98,11 @@ rules
 	index-on-init-code-generation     = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_CODEGEN")
 	
 	index-on-complete-code-generation = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_COMPLETE_CODEGEN")
+	
+	on-init-index-updating = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_INDEX_UPDATING")
+	
+	on-index-updating-completed = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INDEX_UPDATING_COMPLETED")
+	
 	  
 	index-lang-desc =  prim( "SPX_index_language_descriptor" , <get-project-path> , <id>)
 

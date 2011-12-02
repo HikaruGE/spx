@@ -12,7 +12,7 @@ rules
   verify-stratego(s,on-fail-exec,message) =
     s
   <+
-    on-fail-exec;
+    try(on-fail-exec);
     log(|Critical(), <as-string(message)>, <id>);
     prim("SSL_stacktrace_get_all_frame_names");
     report-failure
