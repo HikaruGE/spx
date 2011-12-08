@@ -39,17 +39,30 @@ rules
 	
 	package-qname-to-string : Package(untyped-qname) ->  <convert-qname(|".");string-replace(|"-", ".")> 	untyped-qname
 	
-strategies 
+	
+rules 
 	
 	ppterm = pp-aterm-box ; box2text-string(|100)
 
 	print-as-string = is-string <+ write-to-string
 
-strategies
-	/*internal*/ require(s) = not(s)
+rules
+		/*internal*/ require(s) = not(s)
 
-strategies 
-	
+rules 
+	equal-strings = 
+		?(str1 , str2); 
+		where( 
+			exploded-str1 := <explode-string>str1;
+			exploded-str2 := <explode-string>str2;
+			expected-ret-value := 0
+		);	
+		where(	
+			<strcmp>(exploded-str1 , exploded-str2);
+			?expected-ret-value
+		) 
+		 
+rules	
 	//After ensuring result is unique i.e. list contains only one element, it returns the unique result
 	ensure-is-unique = ?[<id>] <+ dbg-symboltable(!$[SymbolTable| Failed to resolve unique declaration.] | "ensure-is-unique" , "Info");fail
 	

@@ -46,26 +46,30 @@ $[<?xml version="1.0" encoding="UTF-8" ?>
   <import file=".build/build.spx.main.generated.xml" optional = "true"/>
   
   <!-- Compiles and Generates Artefacts. Internally it calls build-spoofaxlang-jvm strategy -->
- 	<target name="buildinit">
+ 	<target name="generate-incrementally">
   	<java classname="org.strategoxt.imp.metatooling.building.AntSpxGenerateArtefacts" failonerror="true">
 		 	<arg value="${basedir}"/>
+		 	<arg value="-i"/> <!-- Incremental Build -->
 	  </java>
   </target>
   
-  <target name="refresh-src" if="eclipse.running">        
-		<eclipse.convertPath fileSystemPath="${basedir}" 			property="projectdir"/>
-        <eclipse.convertPath fileSystemPath="${basedir}/src"  		property="projectdir.src"/>
-  
-        <eclipse.refreshLocal resource="${projectdir}"     depth="infinite"/>
-        <eclipse.refreshLocal resource="${projectdir.src}" depth="infinite"/>
+  <target name="generate-all">
+  	<java classname="org.strategoxt.imp.metatooling.building.AntSpxGenerateArtefacts" failonerror="true">
+		 	<arg value="${basedir}"/>
+		 	<arg value="-c"/> <!-- clean Build -->
+	  </java>
   </target>
-
-
-  <!-- Main target -->
-  <target name="all" depends="buildinit">
-  	<antcall target = "refresh-src"/>
+  
+  <target name="build-incrementally" depends="generate-incrementally">
   	<antcall target = "build-spx-packages"/>
   </target>
+  
+  <target name="build-clean" depends="generate-all">
+  	<antcall target = "build-spx-packages"/>
+  </target>
+  
+  <!-- Main target -->
+  <target name = "all" depends = "build-incrementally"/>
 </project>]
 	end
 

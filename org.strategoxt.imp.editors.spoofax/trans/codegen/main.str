@@ -35,12 +35,12 @@ rules
 			 <build-spoofaxlang-jvm>project-path
 			 
   build-spoofaxlang-jvm:
-    current-project-location -> <id>
+    (current-project-location, build-opt) -> <id>
     where 
-			verify-if-has-errors 
+			verify-if-has-errors;
+			<debug> $[-- Invoking Spoofaxlang Bulid with following arguments [<print-as-string>]] 
 		where 
-    	<debug(!"current-project-directory : ")>current-project-location; 
-    	with-spxverify(	
+			with-spxverify(	
 	  		editor-init; 						         // cleaning up and initializing editors
 				previous-working-dir := <getcwd>;
 				rules(
@@ -49,21 +49,26 @@ rules
 				<chdir>current-project-location				// setting current directory to the project location
 			<+
 				report-failure-with-stacktrace 
-			);
-			
-			with-spxverify(	
-				<debug>$[Activating Project Configuration : ];
+			)
+		where 
+  		with-spxverify(	
+				<debug>$[-- Activating following Project Configuration : ];
 				initialize-configuration;        	// initializes configuration and setting up enviroment variables
-				enable-command-line-mode;  
+				enable-command-line-mode;
 				<show-configuration;debug>()     //show configuration for this spx project
 			<+
 				report-failure-with-stacktrace 
-			);
+			);	
 			with-spxverify(
-				<debug>$[SPXLang Build: ];
+				<debug>$[-- SPXLang Build: ];
+				if <equal-strings>(build-opt , "-c")  then
+					index-clearall;
+					<debug>$[-- Initializing clean build.]
+				else
+					<debug>$[-- Initializing Incremental Build.]
+				end;  
 				build-all';  //building all the spx files in the sources directory
-				<debug>$[Intermediate artefacts have been generated successfully.]
-				
+				<debug>$[-- Intermediate artefacts have been generated successfully.]
 			<+
 				report-failure-with-stacktrace 
 			)
@@ -187,6 +192,6 @@ rules
 	verify-if-has-errors = 
 			not(HasErrors)
 		<+
-			debug(! "Compilation Failed.Please fix the errors before building the artifacts");
+			debug(! "Build Failed.Please fix the errors before building the artifacts");
 			fail
 		
