@@ -27,28 +27,6 @@ imports
 
 rules 
 		
-	build-spoofax-console:
-		arg  -> "" // local directory path is specified 
-		where 
-			xtc-io-wrap(
-		    ?FILE(input);
-				editor-init; 						         // cleaning up and initializing editors
-				rules(NoDebugInfo: _);           // HACK: disable origin use for now
-				rules(ProjectPath := input);
-				<chdir>input;
-				initialize-configuration;        // initializes configuration and setting up enviroment variables
-				// Overriding spx.config configured source directory. 
-				// Comment this line if sources configured in the spx.config should be activated
-				//<override-configured-source-directories><abspath>arg;
-				enable-command-line-mode;  
-				<show-configuration;debug>();     //show configuration for this spx project
-				build-all;                     //building all the spx files in the sources directory
-				<debug>$["----------------------Build-all succeeds----------------------"];
-				!FILE($[[input]/.shadowdir/Globals/Signatures.str])	 //HACK : just to ensure this strategy is not failing ...
-			<+
-				prim("SSL_stacktrace_get_all_frame_names") ; report-failure
-		)
-	
 	report-failure-with-stacktrace = prim("SSL_stacktrace_get_all_frame_names") ; report-failure
 	
 	editor-build-spoofaxlang-jvm :
@@ -56,18 +34,14 @@ rules
 		where
 			 <build-spoofaxlang-jvm>project-path
 			 
-			 
-	//TODO : Improve error reporting. 
   build-spoofaxlang-jvm:
     current-project-location -> <id>
     where 
-			fail-if-has-errors 
+			verify-if-has-errors 
 		where 
     	<debug(!"current-project-directory : ")>current-project-location; 
-    	
     	with-spxverify(	
 	  		editor-init; 						         // cleaning up and initializing editors
-				rules(NoDebugInfo: _);           // HACK: disable origin use for now
 				previous-working-dir := <getcwd>;
 				rules(
 					ProjectPath := current-project-location
@@ -85,15 +59,9 @@ rules
 			<+
 				report-failure-with-stacktrace 
 			);
-			
 			with-spxverify(
 				<debug>$[SPXLang Build: ];
-				<refresh-workspace-file> current-project-location; // refreshing current project
-				with-spxverify(
-						build-all' //building all the spx files in the sources directory
-						, !"Failed to build all the artifacts"
-				);  
-				<chdir>previous-working-dir; 			// resetting working directory
+				build-all';  //building all the spx files in the sources directory
 				<debug>$[Intermediate artefacts have been generated successfully.]
 				
 			<+
@@ -153,13 +121,14 @@ rules
 					; <compile-all>(abs-path , ast)
 					, !"compile-spx failed due to error in complile-all"
 				 )
-	
+
 	editor-clean-spx:  
 		(selected, position, ast, path, project-path) -> None()
 		where
       compile-init; 
       clean-spx(|project-path)
 
+	
 rules 
 		clean-spx(|project-path) = 
 			with-spxverify(
@@ -167,15 +136,20 @@ rules
 	  			<refresh-workspace-file>project-path;
 	      	<debug>$[------Index Cleanup is done ------]
 	  	)
-	  	
-	
-	
+
 rules
 	
 	build-incrementally-service:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			fail-if-has-errors 
+			HasErrors;
+			<debug>$[Compilation Failed.Please fix the errors before building the artifacts : [<print-as-string>path]]
+			
+			
+	build-incrementally-service:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			not(HasErrors)
 		where 
 			with-spxverify(
 				editor-init	
@@ -185,7 +159,7 @@ rules
 	  		);
 			with-spxverify(
   			abs-path := <concat-strings>[project-path, "/" ,path]
-			; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+				; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
 	  		; <build-spx-incrementally>(ast, abs-path) 
 	   )
   	  
@@ -193,7 +167,7 @@ rules
 	editor-build-all:
 		(selected, position, ast, path, project-path) -> None()
 		where
-			fail-if-has-errors 
+			verify-if-has-errors  
 		where
 	 		<debug>$[----------------------------starting compile + build all----------------------------];
 			with-spxverify(	
@@ -210,8 +184,9 @@ rules
 	
 				
 			
-	fail-if-has-errors = 
-		with-spxverify(
+	verify-if-has-errors = 
 			not(HasErrors)
-			, !"Compilation Failed.Please fix the errors before building the artifacts"
-		)	    		  					 
+		<+
+			debug(! "Compilation Failed.Please fix the errors before building the artifacts");
+			fail
+		

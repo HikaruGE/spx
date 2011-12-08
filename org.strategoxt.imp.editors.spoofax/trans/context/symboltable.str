@@ -491,6 +491,7 @@ rules
    */     
   get-indexed-compilation-unit =  verify(is-string|<id>, "Full-path String @get-indexed-compilation-unit"); prim("SPX_index_get_compilation_unit" , <get-project-path> , <id>)
   
+  
   /**
    * Gets PackageDeclaration indexed by the packageId. It also returns all the
    * absolute path where the Package is declared.     

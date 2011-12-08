@@ -65,6 +65,10 @@ rules
 				)
 			end
 
+rules 
+	  
+	get-spxcompilation-unit =  verify(is-string|<id>, "Full-path String @get-compilation-unit"); parse-spoofaxlang-file
+
 
 rules
 

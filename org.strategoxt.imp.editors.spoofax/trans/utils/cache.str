@@ -30,7 +30,7 @@ rules
 		  if <is-newer> (cache-path, path) ; not(<get-currently-analyzing-ast-from-cache> full-path)then
       	// spx-compilation-unit := <ReadFromFile> cache-path;
       	dbg-compiler(! $[Cache | Already updated . Hence, doing nothing]) 
-      	// since cache is updated , it is assumed that index is updated as well
+      	// since cache is updated , it implies that index is updated as well
       else
         
         //1. getting the cached AST to precompile it due to the recent changes.
@@ -38,26 +38,24 @@ rules
           dbg-compiler(! $[Cache | Reading it from actual source!]) ;
           spx-compilation-unit := <parse-file> full-path
         else
-          dbg-compiler(! $[Cache | Reading it from cached source(or currently analzing ast)]) 
+          dbg-compiler(! $[Cache | Reading it from cached source(i.e. the currently analzing ast)]) 
         end;
-        
         //2. precomiling it so update the index and related artifacts 
         {| currently-precompiling-spx-abspath:
             rules ( 
               currently-precompiling-spx-abspath := path'  
             ); 
-            dbg-compiler(! $[Cache | Precompiling [path']]);
+            dbg-compiler(! $[Precompiling [path']]);
             // precompiling modified source to update the cache 
             <precompile <+ throw-precompile-exception>spx-compilation-unit  
         |};
-        
         //3. precomile is successful . Hence updating the existing cache. 
-        //   cache acts as a market to indicate whether compilation and 
+        //   cache acts as a marker to indicate whether compilation and 
         //   code generation is needed. 
         //   if it is in cache it means the precompilation is not needed.
         if <file-exists>full-path then
-          // updating cache if on filesystem (e.g., ignore libstratego-lib)
-          <WriteToBinaryFile> (cache-path, spx-compilation-unit);
+          // updating markers in cache if on filesystem (e.g., ignore libstratego-lib)
+          <WriteToBinaryFile> (cache-path, cache-path);
           dbg-compiler(!$[Caching |Updating cache for following CompilationUnit: [<print-as-string>full-path]])
         end;
         <index-modified-compilation-units-path> path'

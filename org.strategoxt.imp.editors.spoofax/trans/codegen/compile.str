@@ -90,24 +90,29 @@ rules
 				; mark-issues-of-file
 			)
 	
-	compile-packages-of: (ast, file-abs-path) -> <compile-packages-of(fail, id , id)>(ast, file-abs-path) 
+	compile-packages-of: (ast, file-abs-path) -> <compile-packages-of(fail, fail , id)>(ast, file-abs-path) 
 		 	
 	// compiles all the packages stored at the filepath specified
-	compile-packages-of(should-compile-forward-refs, get-forward-references, generate-code): 
+	compile-packages-of (should-compile-forward-refs, get-forward-references, generate-code): 
 		(ast, file-abs-path) -> (ast', issues*)
 		where
 			new-compile-session(
 			 	<get-declared-packages-qname> file-abs-path => list-of-package-qname 
 				; <compile-internal>list-of-package-qname // Compiling
+			  ; dbg-compiler(!$[----compile-packages-of:: compiling and error analysis is done.])
 				; <get-semantic-problmes-by-file>file-abs-path => issues*// getting list of errors
+				; dbg-compiler(!$[----compile-packages-of:: get semantic problems of current file .])
 				; if not(<fail-if-has-errors>issues*) then
-				  	// if there is error, setting flag that foud errors 
+				  	dbg-compiler(!$[----compile-packages-of:: found errors .]);
+				  	// if there is error, setting flag that found errors 
 				  	with-spxverify ( 
 				  		rules(HasErrors :=  True())
+							, !"Failed to set HasErrors to True()"
 						);
 						additional-qnames* := [];
-						<debug(!"----Errors in current AST: ")>issues* 	  // get errors for this file only
-				else
+						dbg-compiler(!$[----Errors in current AST: [<print-as-string>issues*]])	  // get errors for this file only
+				  else
+						dbg-compiler(!$[----compile-packages-of:: No errors found.]);
 						// compiling additional packages 
 						// where current packages are imported to ( forward references) 
 						// Lazy/Incremental compilation is employed.
@@ -121,10 +126,13 @@ rules
 							additional-qnames* := []	
 						end	
 				end
+				; dbg-compiler(!$[----compile-packages-of:: getting analyzed AST to mark errors .])
 				; <get-analyzed-ast>ast => ast'
 				; <get-related-files-of-packages><conc>(list-of-package-qname , additional-qnames*)
-				; mark-issues-of-file
+				; debug-time( mark-issues-of-file | " -- marking issues of file")
+	  		; dbg-compiler(!$[----compile-packages-of:: error marking is done.])  
 				; generate-code		
+			  ; dbg-compiler(!$[----compile-packages-of:: code is generated as well.])
 				; <debug>$[ ------------------------------------------------
 		    ]  
   
@@ -161,12 +169,19 @@ rules
 								  )
 						end
 					; spx-compilation-unit-ast := <get-indexed-compilation-unit> file-path 
-	  			; !(spx-compilation-unit-ast ,  e, w, n)
-	  			;	set-markers(|spx-compilation-unit-ast) 	 //setting error markers	
-		  	}	
+				 	;	( <set-spoofax-markers(|file-path)>(spx-compilation-unit-ast,  e, w, n) 
+				 		<+
+			 				<debug(!"Failed to set Error Markers for ")>file-path;
+			 				fail
+		 				) 
+	  		}	
 			)	
-
 	
+	// Set markers for a given spoofax file
+  // Current term: (ast-desugared, errors, warnings, notes) tuple
+  // file-path: path of the spoofax compilation unit
+  set-spoofax-markers(|file-path) = prim("SSL_EXT_set_markers", file-path)
+
 rules
 	compile-main =
 		? list-of-package-qnames
