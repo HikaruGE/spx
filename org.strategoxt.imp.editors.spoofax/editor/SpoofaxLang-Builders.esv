@@ -38,10 +38,4 @@ builders
     test-resolving-symbol (openeditor) (realtime) (meta)
   */
 
-  builder : "Test TemplateLang" = run-templatelang-tests (meta)
-  
-  
   on save		: build-incrementally-service
-
-
-
