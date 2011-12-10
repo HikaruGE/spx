@@ -12,6 +12,7 @@ imports
 	utils/sourcedir
  	utils/debug
  	utils/contract
+ 	utils/annotations
  	common 
 	config 
 imports 
@@ -22,7 +23,8 @@ imports
 
 rules 
 	verify-declared-stratego = 
-		verify(String | <id> , "String @is-declared-stratego"); 
+		remove-annotations;
+	 	verify(String | <id> , "String @is-declared-stratego"); 
 		<verify-symbol-exists>(<id> , STRSignature())
 	<+
     dbg-analysis(! $[Failed verify-declared-stratego  id [<print-as-string>]] 

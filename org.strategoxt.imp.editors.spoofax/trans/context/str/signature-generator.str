@@ -3,9 +3,10 @@ module context/str/signature-generator
 imports 
 	include/SpoofaxLang
 	utils/contract
+	utils/annotations
 imports
 	lib/editor-common.generated
-
+	
 rules
   		
 	signature-of:
@@ -66,11 +67,12 @@ rules
 rules 
   
   signature-to-declaration-id = 
-      ?(<id> ,_ ,_)
-    + ?(<id> ,_ )  
-    + ?<id>
+    (  ?(<id> ,_ ,_)
+    <+ ?(<id> ,_ )  
+    <+ ?<id>)
+    ; remove-annotations
     ; verify(String | <id> , "String @signature-to-declaration-id")     
-  
+  	
   
   signature-to-str-args-length = 
     ?(_ ,<id> ,_)    <+  !0

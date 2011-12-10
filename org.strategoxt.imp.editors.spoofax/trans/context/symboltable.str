@@ -38,7 +38,7 @@ signature
   
 
   constructors
-    SymbolDef : Namespace * Term * Type   * Term -> Def
+    SymbolDef : Namespace * Term * Type   * Term * SymbolSort -> Def
     
     //TODO : when the problem with the serialization of IstrategoAppl solved, 
     //move Import Symbol in the respective the scoped Symbols
@@ -46,9 +46,12 @@ signature
   constructors 
     ToCodeGenerate : SymTableCommand
 
-    ToCompile  : SymTableCommand
-
-    
+    ToCompile      : SymTableCommand
+	
+		OverridableSymbol : SymbolSort
+		
+		UniqueSymbol      : SymbolSort
+		
 rules 
     // constant terms 
     ALL = !"*"    
@@ -125,7 +128,7 @@ rules
 
 rules
     
-  project-from-symboldef-to-symbol: SymbolDef(_,_ ,_, symbol) -> symbol
+  project-from-symboldef-to-symbol: SymbolDef(_,_ ,_, symbol,_) -> symbol
   
   resolve-all-symbol-definitions-with-duplicates: (scoped-symbol-key , typeCtor) -> <resolve-all-symbol-definitions(project-from-symboldef-to-symbol |<ALL_WITH_DUPLICATES>) >(scoped-symbol-key , typeCtor)
      
@@ -265,6 +268,9 @@ rules
     where
       dbg-symboltable(!$[Found following symbols: [<print-as-string>undefined-symbols]]|"undefine-symbol-definitions" , "info")  
         
+  // TODO : refactor index-symbol-definition and index-unique-symbol-definition      
+  // It has almost all the common logic . Only diff is the provided argument : 
+  // UniqueSymbol() or OverridableSymbol().      
   index-symbol-definition:
   	(symbol-key , symbol-type , symbol) -> <id>
     where
@@ -286,11 +292,39 @@ rules
         ; dbg-symboltable(!$[Invoking SPX_index_symbol_definition with : [<print-as-string>(namespace, key , symbol-type , symbol)]]|"index-symbol-definition" , "info")    
       where
         with-spxverify(
-          !SymbolDef(namespace , key , symbol-type  , symbol);
+          !OverridableSymbol() => symbol-sort;
+          !SymbolDef( namespace , key , symbol-type  , symbol ,  symbol-sort);
           prim( "SPX_symtab_define_symbol" , <get-project-path> , <id>)
       	 	, !"Index Symbol failed."
         )          
- 
+		
+		index-unique-symbol-definition:
+			(symbol-key , symbol-type , symbol) -> <id>
+    	where
+        dbg-symboltable(!$[with: [<print-as-string>(symbol-key , symbol-type , symbol)].]|"index-unique-symbol-definition" , "info")
+    	where
+	    	with-spxverify(
+	        if CurrentScope then 
+	          namespace := <CurrentScope>
+	        else  
+	          namespace := <get-current-scope>
+	        end
+	        , !"Failed to retrieve current namespace identifier."  
+	      )
+      where    
+        with-spxverify(
+          (<remove-scope-from-symbol <+ id >symbol-key ) => key
+          , !"Failed to get the symbol-key."
+        )
+        ; dbg-symboltable(!$[Invoking SPX_index_symbol_definition with : [<print-as-string>(namespace, key , symbol-type , symbol)]]|"index-symbol-definition" , "info")    
+      where
+        with-spxverify(
+          !UniqueSymbol() => symbol-sort;
+          !SymbolDef( namespace , key , symbol-type  , symbol ,  symbol-sort);
+          prim( "SPX_symtab_define_symbol" , <get-project-path> , <id>)
+      	 	, !"Index Symbol failed."
+        )     
+                		
 rules
   
   enable-scope-with-spx-verify( s ) = with-spxverify(s)
