@@ -145,8 +145,6 @@ rules // Constraints
       map(!(<id>, "Build symbol in match pattern")) => builds;
       require([])
   
- 
-  //TODO FIX : origin-equal
   stratego-constraint-warning:
     a@Assign(v @ Var(x), _) -> (x, $[Variable '[x]' may be bound already])
 		where
