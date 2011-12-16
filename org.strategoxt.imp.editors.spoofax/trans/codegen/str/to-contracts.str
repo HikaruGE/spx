@@ -2,7 +2,7 @@ module codegen/str/to-contracts
 imports 
   libstrc
   lib/editor-common.generated
-  context/str/declare
+  context/str/-
   include/SpoofaxLang 
   common
 

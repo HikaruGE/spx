@@ -2,7 +2,7 @@ module context/declare
 
 imports
 	context/sdf/declare
-	context/str/declare
+	context/str/-
 	context/esv/declare
 	context/template/declare
 	context/sdf/declare-signature

@@ -41,8 +41,11 @@ rules
 		
 	// Compiler initialization
 	compile-init =
-		where (index-init <+ debug(!"Failed to initialize SemanticIndex at this moment. Please try later"));
-		
+		where (
+			index-init 
+		<+ 
+			debug(! $[Failed to initialize SemanticIndex for [<get-project-path>] at this moment...."])
+		);
 		// Getting Source directory to start parsing files if needed.
 		// Otherwise, it reads from the cache
 		where(

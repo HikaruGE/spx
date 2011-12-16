@@ -61,9 +61,9 @@ rules
 		module-qname'* -> <id>
 		where
 			with-spxverify(	
-		 		project-path             := <ProjectPath>
-		 		; Package(package-qname)   := <GetEnclosingPackageName>
-		 		, !" Failed to get current-project-path or enclosing package name @generate-esv-main"
+		 		project-path             := <ProjectPath>;
+		 		Package(package-qname)   := <GetEnclosingPackageName>,
+		 		!" Failed to get current-project-path or enclosing package name @generate-esv-main"
 		 	)
  			; dbg-compiler(!$[CodeGen | ESV | Generate-esv-main  : [<print-as-string>package-qname]])
 			; with-spxverify(

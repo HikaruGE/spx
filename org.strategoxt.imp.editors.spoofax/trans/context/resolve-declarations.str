@@ -5,7 +5,7 @@ imports
 	lib/editor-common.generated
 imports 
 	context/-
-	context/str/declare
+	context/str/-
 	context/template/declare
 imports  
   	normalize/signatures

@@ -11,9 +11,9 @@ imports
   utils/debug 
 imports  
   context/sdf/declare-signature
-  context/str/declare
-  context/str/signature-generator
-
+  context/str/-
+  context/symboltable
+	
 rules
   analyze-section: 
     STRSection(ast) -> ( errors, warnings, [])
@@ -23,7 +23,7 @@ rules
 			       {|IsNoConflict
 			       : errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast
 			       ; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
-			       |}
+			        |}
 	       )
 	     
 rules 
@@ -90,9 +90,7 @@ rules // Constraints
          <resolve-str-declaration> cookie => SDefT(_, _, _, _)
       <+ IsNoConflict
       )
-	
-	
-	//signature-of => str-sig ; is-declared-stratego(?str-sig)
+			//signature-of => str-sig ; is-declared-stratego(?str-sig)
 	
 	
   // FIXME: name sdefs after constructors to fix constructor conflict errors 
@@ -129,6 +127,8 @@ rules // Constraints
   stratego-constraint-error:
     Rule(t, _, _) -> <stratego-constraint-error-bad-match> t
 
+	stratego-constraint-error = stratego-constraint-error-bad-build
+	 
   stratego-constraint-error-bad-build:
     t -> matches
     where
@@ -145,19 +145,33 @@ rules // Constraints
       map(!(<id>, "Build symbol in match pattern")) => builds;
       require([])
   
+ 
   //TODO FIX : origin-equal
-  /*
   stratego-constraint-warning:
     a@Assign(v @ Var(x), _) -> (x, $[Variable '[x]' may be bound already])
-    where
+		where
       Var(x') := <declaration-of> v;
-      require(<origin-equal(|x)> x');
-    */
-	
-  stratego-constraint-warning:
-    Var(x) -> (x, $[Unparenthesized constructor: use '[x]()' instead])
+    	require(<spx-origin-equal(|x)> x')
+ 
+ 
+ stratego-constraint-warning:
+    Var(x) -> (x, $[Unparenthesized constructor: use '[x]( [args] )' instead])
     where
-      require(not(is-constructor))
+      require(not(<get-declared-signature>Var(x) => (opname, arity)))  
+    where   
+      ![];
+      get-underscored-string-list(|arity);
+      separate-by(|",");
+      concat-strings;
+      ?args 
+      
+  get-underscored-string-list(|arity) =
+  	?lst;     
+  	if !arity => 0 then 
+  		!lst
+  	else
+  		<get-underscored-string-list( | <subti> (arity,1))> [" _ " | lst]
+  	end		 
 
   stratego-constraint-warning:
     CallT(SVar(<"debug" + "say">), [t], []) -> (s, $[Should be '![s]'])

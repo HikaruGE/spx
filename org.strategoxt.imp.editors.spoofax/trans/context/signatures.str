@@ -1,10 +1,4 @@
 module context/signatures
-
-// signature visibility 
-
-// Importing depth > 1 => visibility is internal
-// IDEA : how to implement this depth
-// build a tree and during resolving search in only one level up 
  
 signature constructors
 	Public	:	 Visibility
@@ -12,7 +6,11 @@ signature constructors
 	Internal:  Visibility	
 
 
-//Signature scopes	
+	InternalScope : ScopeType
+	GlobalScope   : ScopeType
+	PublicScope   : ScopeType
+	
+	
 signature constructors
 	Modules										: ScopedSymbol
 	Packages			 						: ScopedSymbol
@@ -31,8 +29,8 @@ signature constructors
 
 signature constructors 
 
-    OperationSignature : Type 
-    OperationDeclaration : Type 
+  OperationSignature   : Type 
+  OperationDeclaration : Type 
     
  
 signature constructors
@@ -48,6 +46,7 @@ signature constructors
 	
 	
 	STRDef                    : Type
+	RenamedSDefT              : Type
 	STRCookie                 : Type
 	STRSignature              : Type
 	SortDeclaration           : Type
@@ -58,14 +57,18 @@ signature constructors
 	//templatelang 
 	TemplateOptions   : Type
 	CanNotBeBlankFlag : Type   
-	
+
+signature constructors 
+		
 	BooleanType : Type
 	True : BooleanType
 	False : BooleanType
 	
-	Flag : Type  
-
+	
+	
 signature constructors 
+
+	Flag : Type  
 
 	CompileFlag : Flag 
 	

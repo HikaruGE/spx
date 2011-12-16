@@ -15,7 +15,7 @@ imports
 imports  
   analyze/sdf/check
   context/sdf/declare
-  context/str/declare
+  context/str/-
 imports
   codegen/buildscripts
 	codegen/compile
