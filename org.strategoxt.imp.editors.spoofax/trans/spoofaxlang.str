@@ -71,12 +71,34 @@ rules
 
 strategies
 
-  //testing only
   main =
+  	// Builders
     editor-analyze;
+    editor-compile-spx-all-incrementally;
+    editor-clean-and-compile-spx-all ;
+    editor-build-all;
+    editor-build-all-after-cleanup;
+    editor-clean-spx;
+    show-configuration;
     generate-aterm;
+    normalize;
+    generate-name-analysis;
+    build-incrementally-service;
+    // Completions
+    editor-complete;
+    // References
+    editor-resolve;
+    editor-hover;
+    // meta tooling
+    build-spoofaxlang-jvm;
+    // testing
     test-templatelang-to-esv;
     test-templatelang-to-sdf;
     test-templatelang-to-str;
-    build-spoofaxlang-jvm;
-    editor-clean-and-compile-spx-all
+    build-templatelang-sdf;
+    build-templatelang-esv;
+    build-templatelang-str
+
+  build-templatelang-sdf = fail
+  build-templatelang-esv = fail
+  build-templatelang-str = fail

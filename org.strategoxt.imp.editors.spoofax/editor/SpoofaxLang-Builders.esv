@@ -38,4 +38,8 @@ builders
     test-resolving-symbol (openeditor) (realtime) (meta)
   */
 
+  // builder : "TemplateLang: show syntax definition"    = build-templatelang-sdf (openeditor) (realtime) (meta) (source)
+  // builder : "TemplateLang: show completion templates" = build-templatelang-esv (openeditor) (realtime) (meta) (source)
+  builder : "TemplateLang: show pretty printer"       = build-templatelang-str (openeditor) (realtime) (meta) (source)
+
   on save		: build-incrementally-service
