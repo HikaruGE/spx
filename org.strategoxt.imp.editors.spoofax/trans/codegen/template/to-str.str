@@ -34,10 +34,10 @@ strategies
   build-templatelang-str:
     (selected, position, ast, path, project-path) -> (filename, result)
     where with-spxverify(
-    	filename := <guarantee-extension(|"generated.str")> path;
-    	result := <collect-all(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _));
-    	           ![TemplateSection(<id>)];
-    	           template-sections-to-stratego-string> selected
+      filename := <guarantee-extension(|"generated.str")> path;
+      result := <collect-all(?TemplateProduction(_, _, _) + ?TemplateProductionWithCons(_, _, _));
+                 ![TemplateSection(<id>)];
+                 template-sections-to-stratego-string> selected
      )
 
   template-sections-to-stratego-string:
@@ -50,6 +50,62 @@ strategies
       signature constructors
         Z : S-OPTIONS * BOX-LIST -> BOX
         I : S-OPTIONS * BOX -> BOX
+
+      strategies
+
+        box2text-string'(|width) =
+          abox2text'(|width)
+          ; (is-string <+ flatten-list; concat-strings)
+
+        abox2text'(|width) =
+            rules( GppIndent := 0 )
+          ; let local-abox2text(|pos) =
+                  abox2text'(local-abox2text | pos, width)
+
+             in local-abox2text(|0)
+            end
+          ; Fst
+
+        abox2text'(rec : t * t -> t | xpos, width) =
+          abox2text-HV(rec | xpos, width)
+          + abox2text-H(rec | xpos, width)
+          + abox2text-V(rec | xpos, width)
+          + abox2text-I(rec | xpos, width)
+          + abox2text-Z(rec | xpos, width)
+          + abox2text-A(rec | xpos, width)
+          + abox2text-R(rec | xpos, width)
+          + abox2text-S(rec | xpos, width)
+          + abox2text-C(rec | xpos, width)
+          + abox2text-FBOX(rec | xpos, width)
+          + abox2text-R(rec | xpos, width)
+          + abox2text-ALT(rec | xpos, width)
+          + abox2text-list(rec | xpos, width)
+
+        // `I is=N b' is equivalent to `H hs=N [S(""), b]'
+        // NOTE: this I box is not context sensitive!
+        // NOTE: this I box takes a single box as argument, not a list of boxes!
+        abox2text-I(rec : t * t -> t | xpos, width) =
+          ?I(sopt, bs)
+
+          ; {"{|"}GppIndent:
+                <add> (xpos, <gpp-is-length> sopt) => left-xpos
+              ; rules( GppIndent := left-xpos )
+              ; <fetch-elem(?SOpt(IS(), <id>)) <+ !"0"> sopt => value
+              ; <rec(|xpos)> H([SOpt(HS(), value)], [S(""), bs])
+            {"|}"}
+
+        abox2text-Z(rec : t * t -> t | xpos, width) =
+          ?Z(sopt, bs)
+
+          ; GppIndent => indent
+          ; <add> (indent, <gpp-is-length> sopt) => left-xpos
+          ; <filter(gpp-is-real-vbox)> bs
+          ; if ?[] then
+              !([], xpos)
+            else
+              gpp-do-vbox-children(rec | xpos, left-xpos)
+              ; gpp-format-vbox(|sopt, indent)
+            end
 
       overlays
         H0(xs) = H([SOpt(HS(), "0")], xs)
@@ -139,7 +195,7 @@ rules
           input := $[([<separate-by(|",")> arg*])]
         end
       end,
-      !"Failed to pretty-print template" 
+      !"Failed to pretty-print template"
     )
 
 rules
@@ -156,7 +212,7 @@ rules
     where with-spxverify(
       name'  := <implode-string> [<addi> ('a', index)];
       index' := <inc> index,
-      !"Failed to rename template element" 
+      !"Failed to rename template element"
     )
 
 rules
@@ -184,19 +240,19 @@ rules
 
   template-line-elements-to-stratego =
     // 1. Map template elements to strings of Stratego code and String cons.
-  	map(template-element-to-stratego);
-  	// 2. Collapse consecutive String cons into one String cons.
-  	// (Optional, improves readability and performance of generated code.)
-  	concatenate-consecutive-strings;
-  	// 3. Convert String cons to Stratego code, while removing empty strings.
-  	// (The latter is necessary to prevent spurious blank lines:
-  	// BOX removes empty lists, but not empty string elements.)
-  	filter(
-  		\String(t) -> $[S([<templatelang-escape; double-quote> t])]\
-  		<+ not(?String(""))
-		);
-		// 4. Insert commas.
-  	separate-by(|",")
+    map(template-element-to-stratego);
+    // 2. Collapse consecutive String cons into one String cons.
+    // (Optional, improves readability and performance of generated code.)
+    concatenate-consecutive-strings;
+    // 3. Convert String cons to Stratego code, while removing empty strings.
+    // (The latter is necessary to prevent spurious blank lines:
+    // BOX removes empty lists, but not empty string elements.)
+    filter(
+      \String(t) -> $[S([<templatelang-escape; double-quote> t])]\
+      <+ not(?String(""))
+    );
+    // 4. Insert commas.
+    separate-by(|",")
 
   template-element-to-stratego:
     String(t) -> <id>
@@ -238,7 +294,7 @@ rules
           // separator without line breaks => horizontal box
           s := $[pp-h-list(prettyprint-[x]|"[<templatelang-escape> sep]")]
         else
-          // TODO: Support separators with mixed line breaks and literals. 
+          // TODO: Support separators with mixed line breaks and literals.
           if !vs => 0 then
             // separator with one line break => vertical box
             s := $[pp-v-list(prettyprint-[x])]
