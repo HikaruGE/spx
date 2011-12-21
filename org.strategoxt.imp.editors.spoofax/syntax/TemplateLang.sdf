@@ -69,10 +69,11 @@ exports
                                  -> PlaceholderOptions {cons("NoOptions")}
     ";" {PlaceholderOption ","}+ -> PlaceholderOptions {cons("Options")}
 
+    "hide"                 -> PlaceholderOption {cons("Hide")}
     "wrap"                 -> PlaceholderOption {cons("Wrap")}
     "anchor"               -> PlaceholderOption {cons("Anchor")}
     "separator" "=" STRING -> PlaceholderOption {cons("Separator")}
-    "text" "=" STRING      -> PlaceholderOption {cons("Placeholder")}
+    "text" "=" STRING      -> PlaceholderOption {cons("Text")}
 
   syntax
     %% template parts
