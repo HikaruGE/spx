@@ -2,7 +2,6 @@ module context/signatures
  
 signature constructors
 	Public	:	 Visibility
-	Private	:	 Visibility
 	Internal:  Visibility	
 
 
@@ -11,6 +10,11 @@ signature constructors
 	PublicScope   : ScopeType
 	
 	
+	DefData : Package * Type* Visibility * ID * InternalID  -> DefData 
+	
+	InternalID : ID
+
+		
 signature constructors
 	Modules										: ScopedSymbol
 	Packages			 						: ScopedSymbol
@@ -18,13 +22,12 @@ signature constructors
 	
 	ScopeSymbol								: Symbol 
 	
-	//consider declaring the following 
 	STRSection								: Symbol
 	ESVSection								: Symbol
 	SDFSection								: Symbol
 	
 	Unresolved								: Symbol
-	Resolved								: Symbol
+	Resolved								  : Symbol
 
 
 signature constructors 
@@ -63,7 +66,6 @@ signature constructors
 	BooleanType : Type
 	True : BooleanType
 	False : BooleanType
-	
 	
 	
 signature constructors 

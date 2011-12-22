@@ -74,13 +74,13 @@ rules
  
 rules 
   
-  // TODO : get-rid of scoping symbol as it is automatically handle in new symboltable structure  
   declare-definition:
     def -> cookie
     where with-spxverify(
       sig := <signature-of>
       ; scoped-sig    :=<to-scoped-symbol> sig
       ; if not(<DeclareCookie>scoped-sig  <+ <resolve-str-cookie> sig) then
+          // declaring a new cookie 
           cookie := <newterm>
           ; scoped-cookie :=<to-scoped-symbol> cookie
           ; rules(
@@ -90,6 +90,7 @@ rules
 		      ; dbg-declaration(! $[Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]  | "STR|declare-definition" , <debug-level-INFO> ) 
 				  ; dbg-declaration(! $[Storing STRDeclaration : [<print-as-string>scoped-cookie] -> [<print-as-string>def]] | "STR|declare-definition" , <debug-level-INFO> )      
       else
+       	  // using existing cookie 
        	  cookie := <resolve-str-cookie> sig 
       end
     )
@@ -149,7 +150,7 @@ rules
  
   resolve-str-declaration =
     ? cookie
-  	; ( <STRDeclaration> <to-scoped-symbol> cookie
+   	; ( <STRDeclaration> <to-scoped-symbol> cookie
 	  	<+
     		<resolve-symbol-definition>( <id>, STRDef())
     		; dbg-declaration(!$[[<print-as-string>cookie] -> STRDef() ->  [<print-as-string><id>]] | "STR|resolve-str-declaration" , <debug-level-INFO> )

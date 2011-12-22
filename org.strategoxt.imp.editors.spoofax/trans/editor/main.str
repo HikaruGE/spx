@@ -10,6 +10,8 @@ imports
 	utils/debug
 	editor/resolve/-
 	normalize/main
+	codegen/-
+	context/-
 
 rules
 	// Resolves a reference when the user control-clicks or presses F3 in the editor.
@@ -49,8 +51,14 @@ rules
 			  	Compiling following SPX file: [<print-as-string>abs-path]
 		  	]); 
 			with-spxverify(
-	    	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path  , ast);
-	    	<compile-packages-of> (ast, abs-path)  => (analyzed-ast , issues)
+	    	<store-currently-analyzing-ast> (
+	    		<string-replace(|"\\", "/")>abs-path  , ast
+  			);
+    		<compile-packages-of(
+					should-compile-forward-references, 
+					get-used-by, 
+					id )
+				> (ast, abs-path) => (analyzed-ast , issues)
 	    	, !"Failed to compile-package-of"
 	    );  
 		  !issues => ( errors, warnings, infos)

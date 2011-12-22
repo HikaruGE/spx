@@ -25,7 +25,6 @@ rules
 			       ; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
 			        |}
 	       )
-	     
 rules 
   is-declared =
       one(?_{cookie} + ?SVar(_{cookie}))
@@ -127,9 +126,7 @@ rules // Constraints
   stratego-constraint-error:
     Rule(t, _, _) -> <stratego-constraint-error-bad-match> t
 
-	stratego-constraint-error = stratego-constraint-error-bad-build
-	 
-  stratego-constraint-error-bad-build:
+	stratego-constraint-error-bad-build:
     t -> matches
     where
       collect(?RootApp(_) + ?App(_, _) + Wld + ?As(_, _) + ?BuildDefault(_) + ?BuildDefaultPT(_));

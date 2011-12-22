@@ -54,7 +54,8 @@ rules
 			 <get-annotation(get-package-annotation)>modname => Package( package-qname)
 			  ; mId := <get-module-typed-qname>(package-qname, modname)
 			  ; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
-    	  )  
+  	  )
+  	    
 	
 rules 
 	declare-spxmodules-all(s):
@@ -164,3 +165,20 @@ rules
 			 + has-extension(|"rtree")
 			 > resolved-path
 		   ; <declare-legacy-str-imports> legacy-content
+		     
+rules 
+	
+	rename-id(|namespace) = 
+		?x;
+		namespace-qname-string := <package-qname-to-string> namespace;
+	 	<concat-strings>["__internal" , "_", namespace-qname-string  , "_" , <print-as-string>x] 
+	
+	newDefData:	
+		(scope@Package(QName(_)) , type, x) -> DefData(scope,  type, Internal() , x , x)
+		
+	newDefData(rename): 
+ 	(scope@Package(QName(_)) , type, x) -> defData   
+	 where 
+	 		x'  := <rename(|scope)>x;
+	 		defData  := DefData(scope,  type, Internal() , x , x')
+		     

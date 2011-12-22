@@ -23,26 +23,28 @@ imports
 	utils/cache
 	analyze/main
 	codegen/generate
+	context/symboltable
 	
 
 rules
-	build-all' = 
-		?current-term		
-		; build-all
-		; if HasErrors then 
-		  	error-msg := $[Build Failed! ];
-				fatal-err-msg(|error-msg )
-			end  	
-		; !current-term //restoring current term to avoid side effects
-		 
 	build-all = 
 		new-compile-session(
-				list-of-package-qname* := <get-package-list> 
-				; <compile-internal> list-of-package-qname*
-				; generate-spx-artifacts
-		)
+	  	get-package-list
+			; compile-internal
+			; <get-all-analyzed-modules-locations>()
+			; mark-issues-of-file
+			; if HasErrors 
+			  then 
+		  		<debug> $[Error during Compilation. Build Failed. Please fix the errors first.];
+		  		index-close;
+		  		fail
+		  	else
+		  		<debug> $[No Error during Compilation. Generating artefacts.];
+		  		generate-spx-artifacts		
+		 		end
+	 )
 	
-	should-compile-forward-references = id
+	should-compile-forward-references = fail
 	
 	build-spx-incrementally =
 		verify(?(ast, abs-path) |<id> , "?(ast, abs-path) ::build-spx-incrementally" );   
@@ -54,22 +56,22 @@ rules
 	
 	generate-spx-artifacts = 
 		if not(HasErrors) then
-			list-of-package-qname* := <get-package-list>
+			packages := <get-package-list>
 	 		; debug-time( 
 			  	new-code-generate-session(
  					  init-code-generation
 	 				  ; debug-time(
 		  			  	<list-loop(
-			  					generate-spx-package)>list-of-package-qname*
+			  					generate-spx-package)>packages
 				  	  | $[--Generating the artifacts for all the modified spx])
 					  ;<filter(
-					    		has-language-name-configured)>list-of-package-qname*
+					    		has-language-name-configured)>packages
 		    		; emit-build-script 
 					)
 	  		| "--Code Generation done"
- 		  	) 
+	  		) 
 		else
-			<debug>$[Compilation Failed.Please fix the errors before building the artifacts.]		
+			<debug>$[---------------- Compilation Failed.Please fix the errors before building the artifacts -----------------------]		
 		end			
 					
 rules 
@@ -77,12 +79,12 @@ rules
   	dbg-compiler(!$[-----------------::new-code-generate-session::-----------------]);
 		with-spxverify(
 			index-on-init-code-generation;
-  			s;
-  			index-on-complete-code-generation 
-    		, !" new code generated session failed unexpectedly. "  
+  		s;
+  		index-on-complete-code-generation 
+    	, !" new code generated session failed unexpectedly. "  
     )  
 	
-	refresh-file = is-in-command-line-mode  < id + refresh-workspace-file 
+	refresh-file = refresh-workspace-file 
 
 	//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
 	//TODO: OPTIMIZE : DR can be used to construct this imports  

@@ -528,7 +528,7 @@ rules
 	  ; with-spxverify(rules(SPXModuleAST:(OriginalModuleAST(),mid) -> ast))
 	
 	cache-annotated-module-ast	= 
-		verify( ?(mQname@Module(QName(_)), annotatedAst)| <id> , "(Module(QName(_)), _)@cache-annotated-module-ast"); 
+		verify( ?(mQname@Module(QName(_)), annotatedAst)| <id> , "(Module(QName(_)), _)@cache-annotated-module-ast");
 		with-spxverify(
 			rules(SPXModuleAST:(AnnotatedModuleAST(),mQname) -> annotatedAst)
 		)  
@@ -541,6 +541,7 @@ rules
 	get-cached-annotated-module-ast = 
 		verify(?mid@Module(QName(_)) | <id> , "Module(QName(_))  @get-cached-annotated-module-ast" )
 		; <SPXModuleAST>(AnnotatedModuleAST() , mid)
+	  
 
 rules
   

@@ -85,24 +85,28 @@ rules
 rules
   
   declare-str-definition:
-    sdef@SDefT(x, s*, t*, s) -> SDefT(x', s*, t*, s')
+    def@SDefT(x, s*, t*, s) -> SDefT(x', s*, t*, s')
     where with-spxverify(
     	x' := x{<declare-definition>};
       s' := <topdown(try(declare-dynrule))> s
     )
-   	where 
-   		with-spxverify(
-	  		if GetScopeType => InternalScope() then 
-		    	with-spxverify(
-		    		sdeftId := <remove-annotations>x ;
-		    		package-qname-string := <package-qname-to-string> <GetEnclosingPackageName> ;
-		    		new-name := <concat-strings>["__internal" , "_",package-qname-string  , "_" , <print-as-string>sdeftId];
-		    		<index-unique-symbol-definition>(sdeftId , RenamedSDefT() , (<signature-of>sdef , new-name))
-		    	, ! $[Failed to index renamed SDefT...]	
-		    	)	
-	    	end
-	    )	
-
+   	/*
+   	where
+   		!x' =>  sdefId{cookie};
+ 			if GetScopeType => InternalScope() 
+ 			then 
+	    	with-spxverify(
+	    		defData := <newDefData(rename-id)>(<GetEnclosingPackageName> , STRDef() , sdefId);
+	    		internalId := <?DefData(_,_,_,_,<id>)>defData ;
+	    		<debug(!"index unique symbol: ")> (cookie , RenamedSDefT() , (<signature-of>def , internalId));
+	    		<index-unique-symbol-definition>(cookie , RenamedSDefT() , (<signature-of>def , internalId))
+	    	, ! $[Failed to index renamed SDefT]	
+	    	)	
+	    else
+	    	defData := <newDefData>(<GetEnclosingPackageName> , STRDef() , sdefId)	
+    	end ;
+    	<add-annotation(|defData)> x'  => x-with-defData
+	 */
   
 	declare-str-definition:
     o@OpDecl(x, t) -> OpDecl(x', t)
