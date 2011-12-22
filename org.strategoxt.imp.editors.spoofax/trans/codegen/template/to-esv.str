@@ -95,33 +95,31 @@ strategies
       TemplateProduction(sort, SingleLineTemplate([String(<un-double-quote> text)]), attrs)
 
   template-to-completion-template:
-    TemplateProduction(sort, SingleLineTemplate(elem* @ [_ | _]), attrs) ->
+    prod @ TemplateProduction(sort, SingleLineTemplate(_), attrs) ->
       |[ completion template ~sort : ~prefix = ~*part* ]|
     where
       not(<is-deprecated + is-reject> attrs)
     where with-spxverify(
-      {|Expanded:
-        part* := <filter(template-element-to-esv);
-                  template-to-completion-template-helper> elem*;
-        prefix := <build-prefix> part*
-      |}
+      elem* := <expand-single-line-template-production> prod;
+      part* := <filter(template-element-to-esv);
+                template-to-completion-template-helper> elem*;
+      prefix := <build-prefix> part*
     )
     where
       <accept-template-parts(|sort)> part*
 
   template-to-completion-template:
-    TemplateProduction(sort, Template(line* @ [_ | _]), attrs) ->
+    prod @ TemplateProduction(sort, Template(_), attrs) ->
       |[ completion template ~sort : ~prefix = ~*part* (blank) ]|
     where
       not(<is-deprecated + is-reject> attrs)
     where with-spxverify(
-      {|Expanded:
-        part* := <filter(template-line-to-esv);
-                  remove-cursor-except-first;
-                  separate-by(|String("\n"));
-                  template-to-completion-template-helper> line*;
-        prefix := <build-prefix> part*
-      |}
+      line* := <expand-multi-line-template-production> prod;
+      part* := <filter(template-line-to-esv);
+                remove-cursor-except-first;
+                separate-by(|String("\n"));
+                template-to-completion-template-helper> line*;
+      prefix := <build-prefix> part*
     )
     where
       <accept-template-parts(|sort)> part*
@@ -151,17 +149,10 @@ rules
     Line([Layout(x), Placeholder(_, <Option() + Star()>, option*)]) ->
       <spaces-to-tabs> [String(x), Cursor()]
       where
-        <not(one(?Text(_) + ?Hide()))> option*
+        <not(one(?Text(_)))> option*
 
   template-line-to-esv:
-    line @ Line([Layout(_), Placeholder(_, <None() + Plus()>, option*)]) ->
-      // ?t and not(?t) are cycle breaker
-      <?t; expand-template-line; not(?t); filter(template-line-to-esv); is-not-empty-list> [line]
-      where
-        <not(one(?Text(_) + ?Hide()))> option*
-
-  template-line-to-esv:
-    Line(elem*) -> <filter(template-element-to-esv); is-not-empty-list; spaces-to-tabs> elem*
+    Line(elem*) -> <filter(template-element-to-esv); not(?[]); spaces-to-tabs> elem*
 
   spaces-to-tabs =
     try([String(string-replace(|"  ", "\t")) | id])
@@ -171,7 +162,7 @@ rules
     Placeholder(sort(sort), _, option*) ->
       PlaceholderWithSort($[<[text]:], sort)
       where
-        <one(?Text(text)); not(one(?Hide()))> option*
+        <one(?Text(text))> option*
 
   // A and A+ result in a placeholder containing the shortest expansion of A.
   template-element-to-esv:
@@ -190,7 +181,7 @@ rules
     Placeholder(sort(sort), <Option() + Star()>, option*) ->
       PlaceholderWithSort("<:", sort)
     where
-      <not(one(?Text(_) + ?Hide()))> option*
+      <not(one(?Text(_)))> option*
 
   template-element-to-esv:
     Layout(x) -> String(x)
@@ -257,6 +248,7 @@ strategies
 
   // Many of the following strategies fail if a placeholder is encountered
   // that has been expanded before (i.e., a cycle).
+
   // The failure propagates up and is handled by the filter strategy in
   // get-template-lines / get-template-elements, so that placeholders that
   // would lead to infinite recursion are never expanded.
@@ -332,12 +324,7 @@ strategies
   is-template-placeholder:
     Placeholder(sort(x), _, _) -> <id>
     where
-      <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
-
-  is-template-placeholder:
-    PlaceholderWithSort(_, x) -> <id>
-    where
-      <setof-Declaration ; one(?TemplateProduction(_, _, _))> x
+      <get-declarations; one(?TemplateProduction(_, _, _))> x
 
   /**
    * @type List(template-line) ->? List(template-line)
@@ -353,6 +340,12 @@ strategies
     where
       line* := <get-template-lines(|indent) <+ ![t]> x
 
+  // Do not touch already expanded placeholders.
+  expand-template-line:
+    [t @ Line([Layout(_), Placeholder(sort(x), <None() + Plus()>, _)]) | tail] -> [t | tail]
+    where
+      <Expanded> x
+
   // Do not touch option/star placeholders.
   expand-template-line:
     [t @ Line([Layout(_), Placeholder(_, <Option() + Star()>, option*)]) | tail] -> [t | tail]
@@ -366,11 +359,11 @@ strategies
       <one(?Hide())> option*
 
   expand-template-line:
-    [t @ Line(elem*) | tail] -> [Line(elem'*) | tail]
+    [t @ Line(elem*) | tail] -> t'
     where
       not(!elem* => [Layout(_), Placeholder(_, <None() + Plus()>, _)])
     where
-      elem'* := <listbu(expand-template-element); is-not-empty-list> elem*
+      t' := <![Line(<listbu(expand-template-element); not(?[])>) | tail] <+ !tail> elem*
 
   expand-template-line:
     [] -> <id>
@@ -382,12 +375,21 @@ strategies
    *  Placeholder(sort(x), <None() + Plus()>, _) where <Expanded> x
    */
   expand-template-element:
-    [t @ Placeholder(sort(x), <None() + Plus()>, option*) | tail] -> [elem* | tail]
+    [t @ Placeholder(sort(x), m @ <None() + Plus()>, option*) | tail] ->
+      // [elem* | tail]
+      [Placeholder(sort(x), m, [Text(text) | option*]) | tail]
     where
       <not(Expanded)> x;
       <not(one(?Hide()))> option*
     where
-      elem* := <get-template-elements <+ ![t]> x
+      elem* := <get-template-elements <+ ![t]> x;
+      text := <map(template-element-to-string); concat-strings> elem*
+
+  // Do not touch already expanded placeholders.
+  expand-template-element:
+    [t @ Placeholder(sort(x), <None() + Plus()>, _) | tail] -> [t | tail]
+    where
+      <Expanded> x
 
   // Do not touch option/star placeholders.
   expand-template-element:
@@ -415,7 +417,8 @@ strategies  // helpers
    * @type String -> List(template-line)
    */
   get-template-lines(|indent) =
-    setof-Declaration ;
+    get-declarations;
+    not(?[]);
     filter(expand-multi-line-template-production);
     choose-one-expansion;
     map(Line(![indent | <id>]))
@@ -424,7 +427,8 @@ strategies  // helpers
    * @type String -> List(template-element)
    */
   get-template-elements =
-    setof-Declaration ;
+    get-declarations;
+    not(?[]);
     filter(expand-single-line-template-production);
     choose-one-expansion
 
@@ -451,17 +455,14 @@ strategies  // helpers
   template-character-count =
     ?String(<string-length>)
     <+ ?Layout(<string-length>)
-    <+ ?Placeholder(<string-length>)
+    <+ ?Text(<string-length>)
     <+ crush(!0, addi, template-character-count)
 
   // lower than (does not exist in library)
   lti = not(gti)
 
-  setof-Declaration =
-    // debug(!"getting declarations of: ");
+  get-declarations =
     activate-scope(
       setof-sdf-declarations
       |<GetEnclosingPackageName>
-    );
-    // debug(!"declarations: ");
-    is-not-empty-list
+    )

@@ -127,7 +127,7 @@ rules
     Separator(x) -> Separator(<origin-track-forced(un-double-quote; unescape)> x)
 
   templatelang-option-desugar:
-    Placeholder(x) -> Placeholder(<origin-track-forced(un-double-quote; unescape)> x)
+    Text(x) -> Text(<origin-track-forced(un-double-quote; unescape)> x)
 
   templatelang-element-desugar:
     Escape(t) -> String(t')
