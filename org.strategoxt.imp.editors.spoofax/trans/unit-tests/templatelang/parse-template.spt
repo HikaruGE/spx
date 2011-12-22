@@ -39,4 +39,4 @@ test parse wrap option [[ <<X; wrap>> ]]
 parse to Template([Line([Placeholder(_, _, Options([Wrap()]))])])
 
 test parse text option [[ <<X; text="x y">> ]]
-parse to Template([Line([Placeholder(_, _, Options([Placeholder("\"x y\"")]))])])
+parse to Template([Line([Placeholder(_, _, Options([Text("\"x y\"")]))])])

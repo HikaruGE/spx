@@ -38,6 +38,8 @@ rules
 	
 	editor-analyze: 
  		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos)
+    where
+      not(<string-ends-with(|".spt")> path)
  		where
 	    	with-spxverify(
 					editor-init
@@ -62,4 +64,8 @@ rules
 	    	, !"Failed to compile-package-of"
 	    );  
 		  !issues => ( errors, warnings, infos)
-		  
+
+  editor-analyze: 
+    (ast, path, project-path) -> (ast, [], [], [])
+    where
+      <string-ends-with(|".spt")> path
