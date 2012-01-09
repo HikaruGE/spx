@@ -382,9 +382,9 @@ rules
 	          	// invalidate global cache is possible via clearing whole index or calling invalidate primitive
 	          	// hence, if lib changes which is quite unlikely, clearing index will re-read it back  
 	         		if not(<is-lib-exists-in-global-cache>modulename ) then 
-	          			<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports>modulename // storing legacy import declaration
-			 			; <index-lib-in-global-cache> modulename 
-					end
+          			<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports>modulename // storing legacy import declaration
+			 					; <index-lib-in-global-cache> modulename 
+							end
 			  	end  
     			// Setting flag to denote that lib with modulename is resolved
 				; <record-legacy-global-import-is-resolved>(namespace , modulename)

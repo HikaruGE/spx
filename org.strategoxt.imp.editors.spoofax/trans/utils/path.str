@@ -86,13 +86,14 @@ rules
 		 ;<concat-strings> [dir-path, "/" ,artifact-main-file-name, "." , extension]  
 	
 	
-	append-if-not-empty(|string-to-append, seperator) : operand ->result
-  where 
-  	if <eq>("", string-to-append) then 
-			result := operand
-		else
-			result := $[[string-to-append][seperator][operand]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
-		end 
+	append-if-not-empty(|string-to-append, seperator) : 
+		operand ->result
+  	where 
+  		if <eq>("", string-to-append) then 
+				result := operand
+			else
+				result := $[[string-to-append][seperator][operand]]//TODO : when there is a concept-name added in spx , result will be package-name/conceptname
+			end 
 		
 rules
 	ensure-exists =  

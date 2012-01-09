@@ -6,6 +6,10 @@ import java.util.List;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
 
+/**
+ * @author  Md. Adil Akhter <md.adilakhter add gmail.com>
+ *
+ */
 public final class SpxProjectsAnalyzer {
 
 	public static List<IProject> getWorkspaceProjects()

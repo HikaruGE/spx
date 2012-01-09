@@ -8,5 +8,17 @@
        <extension id="org.strategoxt.imp.editors.spoofax.parser" name="SpoofaxLang Parser" point="org.eclipse.imp.runtime.parser">
           <parser class="org.strategoxt.imp.editors.spoofax.SpoofaxLangParseController" language="SpoofaxLang">
           </parser>
-       </extension>    
+       </extension>  
+       
+        <extension  point="org.eclipse.ui.views">
+        	  <category  id="org.strategoxt.imp.editors.spoofax.category.views"  name="SpoofaxLang"> </category>
+        	  <view
+        	   		category="org.strategoxt.imp.editors.spoofax.category.views"
+                class="org.strategoxt.imp.editors.spoofax.ui.views.SpxDependencyVisualizationView"
+                id="org.strategoxt.imp.editors.spoofax.visualization.dependency.views.SpxDependencyVisualizationView"
+                name="SpoofaxLang Package Dependencies"
+                icon="icons/obj16/packages.gif"
+                restorable="true">
+        	 </view>
+       </extension>  
     </plugin>
