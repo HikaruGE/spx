@@ -406,7 +406,7 @@ rules
 	annotate-project-location : 
 		projectname -> annotatedProjectName
 		where 
-			prim("LANG_get_all_projects_in_Workspace");
+			prim("SSL_EXT_get_all_projects_in_workspace");
 			filter( ?(projectname, _));
 			if not(?[(_, projectlocation)]) then 
 				projectlocation := ""

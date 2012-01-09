@@ -102,10 +102,12 @@ rules
     
 	index-invalidate-global-cache     = prim("SPX_exec_index_manage_command" , <get-project-path> , "INVALIDATE_GLOBAL_CACHE")
 	
+	// get everything since last on-complete-code-gen
 	index-on-init-code-generation     = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_CODEGEN")
 	
 	index-on-complete-code-generation = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_COMPLETE_CODEGEN")
 	
+	// get everything since last updating-complete
 	on-init-index-updating = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_INDEX_UPDATING")
 	
 	on-index-updating-completed = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INDEX_UPDATING_COMPLETED")
