@@ -41,4 +41,8 @@ public class SpxModuleDescriptor  extends SpxBaseDescriptor{
 	
 	public IResource getPhysicalResource() throws FileNotFoundException{return  EditorIOAgent.getResource(new File(resourceLocation));}
 	
+	
+	public SpxPackageDescriptor getEnclosingParent(){
+		return this.<SpxPackageDescriptor>getTypedParent();
+	}
 }

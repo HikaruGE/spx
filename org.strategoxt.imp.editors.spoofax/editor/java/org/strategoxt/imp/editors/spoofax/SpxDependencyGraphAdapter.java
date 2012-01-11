@@ -1,4 +1,4 @@
-package org.strategoxt.imp.editors.spoofax.ui.model;
+package org.strategoxt.imp.editors.spoofax;
 
 import static org.spoofax.interpreter.core.Tools.asJavaString;
 import static org.spoofax.interpreter.core.Tools.listAt;
@@ -7,6 +7,8 @@ import static org.spoofax.interpreter.core.Tools.stringAt;
 import org.spoofax.interpreter.terms.IStrategoList;
 import org.spoofax.interpreter.terms.IStrategoTerm;
 import org.spoofax.terms.StrategoListIterator;
+import org.strategoxt.imp.editors.spoofax.ui.model.SpxPackageDescriptor;
+import org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph;
 
 /**
  * @author Md. Adil Akhter <md.adilakhter add gmail.com>
@@ -26,7 +28,6 @@ public class SpxDependencyGraphAdapter {
 		assert projectSpxDependencies != null : "Non Null projectSpxDependencies expected";
 		assert atermDependencyGraph instanceof IStrategoList : "IStrategoList is expected. Type mismatch at atermDependencyGraph ";
 		try {
-
 			// building package and module descriptors
 			for (IStrategoTerm i: StrategoListIterator.iterable((IStrategoList)atermDependencyGraph)) {
 				buildPackageDescriptor(projectSpxDependencies, i);

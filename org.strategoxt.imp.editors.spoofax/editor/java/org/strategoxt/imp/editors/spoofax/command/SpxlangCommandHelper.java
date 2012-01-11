@@ -15,7 +15,7 @@ public final class SpxlangCommandHelper {
 		agent.setAlwaysActivateConsole(true);
 		agent.setWorkingDir(location.toOSString());
 		agent.setProjectPath(location.toOSString());
-
+		
 		//  TODO FIX : imploder attachment is null while project is built from ant script.
 		//  hence, adding an stratego observer is not adding any value
 		

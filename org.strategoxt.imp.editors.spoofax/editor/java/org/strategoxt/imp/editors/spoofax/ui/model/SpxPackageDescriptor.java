@@ -11,6 +11,8 @@ public class SpxPackageDescriptor extends SpxBaseDescriptor{
 	private final Set<String> importedToPackages; // Id of the packages where this package is importedTo 
 	private final Set<SpxModuleDescriptor> enclosedModules;
 
+
+	
 	public SpxPackageDescriptor(String packageName) {
 		this(packageName, new HashSet<String>(), new HashSet<String>(),
 				new HashSet<SpxModuleDescriptor>());
@@ -41,8 +43,9 @@ public class SpxPackageDescriptor extends SpxBaseDescriptor{
 	}
 
 	public void addEnclosedModule(String moduleName, String moduleLocation) {
-		enclosedModules
-				.add(new SpxModuleDescriptor( SpxModuleDescriptor.getModuleName(packageName, moduleName), moduleLocation));
+		SpxModuleDescriptor desc = new SpxModuleDescriptor( SpxModuleDescriptor.getModuleName(packageName, moduleName), moduleLocation);
+		desc.setParent(this);
+		enclosedModules.add(desc);
 	}
 	
 	public Collection<String> getDependentOn(){
@@ -54,4 +57,10 @@ public class SpxPackageDescriptor extends SpxBaseDescriptor{
 	}
 	
 	public Set<SpxModuleDescriptor> getEnclosedModules() {return  enclosedModules;}
+	
+	 
+
+	public SpxProjectDependencyGraph getEnclosingParent(){
+		return this.<SpxProjectDependencyGraph>getTypedParent();
+	}
 }

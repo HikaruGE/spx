@@ -2,6 +2,7 @@ package org.strategoxt.imp.editors.spoofax.ui.actions;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.FindReplaceDocumentAdapter;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.IRegion;
@@ -42,11 +43,17 @@ public class SpxOpenEditorAction extends Action{
 								.getDocumentProvider().getDocument(
 										editor.getEditorInput());
 						
-						final FindReplaceDocumentAdapter searchAdapter = new FindReplaceDocumentAdapter(doc);
-						final String searchString = "module(\\s)*"+ mDesc.getModuleName();
-						IRegion r = searchAdapter.find(0,searchString , true, true, false, true);
 						
-						((ITextEditor)editor).selectAndReveal(r.getOffset(), r.getLength());
+						final FindReplaceDocumentAdapter searchAdapter = new FindReplaceDocumentAdapter(doc);
+						
+						final String packageSearchString = "package(\\s)*"+ mDesc.getEnclosingParent().getPackageName();
+						IRegion pRegion = getRegion(searchAdapter , packageSearchString, 0);
+						
+						
+						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleName();
+						IRegion mRegion = getRegion(searchAdapter , moduleSearchString,pRegion.getOffset());
+						
+						((ITextEditor)editor).selectAndReveal(mRegion.getOffset(), mRegion.getLength());
 					}
 				}
 				else
@@ -56,6 +63,16 @@ public class SpxOpenEditorAction extends Action{
 				e.printStackTrace();
 			}
 		}
+	}
+
+	/**
+	 * @param searchAdapter
+	 * @return
+	 * @throws BadLocationException
+	 */
+	private IRegion getRegion(final FindReplaceDocumentAdapter searchAdapter , String searchString , int startOffset)
+			throws BadLocationException {
+		return searchAdapter.find(startOffset,searchString, true, true, false, true);
 	}
 	
 	public boolean isEnabled() {

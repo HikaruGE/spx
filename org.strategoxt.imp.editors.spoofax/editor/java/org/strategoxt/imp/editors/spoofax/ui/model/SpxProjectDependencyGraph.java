@@ -12,7 +12,7 @@ import org.eclipse.core.resources.IProject;
  * @author Md. Adil Akhter <md.adilakhter add gmail.com>
  *
  */
-public class SpxProjectDependencyGraph {
+public class SpxProjectDependencyGraph extends SpxBaseDescriptor{
 	private final Map<String, SpxPackageDescriptor> packages = new HashMap<String, SpxPackageDescriptor>();
 
 	private final String projectLocation;
@@ -20,6 +20,8 @@ public class SpxProjectDependencyGraph {
 
 	public SpxProjectDependencyGraph(IProject project) {
 		this(project.getName(), project.getLocation().toOSString());
+		
+		this.setParent(SpoofaxlangCnfRoot.getDefault());
 	}
 
 	public String getProjectName() {
@@ -45,6 +47,7 @@ public class SpxProjectDependencyGraph {
 
 	public void addPackage(SpxPackageDescriptor p) {
 		packages.put(p.getPackageName(), p);
+		p.setParent(this);
 	}
 
 	public SpxPackageDescriptor removePackage(SpxPackageDescriptor p) {
@@ -86,5 +89,9 @@ public class SpxProjectDependencyGraph {
 			spxPackageInstance.addImportedPackage(importedPackage.getPackageName());
 			importedPackage.addImportedToPackage(spxPackageInstance.getPackageName());
 		}
+	}
+	
+	public SpoofaxlangCnfRoot getEnclosingParent(){
+		return this.<SpoofaxlangCnfRoot>getTypedParent();
 	}
 }
