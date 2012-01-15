@@ -45,7 +45,7 @@ public class SpxOpenEditorAction extends Action{
 						
 						
 						final FindReplaceDocumentAdapter searchAdapter = new FindReplaceDocumentAdapter(doc);
-						searchAdapter.
+						
 						final String packageSearchString = "package(\\s)*"+ mDesc.getEnclosingParent().getPackageName()+"(\\s)*$";
 						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleName()+"(\\s)*$";
 						
