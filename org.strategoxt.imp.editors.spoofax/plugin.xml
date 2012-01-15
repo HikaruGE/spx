@@ -10,15 +10,69 @@
           </parser>
        </extension>  
        
-        <extension  point="org.eclipse.ui.views">
-        	  <category  id="org.strategoxt.imp.editors.spoofax.category.views"  name="SpoofaxLang"> </category>
-        	  <view
-        	   		category="org.strategoxt.imp.editors.spoofax.category.views"
-                class="org.strategoxt.imp.editors.spoofax.ui.views.SpxDependencyVisualizationView"
-                id="org.strategoxt.imp.editors.spoofax.visualization.dependency.views.SpxDependencyVisualizationView"
-                name="SpoofaxLang Package Dependencies"
-                icon="icons/obj16/packages.gif"
-                restorable="true">
-        	 </view>
-       </extension>  
-    </plugin>
+      <extension  point="org.eclipse.ui.views">
+	  	  <category  id="org.strategoxt.imp.editors.spoofax.category.views"  name="SpoofaxLang"> </category>
+    	  <view
+  	   		category="org.strategoxt.imp.editors.spoofax.category.views"
+          class="org.strategoxt.imp.editors.spoofax.ui.views.SpxDependencyVisualizationView"
+          id="org.strategoxt.imp.editors.spoofax.ui.views.SpxDependencyVisualizationView"
+          name="SpoofaxLang Package Dependencies"
+          icon="icons/obj16/packages.gif"
+          restorable="true">
+      	 </view>
+        	 
+      	 <view
+	    	   	category="org.strategoxt.imp.editors.spoofax.category.views"
+       			class="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView"
+       			id="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView"
+       			name="Spoofaxlang Package Explorer"
+       			icon="icons/obj16/package.gif"
+       			restorable="true">
+	 				</view>
+     </extension> 
+     
+    <extension point="org.eclipse.ui.navigator.viewer">
+    	 	<viewer
+         		viewerId="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView">
+				</viewer>
+	      <viewerContentBinding viewerId="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView">
+	         <includes>
+	            <contentExtension
+	                  isRoot="false"
+	                  pattern="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.Content">
+	            </contentExtension>
+	         </includes>
+	      </viewerContentBinding>
+      
+      </extension>
+     <extension point="org.eclipse.ui.navigator.navigatorContent">  
+       <navigatorContent
+            activeByDefault="true"
+            contentProvider="org.strategoxt.imp.editors.spoofax.ui.providers.SpxPackageExplorerContentProvider"
+            id="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.Content"
+            labelProvider="org.strategoxt.imp.editors.spoofax.ui.providers.SpxPackageExplorerLabelProvider"
+            name="Spoofaxlang Package Explorer content"
+            priority="normal">
+         <actionProvider
+               class="org.strategoxt.imp.editors.spoofax.ui.providers.SpxPackageExplorerActionProvider"
+               id="cnfActionProvider">
+         </actionProvider>
+         <enablement>
+            <or>
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpoofaxlangCnfRoot">
+               </instanceof>
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph">
+               </instanceof>
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpxModuleDescriptor">
+               </instanceof>
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpxPackageDescriptor">
+               </instanceof>
+            </or>
+         </enablement>
+      </navigatorContent>
+   </extension> 
+ </plugin>
