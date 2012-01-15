@@ -62,7 +62,7 @@ public class SpxProjectDependencyGraph extends SpxBaseDescriptor{
 		if( selected instanceof SpxPackageDescriptor){
 			SpxPackageDescriptor p = (SpxPackageDescriptor)selected;
 			
-			for ( String pId :p.getDependentOn() ){
+			for ( String pId :p.getDependencies() ){
 				descriptors.add(getPackageDescriptor(pId)); 
 			}
 		}
@@ -74,7 +74,7 @@ public class SpxProjectDependencyGraph extends SpxBaseDescriptor{
 		if( selected instanceof SpxPackageDescriptor){
 			SpxPackageDescriptor p = (SpxPackageDescriptor)selected;
 			
-			for ( String pId :p.getDependant() ){
+			for ( String pId :p.getDependants() ){
 				descriptors.add(getPackageDescriptor(pId)); 
 			}
 		}

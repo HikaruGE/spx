@@ -80,7 +80,6 @@ public class SpxDependencyVisualizationView extends ViewPart implements IZoomabl
 	private ScrolledForm form = null;
 	private ManagedForm managedForm = null;
 	private GraphViewer viewer;
-	private Action showProjectsDialogActionToolbar;
 	private Action focusDialogAction;
 	private Action focusDialogActionToolbar;
 	private Action showCalleesAction;
@@ -359,11 +358,7 @@ public class SpxDependencyVisualizationView extends ViewPart implements IZoomabl
 				dialog.create();
 				if (dialog.open() == Window.OK) {
 					IProject project = (IProject) dialog.getFirstResult();
-
-
-
 					focusOn(project);
-
 
 					// When a new plug-in is selected, disable the forward action			
 					// The forward action only stores history when the back button was used (much like a browser)

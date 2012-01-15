@@ -1,7 +1,7 @@
 package org.strategoxt.imp.editors.spoofax.ui;
 
 import java.util.Comparator;
-import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.runtime.CoreException;
@@ -66,7 +66,7 @@ public class ProjectSelectionDialog extends FilteredItemsSelectionDialog{
 	@Override
 	protected void fillContentProvider(AbstractContentProvider contentProvider, ItemsFilter itemsFilter, IProgressMonitor progressMonitor) throws CoreException {
 		
-		List<IProject> projects = SpxProjectsAnalyzer.getWorkspaceProjects(); 
+		Set<IProject> projects = SpxProjectsAnalyzer.getWorkspaceProjects(); 
 		
 		progressMonitor.beginTask("Searching Projects...", projects.size()); 
 		

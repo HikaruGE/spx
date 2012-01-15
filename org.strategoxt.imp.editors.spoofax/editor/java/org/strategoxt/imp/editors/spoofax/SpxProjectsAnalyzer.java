@@ -1,7 +1,7 @@
 package org.strategoxt.imp.editors.spoofax;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -12,9 +12,9 @@ import org.eclipse.core.resources.ResourcesPlugin;
  */
 public final class SpxProjectsAnalyzer {
 
-	public static List<IProject> getWorkspaceProjects()
+	public static Set<IProject> getWorkspaceProjects()
 	{
-		ArrayList<IProject> activeProjects= new ArrayList<IProject>(); 
+		Set<IProject> activeProjects= new HashSet<IProject>(); 
 		IProject[] allProjects = ResourcesPlugin.getWorkspace().getRoot().getProjects();
 		
 		for (IProject p : allProjects){

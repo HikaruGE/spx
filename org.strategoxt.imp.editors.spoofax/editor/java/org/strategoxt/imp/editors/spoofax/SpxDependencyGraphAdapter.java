@@ -56,7 +56,7 @@ public class SpxDependencyGraphAdapter {
 
 	}
 
-	public void buildPackageDescriptor(SpxProjectDependencyGraph projectSpxDependencies , IStrategoTerm packageTerm){
+	private void buildPackageDescriptor(SpxProjectDependencyGraph projectSpxDependencies , IStrategoTerm packageTerm){
 
 		SpxPackageDescriptor desc  = null;
 

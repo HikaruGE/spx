@@ -41,10 +41,11 @@ public class SpoofaxlangDependencyViewImages {
 	public static final String IMG_SPX_PROJECT = "projects.gif"; 	
 	public static final String IMG_SPX_PACKAGE = "package_obj.gif";
 	public static final String IMG_SPX_EMPTY_PACKAGE = "empty_logical_package_obj.gif";
-	public static final String IMG_SPX_MODULE = "public_co.gif";
+	public static final String IMG_SPX_MODULE = "module.png";
 	public static final String IMG_REFRESH = "refresh.gif";
 	public static final String IMG_OPEN = "opentype.gif";
-	
+	public static final String IMG_IMPORT_REFS_GROUP = "impc_obj.gif";
+	public static final String IMG_IMPORT = "imp_obj.gif";
 	
 	
 	public static final ImageDescriptor DESC_SNAPSHOT = create(PATH_OBJ, IMG_SNAPSHOT);
@@ -62,6 +63,8 @@ public class SpoofaxlangDependencyViewImages {
 	public static final ImageDescriptor DESC_SPX_MODULE = create(PATH_OBJ, IMG_SPX_MODULE);
 	public static final ImageDescriptor DESC_REFRESH = create(PATH_OBJ, IMG_REFRESH);
 	public static final ImageDescriptor DESC_OPEN = create(PATH_OBJ, IMG_OPEN);
+	public static final ImageDescriptor DESC_IMPORT_GROUP = create(PATH_OBJ, IMG_IMPORT_REFS_GROUP);
+	public static final ImageDescriptor DESC_IMPORT       = create(PATH_OBJ, IMG_IMPORT);
 	
 	private static final void initialize() {
 		PLUGIN_REGISTRY = Activator.getInstance().getImageRegistry();
@@ -80,7 +83,9 @@ public class SpoofaxlangDependencyViewImages {
 		manage(IMG_SPX_EMPTY_PACKAGE, DESC_SPX_EMPTY_PACKAGE);
 		manage(IMG_REFRESH, DESC_REFRESH);
 		manage(IMG_OPEN, DESC_OPEN);
-	}
+		manage(IMG_IMPORT, DESC_IMPORT);
+		manage(IMG_IMPORT_REFS_GROUP, DESC_IMPORT_GROUP);
+		}
 
 	private static ImageDescriptor create(String prefix, String name) {
 		return ImageDescriptor.createFromURL(makeIconURL(prefix, name));

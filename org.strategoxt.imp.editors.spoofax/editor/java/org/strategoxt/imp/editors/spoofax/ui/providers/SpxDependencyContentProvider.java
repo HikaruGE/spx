@@ -24,7 +24,7 @@ public class SpxDependencyContentProvider implements IGraphEntityContentProvider
 		ArrayList<Object> results = new ArrayList<Object>();
 		
 		if (entity instanceof SpxPackageDescriptor){
-			Collection<String> conntectedPackageIDs = ((SpxPackageDescriptor)entity).getDependentOn();
+			Collection<String> conntectedPackageIDs = ((SpxPackageDescriptor)entity).getDependencies();
 			for( String id : conntectedPackageIDs){
 				SpxPackageDescriptor p = graph.getPackageDescriptor(id);
 				if(p != null){

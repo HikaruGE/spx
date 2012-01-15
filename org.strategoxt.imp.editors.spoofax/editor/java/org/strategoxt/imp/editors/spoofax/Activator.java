@@ -27,18 +27,9 @@ public class Activator extends PluginBase
 
   @Override public void start(BundleContext context) throws Exception
   { 
-	  // add resource change listener 
-	  super.start(context);
+    super.start(context);
   }
 
-  @Override public void stop(BundleContext context) throws Exception {
-	  try{
-		 // clean up the resource change listener 
-	  }
-	  finally{
-		  super.stop(context);
-	  }
-  };
   @Override public String getID()
   { 
     return kPluginID;

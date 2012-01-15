@@ -48,19 +48,17 @@ public class SpxPackageDescriptor extends SpxBaseDescriptor{
 		enclosedModules.add(desc);
 	}
 	
-	public Collection<String> getDependentOn(){
+	public Collection<String> getDependencies(){
 		return importedPackages; 
 	}
 	
-	public Collection<String> getDependant(){
+	public Collection<String> getDependants(){
 		return importedToPackages; 
 	}
 	
 	public Set<SpxModuleDescriptor> getEnclosedModules() {return  enclosedModules;}
-	
-	 
-
 	public SpxProjectDependencyGraph getEnclosingParent(){
 		return this.<SpxProjectDependencyGraph>getTypedParent();
 	}
+	
 }

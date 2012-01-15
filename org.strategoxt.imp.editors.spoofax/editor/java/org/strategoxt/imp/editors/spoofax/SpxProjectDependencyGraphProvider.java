@@ -1,9 +1,11 @@
 package org.strategoxt.imp.editors.spoofax;
 
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.eclipse.core.resources.IProject;
 import org.spoofax.interpreter.terms.IStrategoTerm;
+import org.strategoxt.imp.editors.spoofax.command.GetSpxIndexSummariesCommand;
 import org.strategoxt.imp.editors.spoofax.command.GetSpxIndexSummaryCommand;
 import org.strategoxt.imp.editors.spoofax.command.ISpxlangCommand;
 import org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph;
@@ -14,28 +16,41 @@ import org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph;
  */
 public class SpxProjectDependencyGraphProvider {
 
-	final SpxDependencyGraphAdapter adapter;
-	
-	HashMap<String, SpxProjectDependencyGraph> testMap = new HashMap<String, SpxProjectDependencyGraph>();
-	
-	public SpxProjectDependencyGraphProvider(){
-		adapter = new SpxDependencyGraphAdapter();
-	} 
-
 	public SpxProjectDependencyGraph getDependencyGraph(IProject project){
-		
-		String projectLocation = project.getLocation().toOSString();
 		SpxProjectDependencyGraph graph = new SpxProjectDependencyGraph(project);
 		
-		ISpxlangCommand<String, IStrategoTerm>  command = new GetSpxIndexSummaryCommand();
-		command.setContext(projectLocation);
+		return getDependencyGraph(graph);
+	}
+	
+	
+	public static SpxProjectDependencyGraph getDependencyGraph(SpxProjectDependencyGraph g){
 		
+		SpxDependencyGraphAdapter adapter = new SpxDependencyGraphAdapter();
+		ISpxlangCommand<String, IStrategoTerm>  command = new GetSpxIndexSummaryCommand();
+		command.setContext(g.getProjectLocation());
 		command.execute();
 		
 		IStrategoTerm retTermIndexSummary = command.getResult();
+		return adapter.adapt(g, retTermIndexSummary);
+	}
 		
-		return adapter.adapt(graph, retTermIndexSummary);
+	
+	public static Set<SpxProjectDependencyGraph> getDependencyGraphs(Set<IProject> projects){
+		ISpxlangCommand<Set<IProject>, Set<SpxProjectDependencyGraph>>  command = new GetSpxIndexSummariesCommand();
+		command.setContext(projects);
+		command.execute();
+		
+		return command.getResult();
 	}
 	
+	public static Set<SpxProjectDependencyGraph> getDependencyEmptyDependencyGraphs(Set<IProject> projects){
+		
+		Set<SpxProjectDependencyGraph> graphs = new HashSet<SpxProjectDependencyGraph>();
+		for( IProject p : projects){
+			graphs.add(new SpxProjectDependencyGraph(p));
+		}
+		
+		return graphs;
+	}
 	
 }
