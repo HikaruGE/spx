@@ -11,7 +11,9 @@
        </extension>  
        
       <extension  point="org.eclipse.ui.views">
-	  	  <category  id="org.strategoxt.imp.editors.spoofax.category.views"  name="SpoofaxLang"> </category>
+	  	  <category  id="org.strategoxt.imp.editors.spoofax.category.views"  name="SpoofaxLang"> 
+	  	  </category>
+    	  
     	  <view
   	   		category="org.strategoxt.imp.editors.spoofax.category.views"
           class="org.strategoxt.imp.editors.spoofax.ui.views.SpxDependencyVisualizationView"
@@ -75,4 +77,125 @@
          </enablement>
       </navigatorContent>
    </extension> 
+   
+   <!-- popup menu binding -->
+   
+   <extension
+         point="org.eclipse.ui.navigator.viewer">
+      <viewer viewerId="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView">
+         <popupMenu
+                allowsPlatformContributions="true"
+                id="org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.PopupMenu">  
+             <insertionPoint name="group.edit" />
+             <insertionPoint name="group.reorganize" />         
+          </popupMenu>
+      </viewer>
+    </extension>
+    
+    
+    <!-- menu contributions -->
+    
+    <extension
+         point="org.eclipse.ui.menus">
+      <!-- Delete -->   
+      <menuContribution
+            locationURI="popup:org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.PopupMenu?after=group.edit">
+         <command
+               commandId="org.eclipse.ui.edit.delete"
+               id="spoofaxlang.packageExplorer.popupmenu.delete"
+               label="Delete"
+               mnemonic="D"
+               style="push">
+         </command>
+      </menuContribution>
+      <!-- properties -->
+      <menuContribution
+            locationURI="popup:org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.PopupMenu?after=group.properties"> 
+         <command
+               commandId="org.eclipse.ui.file.properties"
+               id="spoofaxlang.packageExplorer.popupmenu.props"
+               label="Properties"
+               mnemonic="I"
+               style="push">
+         </command>
+      </menuContribution>
+      <!-- Refresh -->
+      <menuContribution
+            locationURI="popup:org.strategoxt.imp.editors.spoofax.ui.views.SpoofaxPackageExplorerView.PopupMenu?after=group.reorganize"> 
+         <command
+               commandId="org.eclipse.ui.file.refresh"
+               id="spoofaxlang.packageExplorer.popupmenu.props"
+               label="Refresh"
+               mnemonic="R"
+               style="push">
+         </command>
+      </menuContribution>
+   </extension>
+  
+   <extension
+         point="org.eclipse.ui.handlers">
+      <!-- Delete handlers -->   
+      <handler
+            class="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler"
+            commandId="org.eclipse.ui.edit.delete">
+         <activeWhen>
+            <reference
+                  definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.module">
+            </reference>
+         </activeWhen>
+         <enabledWhen>
+            <reference
+                  definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.module">
+            </reference>
+         </enabledWhen>
+      </handler>
+      
+      <!-- Refresh handlers -->  
+      <handler
+            class="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangRefreshHandler"
+            commandId="org.eclipse.ui.file.refresh">
+         <activeWhen>
+            <reference
+                  definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.project">
+            </reference>
+         </activeWhen>
+         <enabledWhen>
+            <reference
+                  definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.project">
+            </reference>
+         </enabledWhen>
+      </handler>
+      
+   </extension>
+   
+   <extension
+         point="org.eclipse.core.expressions.definitions">
+      <definition
+            id="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.module">
+         <with
+               variable="selection">
+            <iterate
+                  ifEmpty="false"
+                  operator="or">
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpxModuleDescriptor">
+               </instanceof>
+            </iterate>
+         </with>
+      </definition>
+      
+      <definition
+            id="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.project">
+         <with
+               variable="selection">
+            <iterate
+                  ifEmpty="false"
+                  operator="or">
+               <instanceof
+                     value="org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph">
+               </instanceof>
+            </iterate>
+         </with>
+      </definition>
+   </extension>    
  </plugin>

@@ -20,51 +20,54 @@ public class SpxPackageExplorerContentProvider implements ITreeContentProvider{
 	public void dispose() {
 	}
 	Set<SpxProjectDependencyGraph> packageExplorerContent = null;
-	
+
 	SpxProjectDependencyGraphProvider provider = new SpxProjectDependencyGraphProvider();
-	
+
 	public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 		// do nothing
 	}
 
 	public Object[] getElements(Object inputElement) {
-		
+
 		ArrayList<Object> results = new ArrayList<Object>();
-		
+
 		if ( inputElement instanceof SpoofaxlangCnfRoot){
 			Set<IProject> projects = SpxProjectsAnalyzer.getWorkspaceProjects();
 			results.addAll(SpxProjectDependencyGraphProvider.getDependencyEmptyDependencyGraphs(projects));
 		}
-		
+
 		if( inputElement instanceof SpxProjectDependencyGraph){
-			
+
 			SpxProjectDependencyGraph g = SpxProjectDependencyGraphProvider.getDependencyGraph((SpxProjectDependencyGraph)inputElement);
 			results.addAll(g.getEnclosedPackages());
 		}
-		
+
 		if ( inputElement instanceof SpxPackageDescriptor){
-			results.add( 
-					new SpxImportReferenceGroup(
-							SpxImportReferenceGroup.IMPORT_DECLARATIONS_LABEL_TEXT,    
-							((SpxPackageDescriptor)inputElement).getDependencies(),
-							(SpxPackageDescriptor)inputElement
-							)
-					);
-			results.add( 
-					new SpxImportReferenceGroup(
-							SpxImportReferenceGroup.DEPENDANTS_LABEL_TEXT,    
-							((SpxPackageDescriptor)inputElement).getDependants(),
-							(SpxPackageDescriptor)inputElement
-							)
-					);
-			
+			if( ((SpxPackageDescriptor)inputElement).getDependencies().size() >0){
+				results.add( 
+						new SpxImportReferenceGroup(
+								SpxImportReferenceGroup.IMPORT_DECLARATIONS_LABEL_TEXT,    
+								((SpxPackageDescriptor)inputElement).getDependencies(),
+								(SpxPackageDescriptor)inputElement
+						)
+				);
+			}
+			if( ((SpxPackageDescriptor)inputElement).getDependants().size() >0){
+				results.add( 
+						new SpxImportReferenceGroup(
+								SpxImportReferenceGroup.DEPENDANTS_LABEL_TEXT,    
+								((SpxPackageDescriptor)inputElement).getDependants(),
+								(SpxPackageDescriptor)inputElement
+						)
+				);
+			}
 			results.addAll(((SpxPackageDescriptor) inputElement).getEnclosedModules());
 		}
-		
+
 		if(inputElement instanceof SpxImportReferenceGroup){
 			results.addAll( ((SpxImportReferenceGroup) inputElement).getChildren());
 		}
-		
+
 		return results.toArray() ;
 	}
 
@@ -74,23 +77,23 @@ public class SpxPackageExplorerContentProvider implements ITreeContentProvider{
 
 	public Object getParent(Object element) {
 		if ( element instanceof SpxProjectDependencyGraph) return ((SpxProjectDependencyGraph) element).getParent();
-		
+
 		if ( element instanceof SpxPackageDescriptor) return ((SpxPackageDescriptor) element).getParent();
 
 		if( element instanceof SpxModuleDescriptor)	return ((SpxModuleDescriptor) element).getParent();
-		
+
 		if (element instanceof SpxImportReferenceGroup) return ((SpxImportReferenceGroup) element).getParent();
-		
+
 		if (element instanceof  SpxImportReference) return ((SpxImportReference) element).getParent();
-		
+
 		return null;
 	}
 
 	public boolean hasChildren(Object element) {
-		
+
 		return element instanceof SpoofaxlangCnfRoot ||  element instanceof SpxProjectDependencyGraph || element instanceof SpxPackageDescriptor || element instanceof SpxImportReferenceGroup;
 	}
-	
-	 
+
+
 
 }

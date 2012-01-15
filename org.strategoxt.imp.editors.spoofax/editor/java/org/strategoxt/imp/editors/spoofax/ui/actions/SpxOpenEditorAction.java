@@ -31,12 +31,12 @@ public class SpxOpenEditorAction extends Action{
 	public void run() {
 		if(isEnabled()){
 			IWorkbenchWindow activeWorkbenchWindow = Activator.getInstance().getWorkbench().getActiveWorkbenchWindow();
-			
 			Display display = activeWorkbenchWindow.getShell().getDisplay();
 						
 			try {
 				if(EditorState.isUIThread()){
-					IWorkbenchPage page = activeWorkbenchWindow.getActivePage();
+					IWorkbenchPage 	page = activeWorkbenchWindow.getActivePage();
+					
 					IEditorPart editor = IDE.openEditor(page, (IFile)mDesc.getPhysicalResource()); 
 					if(editor instanceof ITextEditor){
 						IDocument doc = ((ITextEditor) editor)
@@ -45,15 +45,33 @@ public class SpxOpenEditorAction extends Action{
 						
 						
 						final FindReplaceDocumentAdapter searchAdapter = new FindReplaceDocumentAdapter(doc);
+						searchAdapter.
+						final String packageSearchString = "package(\\s)*"+ mDesc.getEnclosingParent().getPackageName()+"(\\s)*$";
+						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleName()+"(\\s)*$";
 						
-						final String packageSearchString = "package(\\s)*"+ mDesc.getEnclosingParent().getPackageName();
-						IRegion pRegion = getRegion(searchAdapter , packageSearchString, 0);
+						IRegion pRegion = null; 
+						IRegion mRegion = null;
 						
-						
-						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleName();
-						IRegion mRegion = getRegion(searchAdapter , moduleSearchString,pRegion.getOffset());
-						
-						((ITextEditor)editor).selectAndReveal(mRegion.getOffset(), mRegion.getLength());
+						int searchStartOffset = 0; 
+						while (true){
+							mRegion = getRegion(searchAdapter , moduleSearchString,searchStartOffset,true);
+							if( mRegion != null){
+								// getting module's enclosing package declaration
+								pRegion = getRegion(searchAdapter , packageSearchString, mRegion.getOffset(), false);
+								// checking whether pRegion is not null.
+								if (pRegion != null){
+									break; // found the current module declaration
+								}else
+									searchStartOffset = mRegion.getOffset()+mRegion.getLength(); // module declaration context is not current .searching other module decl with same module name
+							}else
+								break;
+						}
+						if ( mRegion != null)
+							// Opening Module Definition 
+							((ITextEditor)editor).selectAndReveal(mRegion.getOffset(), mRegion.getLength());
+						else
+							// Error Case : Opening Spx File
+							EditorState.asyncOpenEditor(display, (IFile)mDesc.getPhysicalResource(), true);
 					}
 				}
 				else
@@ -70,9 +88,9 @@ public class SpxOpenEditorAction extends Action{
 	 * @return
 	 * @throws BadLocationException
 	 */
-	private IRegion getRegion(final FindReplaceDocumentAdapter searchAdapter , String searchString , int startOffset)
+	private IRegion getRegion(final FindReplaceDocumentAdapter searchAdapter , String searchString , int startOffset , boolean searchForward)
 			throws BadLocationException {
-		return searchAdapter.find(startOffset,searchString, true, true, false, true);
+		return searchAdapter.find(startOffset,searchString, searchForward, true, false, true);
 	}
 	
 	public boolean isEnabled() {
