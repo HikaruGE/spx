@@ -15,14 +15,15 @@ imports
 
 rules 			
 	
-	// Reference Resolving 
+	// Creating a dependency graph for each package  
+	// 
 	resolve-package-references =
 		?list-of-package-tqnames;
 		<list-loop(
 			// Get the list of enclosed modules	and gets module definitions
 			// Afterwards, from the declarations, import references are resolved.
 			dbg-compiler(!$[resolve-package-references |  Currently working on package : [<print-as-string>]]);
-			get-enclosed-dirty-modules; 
+			get-enclosed-dirty-modules;  // only getting the modules that has been ideantified to be changed during this analysis session 
 			get-module-definitions;
 			with-spxverify(
 				map(
@@ -41,7 +42,7 @@ rules
 
 
 // TODO IMPROVE : Merge it with normalize-all 
-rules
+strategies
   store-module-import-references: 
     m@Module(attr,modname,section*) -> Module(attr,modname,resulting-section*)
 		where 
@@ -65,6 +66,7 @@ rules
 					; !Module(attr,modname,resulting-section*) => modifiedModuleDescription
 			|}
 			
+rules			
 	store-import-declaration(|enclosing-namespace-qname): 
 		i@ImportPackage(qname@QName(package-qname-parts*)) -> annotated-import-decl
 		where
@@ -93,12 +95,10 @@ rules
 		where 
 			if <get-module-uri>moduleId then
 			  
-			     // TODO : Remove module import references
-			     // instead, use Package typed qualified name 
 			     //------------------------------------------------------------------------------
 			     // DESIGN ISSUE : initial designed to support more finer grained imports 
 			     // so that language composition conflicts is reduced. But current implementation
-			     // so far does not support it due to simplifying the analysis.   
+			     // so far does not support it due to simplification of the analysis phase.   
 			     //-----------------------------------------------------------------------------
 					<store-spx-import-declaration(|enclosing-namespace-qname)> moduleId
 					;annotated-import-decl:= i

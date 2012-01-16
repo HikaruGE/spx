@@ -41,7 +41,45 @@ imports
 	unit-tests/utils/-
 	unit-tests/-
 */
-
+rules 
+	get-index-summary-jvm : 
+  	current-project-location -> index-summary
+  	where 
+  	with-spxverify(	
+	  		editor-init; 						         // cleaning up and initializing editors
+				previous-working-dir := <getcwd>;
+				rules(
+					ProjectPath := current-project-location
+				);
+				<chdir>current-project-location;				// setting current directory to the project location
+				initialize-configuration
+			)
+		where
+			new-compile-session(
+				enable-command-line-mode
+	  		; get-package-list
+				; compile-internal
+			)
+		where
+			prim("SPX_index_get_summary" , <get-project-path>);
+			?index-summary
+			 	
+	
+  clean-resource-from-spx-index-jvm : 
+  	(current-project-location,resource-location) -> <id>
+  	where 
+  	with-spxverify(	
+	  		editor-init; 						         // cleaning up and initializing editors
+				previous-working-dir := <getcwd>;
+				rules(
+					ProjectPath := current-project-location
+				);
+				<chdir>current-project-location;				// setting current directory to the project location
+				initialize-configuration
+			)
+		where
+			index-clean-resource(|resource-location)
+	
 rules
 
   editor-complete:

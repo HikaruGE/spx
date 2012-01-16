@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SpoofaxLang Plug-in
 Bundle-SymbolicName: org.strategoxt.imp.editors.spoofax; singleton:=true
-Bundle-Activator: org.strategoxt.imp.editors.spoofax.Activator
+Bundle-Activator: org.strategoxt.imp.editors.spoofax.SpoofaxlangActivator
 Bundle-Version: 1.0.0.qualifier
 Bundle-ClassPath: .,
  include/spoofaxlang.jar

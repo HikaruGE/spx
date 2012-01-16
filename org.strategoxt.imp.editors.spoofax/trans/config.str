@@ -63,6 +63,9 @@ rules
 		)	
 	
 	initialize-configuration =
+		where(
+			enable-origin-tracking  // enable origin tracking 
+		); 
 		where( 
 			parse-spoofaxconfiguration-file
 			; normalize-config

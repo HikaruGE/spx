@@ -24,6 +24,10 @@ imports
 	editor/main
 
 
+rules
+	
+	enable-origin-tracking  = prim("SSL_EXT_enable_origins")
+	
 rules 
   //several events regarding the current compiler session. 
   with-spxverify(s) = with-verify( s ,  compile-unload )  

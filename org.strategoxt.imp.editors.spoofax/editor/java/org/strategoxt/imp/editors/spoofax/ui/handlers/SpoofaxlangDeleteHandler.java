@@ -9,11 +9,11 @@ import org.eclipse.ui.handlers.HandlerUtil;
 public class SpoofaxlangDeleteHandler extends AbstractHandler {
 
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		 ISelection currentSelection = HandlerUtil.getCurrentSelection(event);
-		 
-		 //TODO  IMPLEMENT : DELETE 
-		  
-		 System.out.println("Delete " + currentSelection);
-	     return null;
+		ISelection currentSelection = HandlerUtil.getCurrentSelection(event);
+
+		//TODO  IMPLEMENT : SPOOFAXLANG SPECIFIC DELETE  
+		System.out.println("Delete " + currentSelection);
+		
+		return null;
 	}
 }

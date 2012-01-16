@@ -97,6 +97,8 @@ rules
 	index-save  = prim("SPX_exec_index_manage_command" , <get-project-path>,  "SAVE")
 	  
 	index-clearall  = prim("SPX_exec_index_manage_command" , <get-project-path> ,"CLEAR")
+	
+	index-clean-resource(|resource-path) = prim("SPX_index_remove_compilation_unit" , <get-project-path> ,resource-path)
       
 	index-rollback  = prim("SPX_exec_index_manage_command" , <get-project-path> , "ROLLBACK")
     
