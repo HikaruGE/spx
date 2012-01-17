@@ -68,7 +68,7 @@ public class SpxOpenEditorAction extends Action{
 						}
 						if ( mRegion != null)
 							// Opening Module Definition 
-							((ITextEditor)editor).selectAndReveal(mRegion.getOffset(), mRegion.getLength());
+							((ITextEditor)editor).selectAndReveal(mRegion.getOffset(), 0);
 						else
 							// Error Case : Opening Spx File
 							EditorState.asyncOpenEditor(display, (IFile)mDesc.getPhysicalResource(), true);
