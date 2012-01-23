@@ -47,7 +47,7 @@ public class SpxOpenEditorAction extends Action{
 						final FindReplaceDocumentAdapter searchAdapter = new FindReplaceDocumentAdapter(doc);
 						
 						final String packageSearchString = "package(\\s)*"+ mDesc.getEnclosingParent().getPackageName()+"(\\s)*$";
-						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleName()+"(\\s)*$";
+						final String moduleSearchString = "module(\\s)*"+ mDesc.getModuleQualifiedName()+"(\\s)*$";
 						
 						IRegion pRegion = null; 
 						IRegion mRegion = null;
@@ -101,7 +101,7 @@ public class SpxOpenEditorAction extends Action{
 			if( toOpen instanceof SpxModuleDescriptor){
 				mDesc = (SpxModuleDescriptor)toOpen;
 				
-				this.setText("Open \'" + mDesc.getModuleName() + "\'");
+				this.setText("Open \'" + mDesc.getModuleQualifiedName() + "\'");
 				this.setToolTipText(this.getText());
 				this.setImageDescriptor(SpoofaxlangDependencyViewImages.DESC_OPEN);
 				return true;

@@ -20,7 +20,7 @@ public class SpxModuleDescriptor  extends SpxBaseDescriptor{
 		this.resourceLocation = absPath;
 	}
 	
-	public String getModuleName(){
+	public String getModuleQualifiedName(){
 		return moduleName;
 	}
 	

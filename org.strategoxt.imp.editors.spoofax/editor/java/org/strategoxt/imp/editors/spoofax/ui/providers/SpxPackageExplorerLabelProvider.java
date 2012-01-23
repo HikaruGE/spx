@@ -14,7 +14,17 @@ import org.strategoxt.imp.editors.spoofax.ui.model.SpxProjectDependencyGraph;
 public class SpxPackageExplorerLabelProvider  extends LabelProvider implements ILabelProvider, IDescriptionProvider {
 
 	public String getDescription(Object anElement) {
-		 return "This is a description of " + this.getText(anElement);
+		if ( anElement instanceof SpxModuleDescriptor){
+			SpxModuleDescriptor aModule = (SpxModuleDescriptor)anElement;
+			return "Module - "+ aModule.getModuleQualifiedName() + ", located at: "+ aModule.getAbsoluteLocation() + ".";
+		}
+		
+		if( anElement instanceof SpxPackageDescriptor){
+			SpxPackageDescriptor aPackage = (SpxPackageDescriptor )anElement;
+			return "Package - " + aPackage.getPackageName() + ". It has" + aPackage.getEnclosedModules().size() + " enlosed Modules.";
+		}
+		
+		return getText(anElement);
 	}
 	
 	@Override
@@ -35,7 +45,7 @@ public class SpxPackageExplorerLabelProvider  extends LabelProvider implements I
 		if(element instanceof SpxImportReference) return ((SpxImportReference) element).getName();
 		
 		if( element instanceof SpxModuleDescriptor){
-			return ((SpxModuleDescriptor)element).getModuleName();
+			return ((SpxModuleDescriptor)element).getModuleQualifiedName();
 		}	
 		
 		if(element instanceof SpxImportReferenceGroup) return ((SpxImportReferenceGroup) element).getGroupName();

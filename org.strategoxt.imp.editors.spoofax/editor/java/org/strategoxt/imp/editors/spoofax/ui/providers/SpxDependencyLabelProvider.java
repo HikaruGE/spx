@@ -87,7 +87,7 @@ public class SpxDependencyLabelProvider implements ISpxVisualizationLabelProvide
 		}
 		
 		if( element instanceof SpxModuleDescriptor){
-			return ((SpxModuleDescriptor)element).getModuleName();
+			return ((SpxModuleDescriptor)element).getModuleQualifiedName();
 		}	
 		
 		return "";

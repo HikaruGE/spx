@@ -53,19 +53,27 @@ exports
 		"module"
 		"package"
 		"imports"
-		"language" -/- [A-Za-z0-9\_]
+		"language" 
+		"definition"
+		
+		-/- [A-Za-z0-9\_]
 
 
 	lexical syntax
 
     "language"          -> Reserved
     "project"           -> Reserved
+    "builders"          -> Reserved
+    "colorer"         	-> Reserved
+    "references"        -> Reserved
+    "outliner"          -> Reserved
+    "folding"           -> Reserved
+    "completions"       -> Reserved
+    "package"           -> Reserved
+    "module"   		      -> Reserved
     "retain"            -> Reserved
     "with"              -> Reserved
     "unimports"         -> Reserved
-
-
-
     "imports"           -> Reserved
     "overlays"          -> Reserved
     "rules"             -> Reserved
@@ -99,7 +107,7 @@ exports
  		"__internal"				-> Reserved
  		"template"          -> Reserved
  		"templates"         -> Reserved
-
+ 	   
  		Reserved 						-> ReservedName[[ESV]]
  		ReservedName[[ESV]]	-> ID {reject}
 
