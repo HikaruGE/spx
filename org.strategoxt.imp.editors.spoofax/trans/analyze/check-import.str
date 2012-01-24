@@ -2,7 +2,9 @@ module analyze/check-import
 
 imports
 	context/-
+	normalize/-
 	context/symboltable
+	
 imports 
 	include/SpoofaxLang
 	utils/debug
@@ -15,6 +17,7 @@ rules
 		where
   		dbg-analysis(!$[ErrorChecking | Imports Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>)
 			; errors   := <collect-om(imports-constraint-error)> ast
+		  
 rules
 	
 	imports-constraint-error:
@@ -32,6 +35,15 @@ rules
 			require(is-declared-package)
 		where
 			package-qname-string := <convert-qname(|".")>package-qname
+	
+	
+	imports-constraint-error:
+		ImportPackage(package-qname@QName(_)) -> (package-qname , $[Importing enclosing  '[package-qname-string]' package is not allowed. ])
+		where
+			!<GetEnclosingPackageName> => Package(package-qname) 
+		where
+			package-qname-string := <convert-qname(|".")>package-qname
+	
 	
 	imports-constraint-error:
 		ImportPackage(Name(package-name)) -> (package-name, $[Failed to resolve '[package-name]'.])

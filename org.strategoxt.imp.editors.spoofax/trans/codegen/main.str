@@ -83,8 +83,8 @@ rules
 	 		<debug>$[----------------------------starting compile + build all----------------------------];
 			with-spxverify(	
 				editor-init	
-		 		;rules(ProjectPath := project-path)
-		 		;initialize-configuration
+		 		; rules(ProjectPath := project-path)
+		 		; initialize-configuration
 		 		, "Failed to initialize editor" 
  		  );
 	  	clean-spx (| project-path);

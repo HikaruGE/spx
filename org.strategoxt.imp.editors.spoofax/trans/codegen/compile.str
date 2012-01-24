@@ -147,7 +147,7 @@ rules
 	compile-internal: 
 		list-of-package-qname* -> list-of-package-qname*
 		where
-			<debug>$[Compiling packages :[<print-as-string><map(?Package(<id>);convert-qname(|"."))>list-of-package-qname*]]
+			<debug>$[Now compiling packages : [<separate-by(|" , ");concat-strings><map(?Package(<id>);convert-qname(|"."))>list-of-package-qname*]]
 		where
 		  debug-time(
 			  	compile-main
@@ -233,9 +233,11 @@ rules
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
-						; modules-to-compile* := <get-enclosed-dirty-modules; debug(!"compiling following modules :  ")>package-typed-qname
-						  
-						; dbg-compiler(!$[--Compiling SPX Packages:: compiling following modules(dirty) : [<print-as-string>modules-to-compile*]])
+						; modules-to-compile* := <get-enclosed-dirty-modules>package-typed-qname
+						; if <is-not-empty-list> modules-to-compile* then 
+								<debug>$[Now compiling modules : [<separate-by(|",");concat-strings><map(?Module(<id>);convert-qname(|"."))>modules-to-compile*]]  
+							end
+						//; dbg-compiler(!$[--Compiling SPX Packages:: compiling following modules(dirty) : [<print-as-string>modules-to-compile*]])
 						; <declare-spx-global-symbols>modules-to-compile* 
 						; <list-loop(compile-spx-module)>modules-to-compile*
         |}
