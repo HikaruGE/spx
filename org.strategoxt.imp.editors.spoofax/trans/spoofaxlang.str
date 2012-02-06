@@ -24,7 +24,6 @@ imports
 	codegen/sdf/to-name-analysis
  	codegen/sdf/to-signature
   	codegen/main
-   	codegen/template/-
 imports
 	normalize/main
 	normalize/signatures
@@ -90,15 +89,4 @@ strategies
     editor-resolve;
     editor-hover;
     // meta tooling
-    build-spoofaxlang-jvm;
-    // testing
-    test-templatelang-to-esv;
-    test-templatelang-to-sdf;
-    test-templatelang-to-str;
-    build-templatelang-sdf;
-    build-templatelang-esv;
-    build-templatelang-str
-
-  build-templatelang-sdf = fail
-  build-templatelang-esv = fail
-  build-templatelang-str = fail
+    build-spoofaxlang-jvm

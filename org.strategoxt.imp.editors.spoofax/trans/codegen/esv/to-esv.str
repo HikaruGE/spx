@@ -15,10 +15,11 @@ imports
 imports
 	codegen/main
 	codegen/generate
-	codegen/template/to-esv
 	context/-
 imports
 	lib/editor-common.generated
+imports
+  templatelang/to-esv
 
 
 signature constructors
@@ -101,8 +102,8 @@ rules
  				<conc>(<map(get-original-module-definition; template-module-to-esv)> module-qname* ,  sections)
  			else
  				!sections
- 			end	  
-		 	
+ 			end
+
 	ensure-lang-id-added(|package-id) =
 		?sections;
 		// Adding language Id if not already added with language description

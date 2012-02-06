@@ -18,13 +18,11 @@ imports
 	codegen/main
 	codegen/sdf/to-name-analysis
   codegen/sdf/to-signature
-	codegen/template/to-str
 imports
 	context/-
 imports
 	normalize/signatures
 	utils/contract
-	utils/sdf2conflicts
 	common
 
 

@@ -4,7 +4,6 @@ imports
 	context/sdf/declare
 	context/str/-
 	context/esv/declare
-	context/template/declare
 	context/sdf/declare-signature
 	context/-
 	normalize/signatures
@@ -18,6 +17,8 @@ imports
 	config
 	common
 	codegen/main
+imports
+  templatelang/analyze
 
 rules 
 	
@@ -85,14 +86,14 @@ rules
   declare-local-symbols:
     TemplateSection(definition*) -> TemplateSection(declared-definition*)
     with
-     <declare-template-definition-main> definition* => declared-definition* 
+     <map(declare-template)> definition* => declared-definition* 
 
   // TemplateLang
   // FIXME: move to spoofax.configuration?
   declare-local-symbols:
   	TemplateOptions(option*) -> TemplateOptions(declared-option*)
   	with
-  	  <declare-template-options-main> option* => declared-option* 
+  	  <map(declare-template-option)> option* => declared-option* 
 
 rules
 

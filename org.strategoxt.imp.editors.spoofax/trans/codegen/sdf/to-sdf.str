@@ -16,7 +16,6 @@ imports
 imports
   normalize/main
 	normalize/signatures
-	normalize/templatelang
 imports
 	common
 	config
@@ -27,9 +26,10 @@ imports
 imports
 	codegen/main
 	codegen/generate
-	codegen/template/to-sdf
 	utils/contract
-	utils/sdf2conflicts
+imports
+  templatelang/desugar
+  templatelang/to-sdf
 
 rules
 
@@ -55,7 +55,7 @@ rules
     	sdf-string := <pp-sdf-string'> 'module(
     																		<qname-to-path>module-untyped-qname, 
     																		<to-sdf-imports-block>section* , 
-    																		<to-sdf-section-block;sdf2conflicts-store-sdf>section* 
+    																		<to-sdf-section-block/* TVO-FIXME: ;sdf2conflicts-store-sdf */>section* 
     																		)
     	; dbg-compiler(!$[ Codegen | SDF | Saving the artifacts of [<print-as-string> module-untyped-qname].])
 			; <save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string 
@@ -222,6 +222,8 @@ rules
 				result := $[[<qname-to-path >q]
 									 ]
 rules
+
+  // TVO-FIXME: move to TemplateLang
 
   // (from TemplateLang)
 

@@ -26,6 +26,8 @@
         <property name="build.stratego.args" value="
                         -I &quot;${trans}&quot;
                         -I &quot;${basedir}&quot;
+        	              -I &quot;${basedir}/../org.strategoxt.imp.editors.template/trans/public&quot;
+        	              -I &quot;${basedir}/../org.strategoxt.imp.editors.template&quot;
                         -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
         	              -la strc -la stratego-sdf"/>
 

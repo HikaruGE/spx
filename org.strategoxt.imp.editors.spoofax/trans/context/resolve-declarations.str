@@ -6,7 +6,6 @@ imports
 imports 
 	context/-
 	context/str/-
-	context/template/declare
 imports  
   	normalize/signatures
 	codegen/compile
