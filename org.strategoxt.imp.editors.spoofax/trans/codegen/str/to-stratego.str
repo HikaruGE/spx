@@ -24,6 +24,8 @@ imports
 	normalize/signatures
 	utils/contract
 	common
+imports
+  templatelang/to-str
 
 
 rules
@@ -104,16 +106,16 @@ rules
 			; if templatelang-enabled then    
 					 with-spxverify(
 				    	dbg-compiler(!$[Codegen | STR | Generating prettyprinter from package-name: [<print-as-string> package-qname]]);
-				    	{|SubtermConflicts:
-					      <sdf2conflicts> []
+				    	//TVO-FIXME: {|SubtermConflicts:
+					    //TVO-FIXME:  <sdf2conflicts> []
 					      // HACK: this lacks any sanity wrt the original modules in which the SDF was placed ...
-					      ; section* := <map(get-original-module-definition; ?Module(_, _, <id>)); concat> module-qname*
+					        section* := <map(get-original-module-definition; ?Module(_, _, <id>)); concat> module-qname*
 				        ; section'* := <filter(?SDFSection(_) + ?SDFSectionEH(_, _) + ?TemplateSection(_))> section*
 				        ; activate-internal-scope(  
 				        	// this uses information collected by sdf2conflicts
 				        	pp-aterm := <template-sections-to-stratego> section'*
 				        )  
-				   	 |}
+				   	 //TVO-FIXME:|}
 			       ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
 				     ; pp-qname := <QName(at-last([<conc-strings>(<id>, "-prettyprinter")]))> package-qname
 				     ; <save-artifact(save-to-file      | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "str")>(root-directory, pp-qname))> pp-string
