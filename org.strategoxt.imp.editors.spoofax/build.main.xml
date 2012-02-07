@@ -29,7 +29,7 @@
                         -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
         	              -la strc -la stratego-sdf"/>
 
-        <property name="externaljar" value="../org.strategoxt.imp.editors.template/include/templatelang.jar"/>
+        <property name="externaljar" value="../org.strategoxt.imp.editors.template/include/libtemplatelang.jar"/>
         <property name="externaljarflags" value="-la org.strategoxt.imp.editors.template.generated"/>
         <property name="externalrtree" value="../org.strategoxt.imp.editors.template/include/libtemplatelang.rtree"/>
 
