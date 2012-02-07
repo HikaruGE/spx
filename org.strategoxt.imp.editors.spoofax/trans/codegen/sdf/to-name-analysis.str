@@ -5,8 +5,8 @@ imports
   context/sdf/declare-signature
   context/sdf/declare
   include/SpoofaxLang
+  include/libtemplatelang
   analyze/sdf/check
-  utils/attributes
   common
 
 rules

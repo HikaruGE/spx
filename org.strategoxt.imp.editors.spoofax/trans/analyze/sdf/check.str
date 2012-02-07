@@ -4,11 +4,10 @@ imports
   lib/editor-common.generated
  	common
  	utils/debug
- 	utils/attributes
   context/sdf/-
   context/-
   include/SpoofaxLang
-  utils/attributes
+  include/libtemplatelang
 rules
 	verify-sdf-symbol-declaration-exists =
 		<verify-symbol-exists>( <id>, SDFDeclaration())

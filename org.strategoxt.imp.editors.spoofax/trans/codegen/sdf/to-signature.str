@@ -10,9 +10,9 @@ imports
 	context/-
 	codegen/sdf/to-sdf
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	codegen/compile
-	context/str/parse
 	codegen/main
 	codegen/generate
 	context/signatures

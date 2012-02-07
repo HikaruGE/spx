@@ -3,6 +3,7 @@ imports
 	libstratego-sdf
   lib/editor-common.generated
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	context/-
 	context/esv/declare
@@ -14,7 +15,6 @@ imports
 	common
 	utils/debug
 	utils/annotations
-	utils/attributes
 	utils/contract
 imports
 	libstratego-sdf

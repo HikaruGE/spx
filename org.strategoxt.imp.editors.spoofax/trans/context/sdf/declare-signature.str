@@ -2,10 +2,10 @@ module context/sdf/declare-signature
 
 imports
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	common
 	libstrc
-	utils/attributes
 	utils/debug
 	utils/contract
 	

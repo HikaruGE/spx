@@ -2,13 +2,12 @@ module context/parse-adapter
 
 imports
 	include/SpoofaxLang
+  include/libtemplatelang
 	context/signatures
 	normalize/signatures
 	lib/Configuration/SpoofaxConfiguration
 	lib/editor-common.generated
 imports
-	context/sdf/parse
-	context/str/parse
 	codegen/-
 imports
 	utils/path

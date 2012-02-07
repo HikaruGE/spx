@@ -9,8 +9,6 @@ imports
 imports
 	include/SpoofaxLang
 	lib/editor-common.generated
-  lib/sdf-desugar
-  lib/sdf-parenthesize
 imports
 	context/-
 	context/sdf/declare
@@ -21,7 +19,6 @@ imports
 	common
 	config
 	utils/annotations
-	utils/attributes
 	utils/path
 	utils/debug
 imports
@@ -50,7 +47,7 @@ rules
     	; dbg-compiler(!$[ Codegen | SDF | Found Section + Imports for the following module [<print-as-string> module-untyped-qname]])
     where
       // sdf2conflicts here collects information for the parenthesation in the prettyprinter
-    	sdf-string := <pp-sdf-string'> 'module(
+    	sdf-string := <pp-sdf-to-string> 'module(
     																		<qname-to-path>module-untyped-qname, 
     																		<to-sdf-imports-block>section* , 
     																		<to-sdf-section-block/* TVO-FIXME: ;sdf2conflicts-store-sdf */>section* 
@@ -88,7 +85,7 @@ rules
 			)
  		where
  			sdf-string :=
-				<pp-sdf-string'>
+				<pp-sdf-to-string>
 				'module(
   				unparameterized(main-sdf-module-name)
 					, [imports(<map(pp-sdf-import;!'module(unparameterized(<id>)))>module-qname*)]
@@ -166,16 +163,10 @@ rules
 			end
 		)
 
-rules
-
-	override pp-sdf-string = fail // ensure compiler doesn't blow up
-
-  pp-sdf-string' =
-    sdf-desugar;
-    parenthesize-Sdf2;
-  	sdf-ppfix;
-    ast2box(|[<pp-table-sdf>]);
-    box2text-string(|80)
+overlays
+  // Overlays cannot be imported from a library but still the library overlay
+  // names cannot be reused here.
+  sdf-cons'(x) = term(default(appl(unquoted("cons"), [fun(quoted(x))])))
 
 rules
   // TODO: also support Constructor("Module(<2>, <1>)") => {ast("...")}?
@@ -183,7 +174,7 @@ rules
   //  term(default(fun(quoted(s)))) -> term(default(appl(unquoted("cons"), [fun(quoted(s))])))
 
   desugar-sdf-redux:
-    Constructor(s) -> sdf-cons(s)
+    Constructor(s) -> sdf-cons'(s)
 
   // HACK: remove scope from output
   desugar-sdf-redux:

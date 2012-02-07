@@ -1,6 +1,7 @@
 module context/symboltable
 imports 
 	include/SpoofaxLang
+	include/libtemplatelang
 imports 
   common
   utils/contract
@@ -148,7 +149,7 @@ rules
   	typeCtor 
   	-> <resolve-all-symbol-definitions> (<ALL_AS_SET> ,  typeCtor)
      
-  resolve-all-symbol-definitions: 
+  override resolve-all-symbol-definitions: 
   	(scoped-symbol-key , typeCtor) 
   	-> <resolve-all-symbol-definitions( project-from-symboldef-to-symbol | (LookupAllScope() ,<ALL_AS_SET>) ) >(scoped-symbol-key , typeCtor) 
   
@@ -156,7 +157,7 @@ rules
   	(scoped-symbol-key , typeCtor) 
   	-> <resolve-all-symbol-definitions(project-from-symboldef-to-symbol | ( LookupAllScope() ,<ALL_AS_SEQUENCE>)) >(scoped-symbol-key , typeCtor)
   
-  resolve-symbol-definition:
+  override resolve-symbol-definition:
   	(scoped-symbol-key , typeCtor) 
   	-> <resolve-symbol-definition(project-from-symboldef-to-symbol)>(scoped-symbol-key , typeCtor)
 
@@ -296,7 +297,7 @@ rules
   // TODO : refactor index-symbol-definition and index-unique-symbol-definition      
   // It has almost all the common logic . Only diff is the provided argument : 
   // UniqueSymbol() or OverridableSymbol().      
-  index-symbol-definition:
+  override index-symbol-definition:
   	(symbol-key , symbol-type , symbol) -> <id>
     where
         dbg-symboltable(!$[with: [<print-as-string>(symbol-key , symbol-type , symbol)].]|"index-symbol-definition" , "info")
