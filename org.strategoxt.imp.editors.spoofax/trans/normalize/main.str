@@ -2,7 +2,7 @@ module normalize/main
 
 imports
   libstratego-lib
-  libstrc
+  include/libtemplatelang
   lib/editor-common.generated
 imports
 	normalize/stratego
@@ -20,8 +20,6 @@ imports
 	context/-
 	utils/contract
 	context/signatures
-imports
-  templatelang/desugar
 
 rules 
 	 normalize:

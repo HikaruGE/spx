@@ -1,8 +1,7 @@
 module codegen/str/to-stratego
 imports
-	libstrc
-imports
   libstratego-lib
+  include/libtemplatelang
 	lib/editor-common.generated
 imports
   include/SpoofaxLang
@@ -24,9 +23,6 @@ imports
 	normalize/signatures
 	utils/contract
 	common
-imports
-  templatelang/to-str
-
 
 rules
 	// emit STR definition for the specified SPX module.

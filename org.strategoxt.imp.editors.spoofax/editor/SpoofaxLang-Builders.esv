@@ -12,6 +12,7 @@ builders
 builders
 
   provider                  : include/spoofaxlang.jar
+  provider                  : include/templatelang.jar
 
 	observer                  : editor-analyze
 

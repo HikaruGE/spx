@@ -6,7 +6,7 @@ imports
   libstratego-aterm
   libstratego-sglr
   libstratego-sdf
-  libstrc
+  include/libtemplatelang
 imports
   include/SpoofaxLang
   lib/editor-common.generated
@@ -36,7 +36,6 @@ imports
 	 editor/main
 	 codegen/main
 /*
-	unit-tests/templatelang/-
 	unit-tests/utils/-
 	unit-tests/-
 */

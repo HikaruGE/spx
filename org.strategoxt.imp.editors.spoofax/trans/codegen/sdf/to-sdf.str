@@ -5,6 +5,7 @@ imports
   libstratego-gpp
   libstratego-sglr
   libstratego-sdf
+  include/libtemplatelang
 imports
 	include/SpoofaxLang
 	lib/editor-common.generated
@@ -27,9 +28,6 @@ imports
 	codegen/main
 	codegen/generate
 	utils/contract
-imports
-  templatelang/desugar
-  templatelang/to-sdf
 
 rules
 
@@ -201,17 +199,6 @@ rules
 
   desugar-sdf-redux:
     namespaceref2(n, s) -> s
-
-rules
-
-  list-to-conc-grammars:
-    [g1, g2 | gs] -> conc-grammars(g1, <list-to-conc-grammars> [g2 | gs])
-
-  list-to-conc-grammars:
-    [g1] -> g1
-
-  list-to-conc-grammars:
-    [] -> []
 
 rules
 

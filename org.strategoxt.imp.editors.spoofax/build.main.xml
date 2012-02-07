@@ -26,10 +26,16 @@
         <property name="build.stratego.args" value="
                         -I &quot;${trans}&quot;
                         -I &quot;${basedir}&quot;
-        	              -I &quot;${basedir}/../org.strategoxt.imp.editors.template/trans/public&quot;
-        	              -I &quot;${basedir}/../org.strategoxt.imp.editors.template&quot;
                         -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
         	              -la strc -la stratego-sdf"/>
+
+        <property name="externaljar" value="../org.strategoxt.imp.editors.template/include/templatelang.jar"/>
+        <property name="externaljarflags" value="-la org.strategoxt.imp.editors.template.generated"/>
+        <property name="externalrtree" value="../org.strategoxt.imp.editors.template/include/libtemplatelang.rtree"/>
+
+        <target name="copy-rtree">
+            <copy file="${externalrtree}" todir="${include}" preservelastmodified="true"/>
+        </target>
 
         <!-- Optional: external .def and .jar locations
         <property name="externaldef" location="syntax/${sdfmodule}.def"/>
@@ -68,6 +74,7 @@
 	        </dependset>
         	
           	<antcall target="copy-jar"/>
+            <antcall target="copy-rtree"/>
         		<antcall target="spx.stratego.jvm.helper">
 	          	<param name="build.stratego.outputfile" value="${src-gen2}/${strmodule}.java"/>
             	<param name="build.stratego.extraargs" value="-la java-front ${java.jar.import}"/>

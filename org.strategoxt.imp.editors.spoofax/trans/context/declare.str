@@ -1,6 +1,8 @@
 module context/declare
 
 imports
+  include/libtemplatelang
+imports
 	context/sdf/declare
 	context/str/-
 	context/esv/declare
@@ -17,8 +19,6 @@ imports
 	config
 	common
 	codegen/main
-imports
-  templatelang/analyze
 
 rules 
 	
