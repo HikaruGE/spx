@@ -6,42 +6,11 @@ imports
 
 rules 
 
-  // FIXME: Too much overrides here. (The overridden strats are in libtemplatelang.)
-  
-  override with-verify(s, on-fail-exec , msg) = where(verify-stratego(s, on-fail-exec, !$["Internal error: with clause failed unexpectedly. More : [<msg>]]))
-  
-  override with-verify(s, on-fail-exec) = where(verify-stratego(s, on-fail-exec, !"Internal error: with clause failed unexpectedly"))
-  
-  override verify-stratego(s,on-fail-exec,message) =
-    s
-  <+
-    try(on-fail-exec);
-    log(|Critical(), <as-string(message)>, <id>);
-    prim("SSL_stacktrace_get_all_frame_names");
-    report-failure
+  // Other contract strategies are in
+  //   org.strategoxt.imp.editors.template/trans/templatelang/utils/contract
 
-  
-  override as-string(s) = s; as-string <+ !"<?>"
-
-  override as-string = is-string <+ write-to-string
-
-
-    
-//Draft of code contracts for stratego
-rules 
-  override verify(s | arg , expected) = contracts(contract-requires(s| arg , expected))
-  
-  override verify(s | arg) = contracts(contract-requires(s| arg))
-  
-  override verify(s) = contracts(contract-requires(s))
- 
-rules
-
-	override contract-requires ( s , on-fail | arg , expected) =
-			contract-requires ( s | arg , expected)
-		<+
-			on-fail
-
+  // The two strategies below are overridden because they report errors
+  // through a different strategy. 
 
 	override contract-requires ( s | arg , expected) =
 			where(<s> arg)
@@ -50,32 +19,8 @@ rules
 			; fail
 
 
-	override contract-requires ( s | arg ) = <contract-requires (s)> arg
-
-
 	override contract-requires (s) =
 			where(s)
 		<+
 			dbg-analysis(! $[Requires Failed - argument :[<print-as-string>] ]  | "Contact" , <debug-level-WARNING>) 
 			; fail
-
-
-	override contracts ( s ) =  where(s) <+ fail
-
-
-	override with-verification (preconditions, s ) = with-verification (preconditions, s , id)
-
-
-	override with-verification (preconditions, s , postconditions) = where(preconditions) ; s ; where(postconditions) <+ fail
-
-
-rules
-
-	override run-strategy(  s  , on-fail | msg) = s <+  <debug> msg ; on-fail
-
-rules
-	override String = is-string
-
-	override List = is-list
-
-	override ListOf(s) = list-loop(s)

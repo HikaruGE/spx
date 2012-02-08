@@ -23,7 +23,11 @@ imports
 	editor/main
 
 
-rules 
+rules
+
+  // Override the libtemplatelang strategies to plug in the SpoofaxLang-specific
+  // compile-unload cleanup strategy.
+
   //several events regarding the current compiler session. 
   override with-spxverify(s) = with-verify( s ,  compile-unload )  
   
