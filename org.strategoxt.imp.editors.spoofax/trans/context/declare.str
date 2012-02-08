@@ -24,7 +24,7 @@ rules
 	
 	init-declarations = 
 		init-record-signatures;
-		init-template-options
+		templatelang-init-options
     
 rules
   declare-spx-global-symbols =
@@ -82,18 +82,8 @@ rules
       
   declare-local-symbols: ESVSection(def*) -> <id>
 
-  // TemplateLang
-  declare-local-symbols:
-    TemplateSection(definition*) -> TemplateSection(declared-definition*)
-    with
-     <map(declare-template)> definition* => declared-definition* 
-
-  // TemplateLang
-  // FIXME: move to spoofax.configuration?
-  declare-local-symbols:
-  	TemplateOptions(option*) -> TemplateOptions(declared-option*)
-  	with
-  	  <map(declare-template-option)> option* => declared-option* 
+  // hook up to TemplateLang
+  declare-local-symbols = templatelang-declare-section
 
 rules
 
