@@ -73,6 +73,7 @@
             	<targetfileset file="${src-gen2}/${strmodule}.java"/>
 	        </dependset>
         	
+            <available file="${src-gen2}/${strmodule}.java" property="strc-java.available"/>
           	<antcall target="copy-jar"/>
             <antcall target="copy-rtree"/>
         		<antcall target="spx.stratego.jvm.helper">
