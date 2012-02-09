@@ -1,7 +1,8 @@
 module context/resolve-declarations
 
 imports
-	include/SpoofaxLang 
+	include/SpoofaxLang
+	include/libtemplatelang 
 	lib/editor-common.generated
 imports 
 	context/-

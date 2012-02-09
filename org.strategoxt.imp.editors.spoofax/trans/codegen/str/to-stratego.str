@@ -1,6 +1,7 @@
 module codegen/str/to-stratego
 imports
   libstratego-lib
+  libstrc
   include/libtemplatelang
 	lib/editor-common.generated
 imports

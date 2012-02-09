@@ -7,6 +7,7 @@ imports
 	normalize/signatures
 imports 
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	common
 	utils/annotations

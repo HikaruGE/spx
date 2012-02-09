@@ -12,6 +12,7 @@ imports
 imports	
 	lib/editor-common.generated 
 	include/SpoofaxLang
+	include/libtemplatelang
 imports	
 	context/-
 	normalize/signatures

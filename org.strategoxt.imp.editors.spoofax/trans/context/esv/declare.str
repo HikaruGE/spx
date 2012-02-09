@@ -2,6 +2,7 @@ module context/esv/declare
 
 imports
 	include/SpoofaxLang
+	include/libtemplatelang
 	context/-
 	context/sdf/-
 	utils/debug

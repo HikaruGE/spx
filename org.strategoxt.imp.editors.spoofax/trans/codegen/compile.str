@@ -18,6 +18,7 @@ imports
 	config
 imports
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	analyze/main
 	lib/editor-common.generated
