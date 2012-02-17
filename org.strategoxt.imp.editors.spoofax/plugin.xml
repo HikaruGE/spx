@@ -143,11 +143,6 @@
                   definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.module">
             </reference>
          </activeWhen>
-         <enabledWhen>
-            <reference
-                  definitionId="org.strategoxt.imp.editors.spoofax.ui.handlers.SpoofaxlangDeleteHandler.elementSelected.module">
-            </reference>
-         </enabledWhen>
       </handler>
       
       <!-- Refresh handlers -->  

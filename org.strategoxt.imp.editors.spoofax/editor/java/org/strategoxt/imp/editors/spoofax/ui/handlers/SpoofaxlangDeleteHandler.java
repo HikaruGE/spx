@@ -12,7 +12,7 @@ public class SpoofaxlangDeleteHandler extends AbstractHandler {
 		ISelection currentSelection = HandlerUtil.getCurrentSelection(event);
 
 		//TODO  IMPLEMENT : SPOOFAXLANG SPECIFIC DELETE  
-		System.out.println("Delete " + currentSelection);
+		System.out.println("TODO : Delete " + currentSelection + ". currently it is not implemetned. ");
 		
 		return null;
 	}
