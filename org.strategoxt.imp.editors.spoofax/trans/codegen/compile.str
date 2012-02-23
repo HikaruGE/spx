@@ -121,7 +121,7 @@ rules
 						dbg-compiler(!$[----compile-packages-of:: No errors found.]);
 						// compiling additional packages 
 						// where current packages are imported to ( forward references) 
-						// Lazy/Incremental compilation is employed.
+						// Lazy/Incremental compilation is applied.
 						// only compiling following packages if 
 						// there is no error from compiling current packages and all its depending packages
 						if should-compile-forward-refs then 

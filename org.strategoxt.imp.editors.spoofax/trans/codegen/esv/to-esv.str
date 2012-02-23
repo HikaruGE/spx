@@ -81,8 +81,11 @@ rules
  				<inject-package-ctree><get-main-file-name><GetEnclosingPackageName>,   // adding ctree import by default
 	 			<inject-table-definition><get-main-file-name><GetEnclosingPackageName>,   // default table definition
 	 			esv-sections*
-	 	 	)
-	 	 	; get-templatelang-specific-esv-sections(|<GetEnclosingPackageName>,module-qname'*)// Performing templatelang related transformations   
+	 	 	);
+	 	 	if templatelang-enabled then  
+	 	 		debug(!"inside template language enabled");
+	 	 		get-templatelang-specific-esv-sections(|<GetEnclosingPackageName>,module-qname'*)// Performing templatelang related transformations   
+ 			end
  			; ensure-lang-id-added(|<GetEnclosingPackageName>)
  			; esv-aterm := Module(package-esv-main-name, Import([]), <id>) // Final esv-aterm
  			; <save-artifact(WriteToBinaryFile | package-qname , root-directory , <get-main-output-path(|$[[<get-main-file-name><GetEnclosingPackageName>].main], "esv")>(root-directory , package-qname))>esv-aterm

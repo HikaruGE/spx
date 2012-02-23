@@ -86,12 +86,11 @@ rules
  		  ; dbg-compiler(!$[CodeGen | STR | Generate-str-main from package-name: [<print-as-string>package-qname]])
  		  ; with-spxverify(
 	 			 main-str-module-name :=  <get-main-file-name><GetEnclosingPackageName>
-	       ; pp-module-name := <conc-strings>(main-str-module-name, "-prettyprinter")
-				 ; str-aterm := Module(main-str-module-name, [
-				   	Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*),
-				    Imports([Import(pp-module-name)])
-		 		   ]
-			     )
+	       		 ; pp-module-name := <conc-strings>(main-str-module-name, "-prettyprinter")
+				 ; str-aterm := Module(
+				   	main-str-module-name, 
+				   	<get-main-imports(|pp-module-name , module-qname*)>
+		 		 )
 	 			 ; str-string := <pp-stratego-string> <parenthesize-Stratego>  str-aterm
 		    )
 		  ; with-spxverify(
@@ -113,7 +112,7 @@ rules
 				        	pp-aterm := <template-sections-to-stratego> section'*
 				        )  
 				   	 //TVO-FIXME:|}
-			       ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
+			       	 ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
 				     ; pp-qname := <QName(at-last([<conc-strings>(<id>, "-prettyprinter")]))> package-qname
 				     ; <save-artifact(save-to-file      | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "str")>(root-directory, pp-qname))> pp-string
 				     ; <save-artifact(WriteToBinaryFile | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "rtree")>(root-directory, pp-qname))> pp-aterm
@@ -122,6 +121,15 @@ rules
 				end
 rules
 
+	get-main-imports(|pp-module-name , module-qname*) = 
+		if templatelang-enabled then 
+			![Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*)
+			 ,Imports([Import(pp-module-name)])]	
+		else
+		 	![Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*)]
+		end 
+	
+	
 	// get name analysis for  the specified sections
 	get-name-analysis :  
 		sections* -> result

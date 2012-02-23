@@ -53,8 +53,8 @@ rules
     																		<to-sdf-section-block/* TVO-FIXME: ;sdf2conflicts-store-sdf */>section* 
     																		)
     	; dbg-compiler(!$[ Codegen | SDF | Saving the artifacts of [<print-as-string> module-untyped-qname].])
-			; <save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string 
-			; dbg-compiler(!$[ Codegen | SDF | Finishing generation of SDF for [<print-as-string> module-untyped-qname].])
+		; <save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string 
+		; dbg-compiler(!$[ Codegen | SDF | Finishing generation of SDF for [<print-as-string> module-untyped-qname].])
 
 	
 	

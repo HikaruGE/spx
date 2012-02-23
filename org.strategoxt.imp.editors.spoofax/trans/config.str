@@ -58,7 +58,7 @@ rules
 		  , CodeGeneration([OutputDirectory(<default_output_directory>),STROutputMode(<default_stroutput_strategy>)])
 		  , Debug([DebugNone()])  
 		  , SpxProjects([])
-		  , TemplateLang(TemplatelangEnabled())    
+		  , TemplateLang(TemplatelangDisabled())    
 		  ]
 		)	
 	
