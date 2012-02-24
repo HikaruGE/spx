@@ -35,16 +35,16 @@ context-free syntax
 priorities
 
     {
-    <Symbol-CF> <LAYOUT?-CF> "?"            -> <Symbol-CF>
-    <Symbol-CF> <LAYOUT?-CF> "*"             -> <Symbol-CF>
-    <Symbol-CF> <LAYOUT?-CF> "+"             -> <Symbol-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "?"            -> <Symbol[[SDF]]-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "*"             -> <Symbol[[SDF]]-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "+"             -> <Symbol[[SDF]]-CF>
     }
     >
-    <Symbol-CF> <LAYOUT?-CF> "|" <Symbol-CF> -> <Symbol-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "|" <LAYOUT?-CF> <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF>
     >
     {
-     <Namespace-CF> <LAYOUT?-CF> "@=" <LAYOUT?-CF> <Symbol-CF> -> <Symbol-CF>
-     <Namespace-CF>              "@"               <Symbol-CF> -> <Symbol-CF> 
+     <Namespace-CF> <LAYOUT?-CF> "@=" <LAYOUT?-CF> <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF>
+     <Namespace-CF>              "@"               <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF> 
     } 
 
 lexical restrictions
