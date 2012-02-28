@@ -1,0 +1,73 @@
+module emf/spx-to-ecore
+	
+imports
+	include/SpoofaxLang
+	lib/ecore-signatures
+	lib/namespacelib
+	emf/namespaces
+	emf/projections
+	
+strategies
+	spx-to-ecore = topdown(try(to-ecore))
+		
+rules
+	to-ecore:
+		CompilationUnit(
+		  []
+		, [ Package(
+		      qName
+		    , modules
+		    )
+		  ]
+		)	-> EPackage(packageName, productions)
+	where
+		packageName := <to-ecore> qName;
+		productions := <collect-om(?prod(_, _, _))> modules
+	
+	
+	to-ecore:
+		QName(packageName) -> <rtrim-chars(?'.')> <concat-strings> <map(add-dot)> packageName
+	add-dot:
+		string -> <conc-strings> (string, ".")
+	
+	to-ecore:
+		prod(lhs, sort, attrs(attributes)) -> EClass(name, children)
+		where 
+			constructor := <getfirst(?Constructor(consName))> attributes;
+			name := <trim-chars(?'"')> consName;
+			children := <remove-all(?lit(_))> lhs
+
+	to-ecore:
+		sort(intOrString) -> EAttribute(name, type, properties)
+		where 
+			name := "name";
+			type := <int-or-string> intOrString;
+			properties := []
+
+	int-or-string:
+		"ID" -> EString()
+	int-or-string:
+		"INT" -> EInt()
+
+	to-ecore:
+		sort(x) -> <to-reference(|properties)> x
+		where 
+			not (<int-or-string> x);
+			properties := [LowerBound(1), UpperBound(1)]
+
+	to-ecore:
+		iter(sort(x)) -> <to-reference(|properties)> x
+		where
+			properties := [LowerBound(0), UpperBound(1)]
+					
+	to-ecore:
+		iter-star(sort(x)) -> <to-reference(|properties)> x
+		where
+			properties := [LowerBound(0), UpperBound(-1)]
+
+	to-reference(|properties):
+		sort -> EReference(name, UserDefined(type), properties)
+		where
+			name := "name";
+			type := <project-declaration(get-constr|Production())> sort
+

@@ -35,6 +35,9 @@ imports
 imports
 	 editor/main
 	 codegen/main
+imports
+	 emf/main
+	
 /*
 	unit-tests/utils/-
 	unit-tests/-
@@ -66,7 +69,7 @@ rules
     with
       filename := <guarantee-extension(|"aterm")> path;
       result   := selected // we just return the input term
-
+       
 strategies
 
   main =
@@ -82,6 +85,7 @@ strategies
     normalize;
     generate-name-analysis;
     build-incrementally-service;
+    generate-ecore-stage1; generate-ecore-stage2; generate-ecore-stage3;
     // Completions
     editor-complete;
     // References

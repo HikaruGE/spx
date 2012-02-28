@@ -1,0 +1,11 @@
+module emf/projections
+
+imports
+	include/SpoofaxLang
+
+rules
+	get-constr:
+		prod(lhs, sort(x), attrs(attributes)) -> name
+		where
+			constructor := <getfirst(?Constructor(consName))> attributes;
+			name := <trim-chars(?'"')> consName

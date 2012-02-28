@@ -1,0 +1,84 @@
+module ecore-to-xml
+	
+imports
+	lib/ecore-signatures
+	lib/xml/xml-doc
+	
+strategies
+	ecore-to-xml = topdown(try(to-xml))
+		
+rules
+	to-xml:
+		EPackage(name, children) -> Document(prologue, element, epilogue)
+		where 
+			xMLDecl := XMLDecl(VersionDecl(Version("1.0")), Some(EncodingDecl(Encoding("UTF-8"))), None());
+			prologue := Prologue(Some(xMLDecl), [], None());
+	
+			qName := QName(Some(Prefix("ecore")), "EPackage");
+			attributes := [
+				Attribute((QName(Some(Prefix("xmi")), "version")), DoubleQuoted([Literal("2.0")])),
+				Attribute((QName(Some(Prefix("xmlns")), "xmi")), DoubleQuoted([Literal("http://www.omg.org/XMI")])),
+				Attribute((QName(Some(Prefix("xmlns")), "xsi")), DoubleQuoted([Literal("http://www.w3.org/2001/XMLSchema-instance")])),
+				Attribute((QName(Some(Prefix("xmlns")), "ecore")), DoubleQuoted([Literal("http://www.eclipse.org/emf/2002/Ecore")])),
+				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(<new>)])),
+				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),
+				Attribute((QName(None(), "nsURI")), DoubleQuoted([Literal("")]))			
+			];
+			element := Element(qName, attributes, children, None()); 
+					
+			epilogue := Epilogue([])		
+		
+	to-xml:
+		EClass(name, children) ->  Element(qName, attributes, children, None())
+		where
+			qName := QName(None(), "eClassifiers");
+			attributes := [
+				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EClass")])),
+				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
+				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)]))
+			]
+	
+	to-xml:
+		EAttribute(name, type, []) -> Element(qName, attributes, children, None())
+		where
+			qName := QName(None(), "eStructuralFeatures");
+			attributes := [
+				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EAttribute")])),
+				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
+				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),
+				Attribute((QName(None(), "eType")), DoubleQuoted([Literal(type)]))			
+			];
+			children := []
+	
+	to-xml:
+		EString() -> "ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EString"
+	to-xml:
+		EInt() -> "ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
+
+//<eStructuralFeatures xsi:type="ecore:EReference" eType="#_iyLj0GGQEeGzQ5n6uCWZNw"/>
+ 
+	
+	to-xml:
+		EReference(name, UserDefined(type), properties) -> Element(qName, attributes, children, None())
+		where
+			qName := QName(None(), "eStructuralFeatures");
+			fixedAttributes := [
+				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EReference")])),
+				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
+				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),				
+				Attribute((QName(None(), "eType")), DoubleQuoted([Literal(type)]))			
+			];
+			optionalAttributes := properties;
+			attributes := Conc(fixedAttributes, optionalAttributes);
+			children := []
+			
+			
+	to-xml:
+		LowerBound(value) -> Attribute((QName(None(), "lowerBound")), DoubleQuoted([Literal(value')]))
+		where
+			value' := <int-to-string> value
+		
+	to-xml:
+		UpperBound(value) -> Attribute((QName(None(), "upperBound")), DoubleQuoted([Literal(value')]))
+		where
+			value' := <int-to-string> value
