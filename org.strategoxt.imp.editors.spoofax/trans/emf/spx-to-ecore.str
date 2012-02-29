@@ -21,7 +21,7 @@ rules
 		  ]
 		)	-> EPackage(packageName, productions)
 	where
-		packageName := <to-ecore> qName;
+		packageName := qName;
 		productions := <collect-om(?prod(_, _, _))> modules
 	
 	
@@ -34,13 +34,27 @@ rules
 		prod(lhs, sort, attrs(attributes)) -> EClass(name, children)
 		where 
 			constructor := <getfirst(?Constructor(consName))> attributes;
-			name := <trim-chars(?'"')> consName;
+			name := <un-double-quote> consName;
 			children := <remove-all(?lit(_))> lhs
+
+	// non-terminal: n@sort(_) -> n
+	// non-terminal: n@iter(_) -> n
+	// non-terminal: n@iter-star(_) -> n
+	// non-terminal: n@label(l, x) -> n
+	// 	where <non-terminal> x
 
 	to-ecore:
 		sort(intOrString) -> EAttribute(name, type, properties)
 		where 
-			name := "name";
+			name := intOrString;
+			type := <int-or-string> intOrString;
+			properties := []
+			
+	to-ecore:
+		label(l, sort(intOrString)) -> EAttribute(name, type, properties)
+		where 
+			label := <get-label> l;
+			name := label;
 			type := <int-or-string> intOrString;
 			properties := []
 
@@ -50,24 +64,59 @@ rules
 		"INT" -> EInt()
 
 	to-ecore:
-		sort(x) -> <to-reference(|properties)> x
+		label(l, x) -> EReference(name, UserDefined(type), properties)
 		where 
-			not (<int-or-string> x);
-			properties := [LowerBound(1), UpperBound(1)]
-
+			name := <get-label> l;
+			(_, type, bounds) := <get-name-type-and-bounds> x;
+			properties := bounds
+		
 	to-ecore:
-		iter(sort(x)) -> <to-reference(|properties)> x
+		x -> EReference(name, UserDefined(type), properties)
 		where
-			properties := [LowerBound(0), UpperBound(1)]
-					
-	to-ecore:
-		iter-star(sort(x)) -> <to-reference(|properties)> x
-		where
-			properties := [LowerBound(0), UpperBound(-1)]
+			(name, type, bounds) := <get-name-type-and-bounds> x;
+			properties := bounds
 
-	to-reference(|properties):
-		sort -> EReference(name, UserDefined(type), properties)
+	get-label: quoted(label) -> label
+	get-label: unquoted(label) -> label
+				
+	get-name-type-and-bounds:
+		sort(s) -> (name, type, [LowerBound(1), UpperBound(1)])
 		where
-			name := "name";
-			type := <project-declaration(get-constr|Production())> sort
+			name := <first-char-to-lowercase> s;
+			type := <project-declaration(get-constr|Production())> s
+	get-name-type-and-bounds:
+		iter(sort(s)) -> (name, type, [LowerBound(0), UpperBound(1)])
+		where
+			name := <first-char-to-lowercase> s;
+			type := <project-declaration(get-constr|Production())> s
+	get-name-type-and-bounds:
+		iter-star(sort(s)) -> (name, type, [LowerBound(0), UpperBound(-1)])
+		where
+			name := <make-plural> <first-char-to-lowercase> s;
+			type := <project-declaration(get-constr|Production())> s
 
+	first-char-to-lowercase:
+		string -> string'	
+		where
+			(head, tail) := <split-Cons> <explode-string> string;
+			head' := <to-lower> head;
+			string' := <implode-string> <conc> ([head'], tail)
+	
+	make-plural:
+		string -> string'
+		where
+			not ( <string-ends-with(|"y")> string );
+			string' := <conc-strings> (string, "s")
+			
+	make-plural:
+		string -> string'
+		where
+			<string-ends-with(|"y")> string;
+			init := <implode-string> <init> <explode-string> string;
+			string' := <conc-strings> (init, "ies")
+			
+	
+
+signature
+  constructors
+	sort	: actualSort * annotation -> sort

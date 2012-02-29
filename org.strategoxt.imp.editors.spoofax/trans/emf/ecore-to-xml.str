@@ -4,6 +4,13 @@ imports
 	lib/ecore-signatures
 	lib/xml/xml-doc
 	
+overlays 
+	
+	XMLAttribute(name, literal) = 
+		Attribute(QName(None(), name), DoubleQuoted([Literal(literal)]))
+	XMLAttribute(prefix, name, literal) = 
+		Attribute(QName(Some(Prefix(prefix)), name), DoubleQuoted([Literal(literal)]))
+		
 strategies
 	ecore-to-xml = topdown(try(to-xml))
 		
@@ -16,13 +23,13 @@ rules
 	
 			qName := QName(Some(Prefix("ecore")), "EPackage");
 			attributes := [
-				Attribute((QName(Some(Prefix("xmi")), "version")), DoubleQuoted([Literal("2.0")])),
-				Attribute((QName(Some(Prefix("xmlns")), "xmi")), DoubleQuoted([Literal("http://www.omg.org/XMI")])),
-				Attribute((QName(Some(Prefix("xmlns")), "xsi")), DoubleQuoted([Literal("http://www.w3.org/2001/XMLSchema-instance")])),
-				Attribute((QName(Some(Prefix("xmlns")), "ecore")), DoubleQuoted([Literal("http://www.eclipse.org/emf/2002/Ecore")])),
-				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(<new>)])),
-				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),
-				Attribute((QName(None(), "nsURI")), DoubleQuoted([Literal("")]))			
+				XMLAttribute("xmi", "version", "2.0"),
+				XMLAttribute("xmlns", "xmi", "http://www.omg.org/XMI"),
+				XMLAttribute("xmlns", "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+				XMLAttribute("xmlns", "ecore", "http://www.eclipse.org/emf/2002/Ecore"),
+				XMLAttribute("xmi", "id", <conc-strings> ("id_", <new> name)),
+				XMLAttribute("name", name),
+				XMLAttribute("nsURI", "")		
 			];
 			element := Element(qName, attributes, children, None()); 
 					
@@ -33,9 +40,9 @@ rules
 		where
 			qName := QName(None(), "eClassifiers");
 			attributes := [
-				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EClass")])),
-				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
-				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)]))
+				XMLAttribute("xsi", "type", "ecore:EClass"),
+				XMLAttribute("xmi", "id", <conc-strings> ("id_", name)),
+				XMLAttribute("name", name)
 			]
 	
 	to-xml:
@@ -43,10 +50,10 @@ rules
 		where
 			qName := QName(None(), "eStructuralFeatures");
 			attributes := [
-				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EAttribute")])),
-				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
-				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),
-				Attribute((QName(None(), "eType")), DoubleQuoted([Literal(type)]))			
+				XMLAttribute("xsi", "type", "ecore:EAttribute"),
+				XMLAttribute("xmi", "id", <conc-strings> ("id_", <new> name)),
+				XMLAttribute("name", name),
+				XMLAttribute("eType", type)		
 			];
 			children := []
 	
@@ -55,18 +62,16 @@ rules
 	to-xml:
 		EInt() -> "ecore:EDataType http://www.eclipse.org/emf/2002/Ecore#//EInt"
 
-//<eStructuralFeatures xsi:type="ecore:EReference" eType="#_iyLj0GGQEeGzQ5n6uCWZNw"/>
- 
-	
 	to-xml:
 		EReference(name, UserDefined(type), properties) -> Element(qName, attributes, children, None())
 		where
 			qName := QName(None(), "eStructuralFeatures");
 			fixedAttributes := [
-				Attribute((QName(Some(Prefix("xsi")), "type")), DoubleQuoted([Literal("ecore:EReference")])),
-				Attribute((QName(Some(Prefix("xmi")), "id")), DoubleQuoted([Literal(name)])), //TODO generate unique id
-				Attribute((QName(None(), "name")), DoubleQuoted([Literal(name)])),				
-				Attribute((QName(None(), "eType")), DoubleQuoted([Literal(type)]))			
+				XMLAttribute("xsi", "type", "ecore:EReference"),
+				XMLAttribute("xmi", "id", <conc-strings> ("id_", <new> name)),
+				XMLAttribute("name", name),
+				XMLAttribute("eType", <conc-strings> ("id_", type)), 
+				XMLAttribute("containment", "true")
 			];
 			optionalAttributes := properties;
 			attributes := Conc(fixedAttributes, optionalAttributes);
@@ -74,11 +79,12 @@ rules
 			
 			
 	to-xml:
-		LowerBound(value) -> Attribute((QName(None(), "lowerBound")), DoubleQuoted([Literal(value')]))
+		LowerBound(value) -> XMLAttribute("lowerBound", value')
 		where
 			value' := <int-to-string> value
 		
 	to-xml:
-		UpperBound(value) -> Attribute((QName(None(), "upperBound")), DoubleQuoted([Literal(value')]))
+		UpperBound(value) ->  XMLAttribute("upperBound", value')
 		where
 			value' := <int-to-string> value
+			

@@ -22,7 +22,7 @@ rules
 	generate-ecore-stage2:
 	    (selected, position, ast, path, project-path) -> (filename, result)
 	    with
-	      filename := <guarantee-extension(|"xml.aterm")> path;
+	      filename := <guarantee-extension(|"ecore.xml.aterm")> path;
 	      result   := <spx-to-xml-stage2> ast
  
 	generate-ecore-stage3:
