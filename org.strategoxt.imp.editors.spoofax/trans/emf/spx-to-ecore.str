@@ -8,8 +8,8 @@ imports
 	emf/projections
 	
 strategies
-	spx-to-ecore = topdown(try(to-ecore))
-		
+	spx-to-ecore = topdown(try(to-ecore)); create-superclasses
+
 rules
 	to-ecore:
 		CompilationUnit(
@@ -19,81 +19,113 @@ rules
 		    , modules
 		    )
 		  ]
-		)	-> EPackage(packageName, productions)
+		)	-> EPackage(properties, children)
 	where
-		packageName := qName;
-		productions := <collect-om(?prod(_, _, _))> modules
-	
+		properties := [Id(qName), Name(qName)];
+		children := <collect-om(?prod(_, _, _))> modules
 	
 	to-ecore:
 		QName(packageName) -> <rtrim-chars(?'.')> <concat-strings> <map(add-dot)> packageName
-	add-dot:
-		string -> <conc-strings> (string, ".")
-	
-	to-ecore:
-		prod(lhs, sort, attrs(attributes)) -> EClass(name, children)
-		where 
-			constructor := <getfirst(?Constructor(consName))> attributes;
-			name := <un-double-quote> consName;
-			children := <remove-all(?lit(_))> lhs
-
-	// non-terminal: n@sort(_) -> n
-	// non-terminal: n@iter(_) -> n
-	// non-terminal: n@iter-star(_) -> n
-	// non-terminal: n@label(l, x) -> n
-	// 	where <non-terminal> x
-
-	to-ecore:
-		sort(intOrString) -> EAttribute(name, type, properties)
-		where 
-			name := intOrString;
-			type := <int-or-string> intOrString;
-			properties := []
-			
-	to-ecore:
-		label(l, sort(intOrString)) -> EAttribute(name, type, properties)
-		where 
-			label := <get-label> l;
-			name := label;
-			type := <int-or-string> intOrString;
-			properties := []
-
-	int-or-string:
-		"ID" -> EString()
-	int-or-string:
-		"INT" -> EInt()
-
-	to-ecore:
-		label(l, x) -> EReference(name, UserDefined(type), properties)
-		where 
-			name := <get-label> l;
-			(_, type, bounds) := <get-name-type-and-bounds> x;
-			properties := bounds
 		
 	to-ecore:
-		x -> EReference(name, UserDefined(type), properties)
-		where
-			(name, type, bounds) := <get-name-type-and-bounds> x;
-			properties := bounds
+		prod(lhs, sort, attrs(attributes)) -> EClass(properties, children)
+		where 
+			constructor := <getfirst(?Constructor(_))> attributes;
+			classname := <to-unique-classname> (sort, constructor);
+			name := Name(classname);
+			identifier := Id(classname);
+			properties := <try(add-super-type(|sort))> [identifier, name];
+			children := <remove-all(?lit(_))> lhs	
+			
+	to-ecore:
+		sort(primitiveType) -> EAttribute(properties)
+		where 
+			name := Name(primitiveType);
+			identifier := Id(<new>);
+			type := Type(<type-to-ecore> primitiveType);
+			properties := [identifier, name, type]
+			
+	to-ecore:
+		label(l, sort(primitiveType)) -> EAttribute(properties)
+		where 
+			label := <get-label> l;
+			name := Name(label);
+			identifier := Id(<new>);
+			type := Type(<type-to-ecore> primitiveType);
+			properties := [identifier, name, type]
 
-	get-label: quoted(label) -> label
-	get-label: unquoted(label) -> label
-				
-	get-name-type-and-bounds:
-		sort(s) -> (name, type, [LowerBound(1), UpperBound(1)])
+	to-ecore:
+		label(l, x) -> EReference(properties')
+		where 
+			properties := <get-properties> x;
+			name := <get-label> l;
+			properties' := <map((Name(_) -> Name(name)) <+ id)> properties
+		
+	to-ecore:
+		x -> EReference(properties)
+		where
+			properties := <get-properties> x
+
+	type-to-ecore:
+		"ID" -> EString()
+		
+	type-to-ecore:
+		"INT" -> EInt()
+
+
+rules
+	
+	add-super-type(|sort):
+		properties -> properties'
+		where
+			s := <get-sort> sort;
+			not ( <get-unique-declaration(|Production())> s );
+			properties' := <conc> (properties, [ESuperType(s)])
+			
+	to-unique-classname:
+		(sort(s), Constructor(c)) -> constructor
+		where
+			constructor := <un-double-quote> c
+		where
+			<get-unique-declaration(|Production())> s
+			+ not ( <equal> (s, constructor) )
+			
+	to-unique-classname:
+		(sort(s), Constructor(c)) -> <concat-strings> [constructor, "_", <new>]
+		where
+			constructor := <un-double-quote> c;
+			not ( <get-unique-declaration(|Production())> s );
+			<equal> (s, constructor)
+
+	get-properties:
+		sort(s) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(1)]
 		where
 			name := <first-char-to-lowercase> s;
-			type := <project-declaration(get-constr|Production())> s
-	get-name-type-and-bounds:
-		iter(sort(s)) -> (name, type, [LowerBound(0), UpperBound(1)])
+			type := <get-type> s
+	get-properties:
+		iter(sort(s)) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(1)]
 		where
 			name := <first-char-to-lowercase> s;
-			type := <project-declaration(get-constr|Production())> s
-	get-name-type-and-bounds:
-		iter-star(sort(s)) -> (name, type, [LowerBound(0), UpperBound(-1)])
+			type := <get-type> s
+	get-properties:
+		iter-star(sort(s)) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(1)]
 		where
 			name := <make-plural> <first-char-to-lowercase> s;
-			type := <project-declaration(get-constr|Production())> s
+			type := <get-type> s
+			
+	get-type:
+		s -> type
+		where 
+			<get-unique-declaration(|Production())> s;
+			type := <project-declaration(get-constr|Production())> s		
+
+	get-type:
+		s -> s
+		where 
+			not ( <get-unique-declaration(|Production())> s )
+
+
+rules
 
 	first-char-to-lowercase:
 		string -> string'	
@@ -114,9 +146,27 @@ rules
 			<string-ends-with(|"y")> string;
 			init := <implode-string> <init> <explode-string> string;
 			string' := <conc-strings> (init, "ies")
-			
-	
 
-signature
-  constructors
-	sort	: actualSort * annotation -> sort
+	add-dot:
+		string -> <conc-strings> (string, ".")
+
+
+
+rules
+
+	create-superclasses:
+		EPackage(properties, classes) -> EPackage(properties, classes')
+		where
+			non-unique-sorts := <make-set> <remove-all(get-unique-declaration(|Production()))> <project-all-declarations(get-sort|Production())>;
+			super-classes := <map(create-superclass)> non-unique-sorts;
+			classes' := <conc> (classes, super-classes)
+			
+	create-superclass:
+		sort ->  EClass(properties, children)
+		where
+			identifier := Id(sort);
+			name := Name(sort);
+			properties := [identifier, name];
+			children := []			
+			
+			

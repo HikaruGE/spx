@@ -6,7 +6,7 @@ imports
 	lib/namespacelib
 
 strategies
-	map-all = alltd(map)
+	map-all = enable-namespace-debugging; alltd(map)
 	
 rules
 		
