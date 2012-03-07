@@ -64,7 +64,7 @@ rules
 				output-path-rtree    := <get-output-path(|"rtree")>(root-dir, module-untyped-qname)
 				; ! " failed to get output-path-rtree @emit-str-rtree"
 			)
-			; str-section-def := <conc>(<collect-om(?STRSection(<id>), conc)> section* ,<get-name-analysis>section*)
+			; str-section-def := <concat>[<collect-om(?STRSection(<id>), conc)> section* ,<get-name-analysis>section*, <get-pretty-printer>section*]
 			; str-aterm := Module(
 			 										 <qname-to-path>module-untyped-qname,
 			 										 <conc>(<to-str-imports-block(|module-untyped-qname)>section*,
@@ -99,26 +99,26 @@ rules
 		  	)
 			; dbg-compiler(!$[ Codegen | STR | Generation of Main STR Module for package : [<print-as-string> package-qname] is done])
 			// Generating pretty-printer if templatelang is enabled 
-			; if templatelang-enabled then    
-					 with-spxverify(
-				    	dbg-compiler(!$[Codegen | STR | Generating prettyprinter from package-name: [<print-as-string> package-qname]]);
-				    	//TVO-FIXME: {|SubtermConflicts:
-					    //TVO-FIXME:  <sdf2conflicts> []
-					      // HACK: this lacks any sanity wrt the original modules in which the SDF was placed ...
-					        section* := <map(get-original-module-definition; ?Module(_, _, <id>)); concat> module-qname*
-				        ; section'* := <filter(?SDFSection(_) + ?SDFSectionEH(_, _) + ?TemplateSection(_))> section*
-				        ; activate-internal-scope(  
-				        	// this uses information collected by sdf2conflicts
-				        	pp-aterm := <template-sections-to-stratego> section'*
-				        )  
-				   	 //TVO-FIXME:|}
-			       	 ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
-				     ; pp-qname := <QName(at-last([<conc-strings>(<id>, "-prettyprinter")]))> package-qname
-				     ; <save-artifact(save-to-file      | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "str")>(root-directory, pp-qname))> pp-string
-				     ; <save-artifact(WriteToBinaryFile | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "rtree")>(root-directory, pp-qname))> pp-aterm
-					   ; dbg-compiler(!$[ Codegen | STR | Generation of prettyprinter : [<print-as-string>package-qname] is done.])
-						)
-				end
+			// ; if templatelang-enabled then    
+			// 		 with-spxverify(
+			// 	    	dbg-compiler(!$[Codegen | STR | Generating prettyprinter from package-name: [<print-as-string> package-qname]]);
+			// 	    	//TVO-FIXME: {|SubtermConflicts:
+			// 		    //TVO-FIXME:  <sdf2conflicts> []
+			// 		      // HACK: this lacks any sanity wrt the original modules in which the SDF was placed ...
+			// 		        section* := <map(get-original-module-definition; ?Module(_, _, <id>)); concat> module-qname*
+			// 	        ; section'* := <filter(?SDFSection(_) + ?SDFSectionEH(_, _) + ?TemplateSection(_))> section*
+			// 	        ; activate-internal-scope(  
+			// 	        	// this uses information collected by sdf2conflicts
+			// 	        	pp-aterm := <template-sections-to-stratego> section'*
+			// 	        )  
+			// 	   	 //TVO-FIXME:|}
+			//        	 ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
+			// 	     ; pp-qname := <QName(at-last([<conc-strings>(<id>, "-prettyprinter")]))> package-qname
+			// 	     ; <save-artifact(save-to-file      | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "str")>(root-directory, pp-qname))> pp-string
+			// 	     ; <save-artifact(WriteToBinaryFile | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "rtree")>(root-directory, pp-qname))> pp-aterm
+			// 		   ; dbg-compiler(!$[ Codegen | STR | Generation of prettyprinter : [<print-as-string>package-qname] is done.])
+			// 			)
+			// 	end
 rules
 
 	get-main-imports(|pp-module-name , module-qname*) = 
@@ -139,7 +139,18 @@ rules
 		<+
 			dbg-compiler(!$[ Codegen | STR | Failed name analysis.])
 
-
+  // get pretty printing strategies for syntax templates
+  get-pretty-printer :
+    section* -> result
+    where
+      with-spxverify(
+        if templatelang-enabled then
+          result := <template-sections-to-stratego> section*
+        else
+          result := []
+        end
+        , !" failed to generate pretty printing strategies @get-pretty-printer"
+      )
 
 rules
 
