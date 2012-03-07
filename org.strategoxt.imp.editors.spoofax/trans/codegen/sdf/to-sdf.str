@@ -229,5 +229,5 @@ rules
 		   >(sort, cons) => t 
 			)
   
-  // Hook desugar-sdf-redux to templatelang-desugar-sdf
-  desugar-sdf-redux = templatelang-desugar-sdf
+  // Hook desugar-sdf-redux to templatelang-desugar
+  desugar-sdf-redux = templatelang-desugar

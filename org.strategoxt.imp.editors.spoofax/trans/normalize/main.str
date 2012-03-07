@@ -140,14 +140,14 @@ rules
 	desugar-spx : 
 		SDFSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSection( sectionDef' )
 		where
-			<templatelang-desugar-sdf-top> sectionDef => sectionDef'
+			<templatelang-desugar-top> sectionDef => sectionDef'
 	
 		
   // TODO: Maybe SDFSectionEH can be desugared into SDFSection.
 	desugar-spx : 
 		SDFSectionEH ( eh, sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSectionEH( eh, sectionDef' )
 		where
-    	<templatelang-desugar-sdf-top> sectionDef => sectionDef'
+    	<templatelang-desugar-top> sectionDef => sectionDef'
   
 rules
 	//Desugaring STR sections
