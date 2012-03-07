@@ -86,10 +86,9 @@ rules
  		  ; dbg-compiler(!$[CodeGen | STR | Generate-str-main from package-name: [<print-as-string>package-qname]])
  		  ; with-spxverify(
 	 			 main-str-module-name :=  <get-main-file-name><GetEnclosingPackageName>
-	       		 ; pp-module-name := <conc-strings>(main-str-module-name, "-prettyprinter")
 				 ; str-aterm := Module(
 				   	main-str-module-name, 
-				   	<get-main-imports(|pp-module-name , module-qname*)>
+				   	<get-main-imports(|module-qname*)>
 		 		 )
 	 			 ; str-string := <pp-stratego-string> <parenthesize-Stratego>  str-aterm
 		    )
@@ -121,15 +120,9 @@ rules
 			// 	end
 rules
 
-	get-main-imports(|pp-module-name , module-qname*) = 
-		if templatelang-enabled then 
-			![Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*)
-			 ,Imports([Import(pp-module-name)])]	
-		else
-		 	![Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*)]
-		end 
-	
-	
+  get-main-imports(|module-qname*) =
+    ![Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*)]
+
 	// get name analysis for  the specified sections
 	get-name-analysis :  
 		sections* -> result
@@ -145,7 +138,7 @@ rules
     where
       with-spxverify(
         if templatelang-enabled then
-          result := <template-sections-to-stratego> section*
+          result := <templatelang-desugar-top; template-sections-to-stratego> section*
         else
           result := []
         end

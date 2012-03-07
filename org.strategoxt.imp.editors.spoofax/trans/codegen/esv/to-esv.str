@@ -100,7 +100,7 @@ rules
  				//modules to consider for creating packed.esv
 				<get-all-imported-modules>package-id  => imported-modules*;
 				<conc;make-set>( module-qname'* , imported-modules*) => module-qname*; 
-        <conc>(<map(get-original-module-definition; ?Module(_, _, <template-sections-to-esv>))> module-qname* ,  sections)
+        <conc>(<map(get-original-module-definition; ?Module(_, _, <templatelang-desugar-top; template-sections-to-esv>))> module-qname* ,  sections)
  			else
  				!sections
  			end

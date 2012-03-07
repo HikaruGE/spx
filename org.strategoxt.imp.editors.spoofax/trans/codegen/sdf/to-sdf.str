@@ -105,7 +105,7 @@ rules
 		where
 		  sdf-section* := <conc> (
 			  <collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> sections*,
-			  <collect-om(?TemplateSection(_)); template-sections-to-sdf> sections*
+			  <collect-om(?TemplateSection(_)); templatelang-desugar-top; template-sections-to-sdf> sections*
 			);
 			if <ensure-list-is-not-empty>sdf-section* then
 				sdf-section-block := <to-generated-artifact-block(list-to-conc-grammars; topdown(repeat(desugar-sdf-redux)), \s -> [exports(s)]\)>sdf-section*
