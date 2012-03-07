@@ -82,8 +82,27 @@ rules
       
   declare-local-symbols: ESVSection(def*) -> <id>
 
-  // hook up to TemplateLang
-  declare-local-symbols = templatelang-declare-section
+  // Hook up to TemplateLang:
+  // 1) convert syntax templates to SDF; declare the SDF
+  // 2) convert syntax templates to Stratego; declare the Stratego code
+
+  declare-local-symbols:
+    TemplateSection(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section;
+      <map(template-production-to-sdf); declare-sdf-definition-main> def*;
+      if templatelang-enabled then
+        <map(template-to-prettyprint-strategy); declare-str-local-definition-main> def*
+      end
+      , !"Failed to declare local symbols in TemplateSection :: declare-local-symbols"
+    )
+
+  declare-local-symbols:
+    TemplateOptions(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section
+      , !"Failed to declare local symbols in TemplateOptions :: declare-local-symbols"
+    )
 
 rules
 
