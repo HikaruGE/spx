@@ -140,10 +140,12 @@ rules
 				|}
 				, !$[generate-spx-module:: [<print-as-string>module-typed-qname] Failed. ]
 			)
-			
-	
-	init-code-generation = with-spxverify(<emit-default-signatures>() , "Failed to emit default signatures") 
-	
+
+
+  init-code-generation =
+    with-spxverify(<emit-default-signatures>() , "Failed to emit default signatures");
+    with-spxverify(<emit-default-strategies>() , "Failed to emit default strategies")
+
 	generate-all =
 		with-spxverify( 
 			verify(?m@Module(QName(_)) |<id> , "?Module(QName(_))  ::generate-main")
