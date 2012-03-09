@@ -94,9 +94,11 @@ rules
     where
       Package(QName([package-name | _])) := <GetEnclosingPackageName>
     where try(
-      template-section-to-stratego(|package-name);
-      basic-stratego-desugar-top;
-      declare-stratego-globals-top
+      if templatelang-enabled then
+        template-section-to-stratego(|package-name);
+        basic-stratego-desugar-top;
+        declare-stratego-globals-top
+      end
     )
 
 	declare-global-symbols: SDFSectionEH(_,def*) -> <declare-global-symbols> SDFSection(def*)
@@ -136,9 +138,11 @@ rules
     where
       Package(QName([package-name | _])) := <GetEnclosingPackageName>
     where try(
-      template-section-to-stratego(|package-name);
-      basic-stratego-desugar-top;
-      declare-stratego-globals-top
+      if templatelang-enabled then
+        template-section-to-stratego(|package-name);
+        basic-stratego-desugar-top;
+        declare-stratego-globals-top
+      end
     )
 
   declare-global-symbols:

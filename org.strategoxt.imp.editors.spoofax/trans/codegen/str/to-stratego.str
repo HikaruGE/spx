@@ -195,7 +195,7 @@ rules
 			else
 				str-import-block' := []
 			end;
-	    if templatelang-enabled; <filter(?TemplateSection(_))> sections* => [_ | _] then
+	    if templatelang-enabled; <fetch(?TemplateSection(_))> sections* then
 	      templatelang-import* := [Import("libstratego-gpp"), Import("Globals/TemplateLang")] 
 	    else
 	      templatelang-import* := []
