@@ -138,7 +138,8 @@ rules
     where
       with-spxverify(
         if templatelang-enabled then
-          result := <templatelang-desugar-top; template-sections-to-stratego> section*
+          Package(QName([package-name | _])) := <GetEnclosingPackageName>;
+          result := <templatelang-desugar-top; template-sections-to-stratego(|package-name)> section*
         else
           result := []
         end

@@ -9,6 +9,7 @@ imports
 	context/sdf/declare-signature
 	context/-
 	normalize/signatures
+  normalize/stratego
 imports
 	include/SpoofaxLang
 	lib/editor-common.generated
@@ -72,7 +73,7 @@ rules
 				 
 
 	declare-local-symbols:
-		SDFSectionEH(_,definition*) -><declare-local-symbols>SDFSection(definition*)
+		SDFSectionEH(_,definition*) -> <declare-local-symbols> SDFSection(definition*)
 
 	declare-local-symbols:
 	  STRSection(def*) -> STRSection(m-definition*)
@@ -82,33 +83,23 @@ rules
       
   declare-local-symbols: ESVSection(def*) -> <id>
 
-  // Hook up to TemplateLang:
-  // 1) convert syntax templates to SDF; declare the SDF
-  // 2) convert syntax templates to Stratego; declare the Stratego code
+  declare-local-symbols: TemplateSection(def*) -> <id>
 
-  declare-local-symbols:
-    TemplateSection(def*) -> <id>
-    where with-spxverify(
-      templatelang-declare-section;
-      <map(template-production-to-sdf); declare-sdf-definition-main> def*;
-      if templatelang-enabled then
-        <map(template-to-prettyprint-strategy); declare-str-local-definition-main> def*
-      end
-      , !"Failed to declare local symbols in TemplateSection :: declare-local-symbols"
-    )
-
-  declare-local-symbols:
-    TemplateOptions(def*) -> <id>
-    where with-spxverify(
-      templatelang-declare-section
-      , !"Failed to declare local symbols in TemplateOptions :: declare-local-symbols"
-    )
+  declare-local-symbols: TemplateOptions(def*) -> <id>
 
 rules
 
-	declare-global-symbols: SDFSection(def*) -> <id>
+  declare-global-symbols:
+    SDFSection(def*) -> <id>
+    where
+      Package(QName([package-name | _])) := <GetEnclosingPackageName>
+    where try(
+      template-section-to-stratego(|package-name);
+      basic-stratego-desugar-top;
+      declare-stratego-globals-top
+    )
 
-	declare-global-symbols: SDFSectionEH(_,def*) -> <id>
+	declare-global-symbols: SDFSectionEH(_,def*) -> <declare-global-symbols> SDFSection(def*)
 
 	declare-global-symbols: s@STRSection(def*) -> STRSection(m-definition*)
 	where
@@ -125,12 +116,37 @@ rules
 				<index-symbol-definition>(current-package-name, ESVSection() ,  declared-definition*)
 				, !$[Failed to index esv section of [current-package-name]] 
 			) 
-	
-  // TemplateLang
-  declare-global-symbols: TemplateSection(def*) -> <id>
 
-  // TemplateLang
-  declare-global-symbols: TemplateOptions(opt*) -> <id>
+  // Hook up to TemplateLang:
+  // 1) convert syntax templates to SDF; declare the SDF
+  // 2) convert syntax templates to Stratego; declare the Stratego code
+
+  declare-global-symbols:
+    TemplateSection(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section
+      , !"Failed to declare global symbols in TemplateSection :: declare-global-symbols"
+    )
+    where try(
+      // Not using template-section-to-sdf, because we do not want to declare
+      // signatures for generated CONTENTCOMPLETE productions.
+      <map(template-production-to-sdf)> def*;
+      declare-sdf-definition-main
+    )
+    where
+      Package(QName([package-name | _])) := <GetEnclosingPackageName>
+    where try(
+      template-section-to-stratego(|package-name);
+      basic-stratego-desugar-top;
+      declare-stratego-globals-top
+    )
+
+  declare-global-symbols:
+    TemplateOptions(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section
+      , !"Failed to declare global symbols in TemplateOptions :: declare-global-symbols"
+    )
 
 rules
 
