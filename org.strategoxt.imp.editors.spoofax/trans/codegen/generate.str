@@ -57,22 +57,20 @@ rules
 	
 	generate-spx-artifacts = 
 		if not(HasErrors) then
-			packages := <get-package-list>
+      packages := <get-package-list>
 	 		; debug-time( 
-			  	new-code-generate-session(
+		      new-code-generate-session(
  					  init-code-generation
 	 				  ; debug-time(
-		  			  	<list-loop(
-			  					generate-spx-package)>packages
-				  	  | $[--Generating the artifacts for all the modified spx])
-					  ;<filter(
-					    		has-language-name-configured)>packages
+	  			  	 <list-loop(generate-spx-package)>packages
+			  	     | $[--Generating the artifacts for all the modified spx])
+		        ; <filter(has-language-name-configured)>packages
 		    		; emit-build-script 
 					)
-	  		| "--Code Generation done"
-	  		) 
+  		    | "--Code Generation done"
+  		  ) 
 		else
-			<debug>$[---------------- Compilation Failed.Please fix the errors before building the artifacts -----------------------]		
+		  <debug>$[---------------- Compilation Failed.Please fix the errors before building the artifacts -----------------------]		
 		end			
 					
 rules 
@@ -85,61 +83,53 @@ rules
     	, !" new code generated session failed unexpectedly. "  
     )  
 	
-	refresh-file = refresh-workspace-file 
-
-	//TODO: OPTIMIZE : get the imports and resue it in all the generation phase rather traversing to find it out each time. 
-	//TODO: OPTIMIZE : DR can be used to construct this imports  
+	// Temp fix : refresh-file doing nothing 
+  // TODO : remove following strategy after merge with the branch 
+  refresh-file = id   
 
 	// generates artifact for spx packages 
 	generate-spx-package: 
 		package-typed-qname@Package(untyped-qname) -> <id>
-		where 
-			dbg-compiler(!$[Generate| Generate code for spx-package| Generating Artifacts for following package: [<print-as-string>]]); 
-			with-spxverify(
-				if not(<get-declared(|CodeGenerated())>package-typed-qname)  then 
-					{|GetEnclosingPackageName:
-							with-spxverify(
-						 		rules (GetEnclosingPackageName := package-typed-qname)
-								, !"Setting GetEnclosingPackageName failed"
-							);  
-							enclosed-module-typed-qnames := <get-enclosed-dirty-modules-to-generate>package-typed-qname;
-							
-							<list-loop(
-									generate-spx-module)>enclosed-module-typed-qnames;// Generates artifacts from all the modules 	
-							
-							<emit-internal-signatures>package-typed-qname;// generating internal signatures 
-							
-							// Since, the language-name is defined for this language 
-							// generate all the main artifacts  for this package
-							// if Language name is not defined for certain packaged, they will not be considered 
-							// as a language , rather will be treated as a langauge library to be reused by other 
-							// languages.
-							if (<get-language-name> package-typed-qname) then
-									<emit-package-signature-main>();
-									<generate-main> package-typed-qname
-							end
+		where dbg-compiler(!$[Generate| Generate code for spx-package| Generating Artifacts for following package: [<print-as-string>]]) 
+    where	with-spxverify(
+				  if not(<get-declared(|CodeGenerated())>package-typed-qname)  then 
+						{| GetEnclosingPackageName
+						 : with-spxverify(
+							  rules (GetEnclosingPackageName := package-typed-qname)
+							  , !"Setting GetEnclosingPackageName failed"
+				       )
+				       ; enclosed-module-typed-qnames := <get-enclosed-dirty-modules-to-generate>package-typed-qname
+			         ; <list-loop( generate-spx-module)>enclosed-module-typed-qnames // Generates artifacts from all the modules
+	             ; <emit-internal-signatures>package-typed-qname;// generating internal signatures 
+							 // Since, the language-name is defined for this language 
+							 // generate all the main artifacts  for this package
+							 // if Language name is not defined for certain packaged, they will not be considered 
+							 // as a language , rather will be treated as a langauge library to be reused by other 
+							 // languages.
+							 if (<get-language-name> package-typed-qname) then
+							   <emit-package-signature-main>()
+						   ; <generate-main> package-typed-qname
+						   end
 						|};		
 						with-spxverify( <store-declared(|CodeGenerated())>package-typed-qname , "failed to store CodeGenerated()")
-					end
+				  end
 					, ! $[Generate| generate-spx-package |[<print-as-string>package-typed-qname] Failed. ]
 				)
 	
 	generate-spx-module: 
 		module-typed-qname@Module(untyped-qname) -> <id>
-		where 
-			dbg-compiler(!$[generate-spx-module::Planning to generate module for semantic problems: [<print-as-string>]]) 
-		where 
-			with-spxverify(
-				dbg-compiler (! $[generate-spx-module::Currently Generating : [<print-as-string>]]);
-				{|GetEnclosingModuleName:
-							// setting the current scope 
-							rules( GetEnclosingModuleName := module-typed-qname);
-					
-							// generating code for the module id
-							<generate-all>module-typed-qname	// generating all the artifacts for the specified module
-				|}
-				, !$[generate-spx-module:: [<print-as-string>module-typed-qname] Failed. ]
-			)
+		where dbg-compiler(!$[generate-spx-module::Planning to generate module for semantic problems: [<print-as-string>]]) 
+		where with-spxverify(
+				    dbg-compiler (! $[generate-spx-module::Currently Generating : [<print-as-string>]]);
+				    {|  GetEnclosingModuleName
+			       :  // setting the current scope 
+				        rules( GetEnclosingModuleName := module-typed-qname);
+					       
+						    // generating code for the module id
+							  <generate-all>module-typed-qname	// generating all the artifacts for the specified module
+			       |}
+				      , !$[generate-spx-module:: [<print-as-string>module-typed-qname] Failed. ]
+			    )
 
 
   init-code-generation =
