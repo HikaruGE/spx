@@ -38,8 +38,16 @@ rules
 					declare-internal( declare-spxmodules-all( declare-global-symbols))
 			  	)
 			|}	
-	)
-	
+	);
+	with-spxverify(
+    if GetEnclosingPackageName; get-language-name => lang-name then
+      // The parenthesize-<lang-name> strategy is automatically added by build system.
+      dbg-compiler(!$[----Declaring parenthesize-[lang-name] strategy]);
+      <declare-stratego-globals-top><basic-stratego-desugar-top>
+          SDefNoArgs($[parenthesize-[lang-name]], Fail())
+    end
+  )
+
 	delcare-spx-scoped-symbols = 
 		dbg-compiler(!$[----Declaring local Symbols for: [<print-as-string>]]);
 		declare-internal(
@@ -116,6 +124,8 @@ rules
 			with-spxverify(
 				//storing esv section
 				<index-symbol-definition>(current-package-name, ESVSection() ,  declared-definition*)
+        // Indexing langauge descriptor for this package if it does exists
+        ; try(<index-language-descriptor><get-declared-language-definition><GetEnclosingModuleName>)
 				, !$[Failed to index esv section of [current-package-name]] 
 			) 
 

@@ -285,8 +285,6 @@ rules
 				
 				; with-spxverify(
 				  	<add-to-compiled-modules>(module-typed-qname,location)
-			  	  // Indexing langauge descriptor for this package if it does exists 
-        		; try(<index-language-descriptor><get-declared-language-definition>module-typed-qname)
     		  	)
 			else
 				dbg-compiler(!$[----Compiling module:: Ignored as already in the queue : [<print-as-string>]]) //this package is not compiled before

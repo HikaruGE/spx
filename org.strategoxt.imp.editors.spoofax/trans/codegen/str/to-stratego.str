@@ -125,27 +125,7 @@ rules
 					; <save-artifact(WriteToBinaryFile | package-qname , root-directory, <get-main-output-path(|main-str-module-name, "rtree")>(root-directory, package-qname))>str-aterm
 		  	)
 			; dbg-compiler(!$[ Codegen | STR | Generation of Main STR Module for package : [<print-as-string> package-qname] is done])
-			// Generating pretty-printer if templatelang is enabled 
-			// ; if templatelang-enabled then    
-			// 		 with-spxverify(
-			// 	    	dbg-compiler(!$[Codegen | STR | Generating prettyprinter from package-name: [<print-as-string> package-qname]]);
-			// 	    	//TVO-FIXME: {|SubtermConflicts:
-			// 		    //TVO-FIXME:  <sdf2conflicts> []
-			// 		      // HACK: this lacks any sanity wrt the original modules in which the SDF was placed ...
-			// 		        section* := <map(get-original-module-definition; ?Module(_, _, <id>)); concat> module-qname*
-			// 	        ; section'* := <filter(?SDFSection(_) + ?SDFSectionEH(_, _) + ?TemplateSection(_))> section*
-			// 	        ; activate-internal-scope(  
-			// 	        	// this uses information collected by sdf2conflicts
-			// 	        	pp-aterm := <template-sections-to-stratego> section'*
-			// 	        )  
-			// 	   	 //TVO-FIXME:|}
-			//        	 ; pp-string := <pp-stratego-string> <parenthesize-Stratego> pp-aterm
-			// 	     ; pp-qname := <QName(at-last([<conc-strings>(<id>, "-prettyprinter")]))> package-qname
-			// 	     ; <save-artifact(save-to-file      | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "str")>(root-directory, pp-qname))> pp-string
-			// 	     ; <save-artifact(WriteToBinaryFile | pp-qname , root-directory, <get-main-output-path(|pp-module-name, "rtree")>(root-directory, pp-qname))> pp-aterm
-			// 		   ; dbg-compiler(!$[ Codegen | STR | Generation of prettyprinter : [<print-as-string>package-qname] is done.])
-			// 			)
-			// 	end
+
 rules
 
   get-main-imports(|module-qname*) =
@@ -166,6 +146,7 @@ rules
     where
       with-spxverify(
         if templatelang-enabled then
+          // FIXME: should use language name, not package name
           Package(QName([package-name | _])) := <GetEnclosingPackageName>;
           result := <templatelang-desugar-top; template-sections-to-stratego(|package-name)> section*
         else
@@ -215,7 +196,8 @@ rules
 			result' := <map(to-str-import);flatten-list>module-qnames*
 		where
 			<to-str-import><get_internal_module_qtname>package-qname => [_, sig-import];
-			result := <conc>([Import("libstratego-lib"),sig-import] , result')
+			parenthesize-str-module-name := $[[<get-main-file-name>package-qname]-parenthesize];
+			result := <conc>([Import("libstratego-lib"), Import(parenthesize-str-module-name), sig-import], result')
 
 rules
 
