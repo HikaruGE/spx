@@ -44,7 +44,13 @@ rules
       // The parenthesize-<lang-name> strategy is automatically added by build system.
       dbg-compiler(!$[----Declaring parenthesize-[lang-name] strategy]);
       <declare-stratego-globals-top><basic-stratego-desugar-top>
-          SDefNoArgs($[parenthesize-[lang-name]], Fail())
+          SDefNoArgs($[parenthesize-[lang-name]], Fail());
+      if templatelang-enabled then
+        // The prettyprint-<lang-name> strategy is added by templatelang code gen.
+        dbg-compiler(!$[----Declaring prettyprint-[lang-name] strategy]);
+        <declare-stratego-globals-top><basic-stratego-desugar-top>
+            SDefNoArgs($[prettyprint-[lang-name]], Fail())
+      end
     end
   )
 
@@ -99,11 +105,9 @@ rules
 
   declare-global-symbols:
     SDFSection(def*) -> <id>
-    where
-      Package(QName([package-name | _])) := <GetEnclosingPackageName>
     where try(
       if templatelang-enabled then
-        template-section-to-stratego(|package-name);
+        template-section-to-stratego;
         basic-stratego-desugar-top;
         declare-stratego-globals-top
       end
@@ -145,11 +149,9 @@ rules
       <map(template-production-to-sdf)> def*;
       declare-sdf-definition-main
     )
-    where
-      Package(QName([package-name | _])) := <GetEnclosingPackageName>
     where try(
       if templatelang-enabled then
-        template-section-to-stratego(|package-name);
+        template-section-to-stratego;
         basic-stratego-desugar-top;
         declare-stratego-globals-top
       end

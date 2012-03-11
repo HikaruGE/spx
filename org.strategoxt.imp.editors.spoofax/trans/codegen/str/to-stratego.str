@@ -146,9 +146,12 @@ rules
     where
       with-spxverify(
         if templatelang-enabled then
-          // FIXME: should use language name, not package name
-          Package(QName([package-name | _])) := <GetEnclosingPackageName>;
-          result := <templatelang-desugar-top; template-sections-to-stratego(|package-name)> section*
+          desugared-section* := <templatelang-desugar-top> section*;
+          if GetEnclosingPackageName;get-language-name => lang-name then
+            result := <template-sections-to-stratego(|lang-name)> desugared-section*
+          else
+            result := <template-sections-to-stratego> desugared-section*
+          end
         else
           result := []
         end
