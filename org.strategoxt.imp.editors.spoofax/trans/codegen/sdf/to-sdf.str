@@ -46,11 +46,10 @@ rules
    		; output-path   := <get-output-path(|"sdf")>(root-directory , module-untyped-qname)
     	; dbg-compiler(!$[ Codegen | SDF | Found Section + Imports for the following module [<print-as-string> module-untyped-qname]])
   	where
-  		// sdf2conflicts here collects information for the parenthesation in the prettyprinter
 			sdf-string := <pp-sdf-to-string> 'module(
 				<qname-to-path>module-untyped-qname, 
     			<to-sdf-imports-block>section* , 
-    			<to-sdf-section-block/* TVO-FIXME: ;sdf2conflicts-store-sdf */>section* 
+    			<to-sdf-section-block>section* 
 			)
     	; <save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string 
 			; dbg-compiler(!$[ Codegen | SDF | Finishing generation of SDF for [<print-as-string> module-untyped-qname].])
