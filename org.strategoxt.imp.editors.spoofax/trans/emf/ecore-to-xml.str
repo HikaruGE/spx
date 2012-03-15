@@ -29,7 +29,7 @@ rules
 				XMLAttribute("xmlns", "xmi", "http://www.omg.org/XMI"),
 				XMLAttribute("xmlns", "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
 				XMLAttribute("xmlns", "ecore", "http://www.eclipse.org/emf/2002/Ecore"),
-				XMLAttribute("nsURI", "")		
+				XMLAttribute("nsURI", "uri")		
 			];
 			attributes := <conc> (fixedAttributes, properties);
 			element := Element(qName, attributes, children, None()); 

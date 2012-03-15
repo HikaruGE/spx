@@ -98,7 +98,7 @@ rules
 			<equal> (s, constructor)
 
 	get-properties:
-		sort(s) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(1)]
+		sort(s) -> [Id(<new> name), Name(name), Type(type), LowerBound(1), UpperBound(1)]
 		where
 			name := <first-char-to-lowercase> s;
 			type := <get-type> s
@@ -108,7 +108,7 @@ rules
 			name := <first-char-to-lowercase> s;
 			type := <get-type> s
 	get-properties:
-		iter-star(sort(s)) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(1)]
+		iter-star(sort(s)) -> [Id(<new> name), Name(name), Type(type), LowerBound(0), UpperBound(-1)]
 		where
 			name := <make-plural> <first-char-to-lowercase> s;
 			type := <get-type> s
