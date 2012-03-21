@@ -113,7 +113,7 @@ rules
 	      p'*            := <filter(is-non-terminal)> p*;
 	      vars           := <map(non-terminal-to-new-var)> p'*;
 	      annotated-vars := <zip(add-namespace-anno-1 <+ add-namespace-anno-2)> (p'*, vars)
-      )
+	     )
 
 rules
 

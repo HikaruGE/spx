@@ -5,7 +5,7 @@ imports
 
 rules 
   
-  with-verify(s, on-fail-exec , msg) = where(verify-stratego(s, on-fail-exec, !$["Internal error: with clause failed unexpectedly. More : [<msg>]]))
+  with-verify(s, on-fail-exec , msg) = where(verify-stratego(s, on-fail-exec, !$["Internal error: [<msg>] - with clause failed unexpectedly. ]))
   
   with-verify(s, on-fail-exec) = where(verify-stratego(s, on-fail-exec, !"Internal error: with clause failed unexpectedly"))
   

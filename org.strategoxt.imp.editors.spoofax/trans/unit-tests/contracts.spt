@@ -1,0 +1,25 @@
+module contracts
+
+language SpoofaxLang
+
+
+test test-contract-requires 
+	![1,2];
+	verify( is-list | <id> , "list expected")
+	=> [1,2]
+	
+	
+	
+test test-contract-requires-failed 
+	![1,2];
+	verify( is-string | <id> , "String expected")
+<+ 
+	![]
+	=> []
+	  
+	
+test test-contract-requires-failed 2 
+	![1,2];
+	verify( is-string | <id> , "String expected")
+	fails
+	

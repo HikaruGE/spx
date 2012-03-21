@@ -1,0 +1,10 @@
+/**
+* Unit tests for the Teststratego language.
+*/
+module parse
+
+language SpoofaxLang
+
+test parse stratego 
+	<parse-stratego-string> "module example rules 	get-project-path = id" 
+	=> Module("example", _) 

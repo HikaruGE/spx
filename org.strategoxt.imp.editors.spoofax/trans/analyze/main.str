@@ -27,22 +27,33 @@ imports
 	utils/contract
 	spoofaxlang
 	common
+	config 
 	
 rules 
-	// performs static analysis and semantic checking 
-	analyze-main= 
+	analyze-main = 
 		with-spxverify(
-			?list-of-package-qnames
-			; <analyze-global>()
-			; <list-loop(analyze-spx-package)>list-of-package-qnames
+			?p*;
+			<analyze-global>();
+			<mapconcat(get-used-by)>p*=> additional-p*;
+			<conc>(p* , additional-p*) => p'*;
+			debug-compiler(!$[Type Checking following packages : [<print-as-string> p'*]]);
+			<list-loop(
+			  	analyze-spx-package
+	  	)> p'*
 			, !"analyze-main failed"
 		)
-	
+		
 rules	// Package specific semantic error checking 
 
-	// verify whether this package will be analyzed or not
-	should-analyze-this-package = not(is-in-analyzed-packages-queue) 
-		
+	set-has-errors = 
+		if not(HasErrors) then 
+			with-spxverify ( 
+				rules(HasErrors :=  True()) // setting up the market to denote there are errors from semantic analysis
+				, !"Failed to set HasErrors to True()"
+			)
+		end
+					
+	should-analyze-this-package = not(is-in-analyzed-packages-queue) // a Perdicate that verify whether this package will be analyzed or not 
 	
 	// Fails if there is any semantic problems 
 	fail-if-has-errors : 
@@ -61,9 +72,9 @@ rules	// Package specific semantic error checking
 			if should-analyze-this-package  then //FOR handling circular referneces   
 				{| GetEnclosingPackageName 
 				 : rules ( 
-		 			 	GetEnclosingPackageName:= package-typed-qname
+		 			 	 GetEnclosingPackageName:= package-typed-qname
 		 			 )
-	 			 ; <analyze>package-typed-qname // analyzing current package's declaration
+	 			 ; <analyze> package-typed-qname // analyzing current package's declaration
 				 ; with-spxverify ( // analyzing all the enclosed module definition
 		   				<list-loop(analyze-spx-module)><get-enclosed-modules>package-typed-qname
 					 )		
@@ -74,12 +85,12 @@ rules	// Package specific semantic error checking
 		    fail
       end
 			
+	// analyze spx-modules for semantic errors 
 	analyze-spx-module: 
 		module-typed-qname@Module(_) -> <id>
 		where 
-			dbg-analysis(! $[Analyze|  analyze-spx-module> Planning to analyze module for semantic problems: [<print-as-string>]] | "analyze-spx-module" , <debug-level-INFO>)    
+			dbg-analysis(! $[Analyze|  analyze-spx-module: Planning to analyze module for semantic problems: [<print-as-string>]] | "analyze-spx-module" , <debug-level-INFO>)    
 		where 
-			
 			if not(<is-a-analyzed-module>module-typed-qname) then
 				<get-module-definition-with-location> module-typed-qname => (module-decl,location);
 				{| GetEnclosingModuleName
@@ -94,12 +105,12 @@ rules	// Package specific semantic error checking
 			 
 rules
 	//lookups for the analyzed problems
-	get-all-analyzed-problems =  all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
+	get-all-analyzed-problems = all-keys-GetSemanticProblems ; map(GetSemanticProblems); unzip-semantic-issuses 
 	
 	get-semantic-problmes-by-file: 
 		file-abs-path ->problems
 		where
-			verify(String | <id> , "String @get-semantic-problmes-by-file")  
+				verify(String | <id> , "String at get-semantic-problmes-by-file")  
 			; get-declared-modules-qname
 			; get-semantic-problems(
 					get-semantic-problmes-at-module-level
@@ -157,34 +168,115 @@ rules
 			)	
 		where		
 			<unzip-semantic-issuses>combined-problmes* => semantic-problems* 
-
-	// Following strategy unzips semantic issues and combines them 
-	// together. Example : Converts a list as following 
-	//				[([a1] , [b1] , [c1])
-	//				([a2] , [b2] , [c2])
-	//				([a3] , [b3] , [c3])
-	//				] 
-	//	to:
-	//			([a1,a2,a3] , [b1,b2,b3] , [c1,c2,c3])
+	
 	unzip-semantic-issuses:
 		list-of-semantic-issues -> unziped-list
 		where
 				<unzip-semantic-issuse(|[] , [], [])>list-of-semantic-issues => unziped-list
-			<+
-				debug(!"unzip semantic issues failed : ");fail
-	
+			
 	// unziping list of semantic issues
 	unzip-semantic-issuse(|errors, warnings, infos) =
 		?[hd-issue|rest-issues];
 		(
-				(!hd-issue => (errs', warns' , infos') <+ <debug> $["Illegal Argument in unzip-semantic-issues : [<print-as-string>hd-issue]"];fail)
-				;err1 := <concat>[errs', errors]
-				;war1 := <concat>[warns', warnings]
-				;inf1 := <concat>[infos', infos]
-				;<unzip-semantic-issuse(|err1, war1, inf1)>rest-issues 
-			 <+
-			  !hd-issue => [];
-			  <unzip-semantic-issuse(|errors, warnings, infos)>rest-issues
+				!hd-issue => (errs', warns' , infos') 
+				; err1 := <concat>[errs', errors]
+				; war1 := <concat>[warns', warnings]
+				; inf1 := <concat>[infos', infos]
+				; <unzip-semantic-issuse(|err1, war1, inf1)>rest-issues 
+		 <+
+		  	!hd-issue => []
+			  ; <unzip-semantic-issuse(|errors, warnings, infos)>rest-issues
 		)
 		
 	unzip-semantic-issuse(|errors, warning, infos) : [] -> (errors, warning, infos)		
+
+
+rules  
+	
+	// pretty-prints all the errors found in the current compile session
+	pp-errors  = collect-all-errors(![] | 0) ; ?(error-entries*,totalNumOfErrors); <pp-error-entries>error-entries*; separate-by(|"\n") ; concat-strings ; !(<id>, totalNumOfErrors) 
+
+	// collects all the errors 
+	collect-all-errors(acc | numErrors): [current-file|other-files]  -> <collect-all-errors(!acc'|numErrors')>other-files
+	where
+		(e, _, _) := <get-semantic-problmes-by-file>current-file;
+		acc' := [(current-file,e)|<acc>()];
+		numErrors' := <addi>(numErrors , <length>e) 
+		
+
+	collect-all-errors(acc | numErrors) : [] -> (<acc>, numErrors) 
+
+	// pretty-prints error entries
+	// found for every file name
+	pp-error-entries : t* -> <filter(pp-error-entries)>t*
+		
+	pp-error-entries : (filename , e*) -> error-string
+	where <is-not-empty-list>e*
+	where 
+		error-string := 
+
+$[
+File: [filename]
+Errors : 
+[<pp-error-entry(|1)> e*]
+
+----------------------------
+
+]
+
+	pp-error-entry( |index ) : [] -> $[] 
+	
+	pp-error-entry( |index ) : [e-first| e-rest*]  -> $[ 
+[<print-as-string>index]. [error-message] 
+[<pp-error-entry( |<inc>index )>e-rest* ]
+] 
+	where 
+		error-message := <?(_,<id>)>e-first
+		
+rules 
+			
+strategies 
+	
+	/*
+	* Gets analyzed AST of the current AST . It traverse the tree 
+	* and updates it based on the current version in the Index .
+	* 
+	* @type  ast -> analyzed-ast
+	*/
+	get-analyzed-ast = origin-track-forced(analyzed-ast)
+	
+rules
+	
+	analyzed-ast:
+		CompilationUnit(moduledef*) -> <analyzed-ast>CompilationUnit([] , [appended-default-package-declaration])
+		where
+			 appended-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
+
+	analyzed-ast:	
+		c@CompilationUnit(import* , package*) ->	CompilationUnit( import* , modified-packages)
+		where
+				<alltd(origin-track-forced(analyzed-package-ast))> package* => modified-packages
+			
+	analyzed-package-ast:
+    Package(Name(package-name) , modules* ) -> result
+    where
+        !QName([package-name]) => package-qname;
+        <analyzed-package-ast>Package( package-qname , modules* ) => result            
+        
+	
+	analyzed-package-ast:
+    p@Package(package-qname@QName(_) , modules* ) -> 	Package(package-qname, modulesdef' )
+    where
+        !package-qname => QName(_);
+        {| GetEnclosingPackageName
+         :		<declare-current-package-scope>Package(package-qname)
+         		; <alltd(origin-track-forced(analyze-module-ast))>modules* => modulesdef'
+        |}
+        
+	analyze-module-ast:
+			m@Module(attrb* , modname , section*) ->	modifiedModuleDescription
+      where
+        	GetEnclosingPackageName  =>  Package(QName(package-name-part*))
+        ; !modname => SPXModuleName(mod-name-string)
+        ; enclosing-module-qualified-typed-name :=  Module(QName([package-name-part*| [mod-name-string]]))
+      	; <get-analyzed-module-ast>enclosing-module-qualified-typed-name  => modifiedModuleDescription                      				

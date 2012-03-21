@@ -29,11 +29,11 @@ rules
 	module-constraint-error : 
 		def@Module(attrb* , s@SPXModuleName(m) , section*) -> (s, $[Multiple declaration of module '[m]' ])
 		where
-			module-qname := <GetEnclosingModuleName> ;
-			<get-enclosed-modules-of-package><GetEnclosingPackageName>
+			module-qname := <GetEnclosingModuleName>
+			; <get-enclosed-modules-of-package><GetEnclosingPackageName>
 			; filter(?module-qname)
 			; is-not-empty-list 
-			; require(ensure-is-unique) // if declaration is not unique, it means that module with this names is declared multiple times in the current package scope
+			; require(ensure-is-unique)  // if declaration is not unique, it means that module with this names is declared multiple times in the current package scope
 	
 rules 
 	//analyzes module errors returns it as a touple of errors , warnings and infos 
@@ -50,10 +50,7 @@ rules
 	append-semantic-problems(s|unziped-issues*):  
 		m@Module(attrb* , modname , section*)  -> semantic-problems*
 		where with-spxverify( 
-			<merge-semantic-problems>( 
-				<s> m , 
-				unziped-issues*
-			)=> semantic-problems*
+			<merge-semantic-problems>( <s> m ,	unziped-issues*)=> semantic-problems*
 		)
 rules
 	
@@ -64,7 +61,7 @@ rules
 			; with-spxverify(
 				  	package-typed-qname := <GetEnclosingPackageName> 
 				  ; module-typed-qname  := <GetEnclosingModuleName>
-				  , !"Failed to create current scope @analyze-module-definition"  	
+				  , !"Failed to initialize context at check-module.analyze-module-definition"  	
 				  )
 			; dbg-analysis(!$[ErrorChecking | Analyzing Semantic Problems of [<print-as-string> (package-typed-qname,module-typed-qname)]] | "analyze-module-definition" , <debug-level-INFO>)
 			; with-spxverify(
@@ -75,7 +72,7 @@ rules
 				<append-semantic-problems(analyze-module-semantics|unziped-issues*)> m  => unziped-issues'*
 				; current-scope := (package-typed-qname ,module-typed-qname)
 				; with-spxverify(  
-						rules( GetSemanticProblems :  current-scope  ->unziped-issues'*)
+						rules( GetSemanticProblems :  current-scope  -> unziped-issues'*)
 					)	
 		where
 			dbg-analysis(! $[ErrorChecking | Found semantic problems for [<print-as-string> (package-typed-qname,module-typed-qname)]  

@@ -19,7 +19,6 @@ imports
 	common
 
 rules
-
 	parse-spx-sources :
 		(sourcedir , searchOption) -> <id>
 		where
@@ -53,10 +52,11 @@ rules
       end
     )
 
- 	parse-and-precompile-if-needed: filename -> <id>
+ 	parse-and-precompile-if-needed: 
+ 		filename -> <id>
  		where
  			if has-extension(|"spx") then
-	 			dbg-compiler(! $[Pre-Compiling| Parsing following file : [<print-as-string>]]);
+	 			debug-compiler(! $[Pre-Compiling| Parsing following file : [<print-as-string>]]);
 	 			open-spx-compilation-unit(
 					spx-compilation-unit-path,
 					spx-precompiled-cache-path,

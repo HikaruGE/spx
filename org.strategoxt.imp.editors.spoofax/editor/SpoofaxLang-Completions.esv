@@ -1,13 +1,25 @@
 module SpoofaxLang-Completions
 
-imports SpoofaxLang-Completions.generated
+//imports SpoofaxLang-Completions.generated
 
 completions
      // Semantic (identifier) completion:
-     completion proposer:
-            editor-complete
+     completion proposer:      editor-complete
+     completion trigger: "imports "
+     completion trigger: "\."
+     
 
+completions                    
+                   
+	completion keyword : "rules"    
+
+completions 
+
+	completion template: "package " <p> " \n\t module " <m>  "\n" (blank)
+	completion template: "module " <m>  "\n" (blank) 
+	
 completions
+    
     // TemplateLang completions
     completion template TemplateProduction : "template" =
       <Sort> "." <Cons> " = <<" (cursor) ">>" (blank)
@@ -40,15 +52,6 @@ completions
 
     completion template:
       "syntax" "\n\t" (blank)
-
-    completion template:
-      "imports" "\n\t" (blank)
-
-    completion template:
-      "exports" "\n\t" (blank)
-
-    completion template:
-      "hiddens" "\n\t" (blank)
 
     completion template:
       "context-free restrictions" "\n\t" (blank)
@@ -179,19 +182,19 @@ completions
 
 completions
 
-  completion template : Strategy =
-    "if" " " <e> " then\n\t" <s> "\nend"
+  completion template : 
+    "if" " " <e> " then\n\t" <s> "\nend" (blank)
 
-  completion template : Strategy =
-    "switch" " " <s> "\n\tcase " <c> ":" " " <s> "\n\totherwise: " <id> "\nend"
+  completion template : 
+    "switch" " " <s> "\n\tcase " <c> ":" " " <s> "\n\totherwise: " <id> "\nend" (blank)
 
-  completion template : Strategy =
-    "let" "\n\t" <x> " = " <s> "\nin\n\t" <s> "\nend"
-
-  completion template : Def =
+  completion template : 
+    "let" "\n\t" <x> " = " <s> "\nin\n\t" <s> "\nend" (blank)
+    
+  completion template : 
     "where" "\n\t" (blank)
 
-  completion template : Def =
+  completion template : 
     "with" "\n\t" (blank)
 
   completion template:
@@ -200,15 +203,10 @@ completions
   completion template:
     "rules" "\n\t" (blank)
 
-  completion template : Decl =
-    "imports" "\n\t" <Module> (blank)
-
   completion template:
     "signature constructors" "\n\t" (blank)
 
   completion template:
     "signature sorts" "\n\t" (blank)
 
-  completion template : Module =
-    "module " <name> "\n\nstrategies\n\n\t"
-
+  

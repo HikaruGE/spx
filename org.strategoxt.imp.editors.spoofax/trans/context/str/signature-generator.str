@@ -66,11 +66,20 @@ rules
       end
 rules 
   
+  strip-annotation : (x ,s,t)  -> (<remove-annotations>x ,s ,t) 
+   
+  strip-annotation : (x , t)  -> (<remove-annotations>x ,t)  
+  
+  strip-annotation : x -> <remove-annotations>x
+  
+   
   signature-to-declaration-id = 
-    (  ?(<id> ,_ ,_)
-    <+ ?(<id> ,_ )  
-    <+ ?<id>)
-    ; remove-annotations
+    (  
+    	?(<id> ,_ ,_) <+ 
+    	?(<id> ,_ )   <+ 
+    	? <id>
+  	)
+  	; remove-annotations
     ; verify(String | <id> , "String @signature-to-declaration-id")     
   	
   

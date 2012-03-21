@@ -7,6 +7,7 @@ import java.util.Set;
 public class SpxPackageDescriptor extends SpxBaseDescriptor{
 
 	private final String packageName; // name of the package 
+
 	private final Set<String> importedPackages; // id of the imported Package 
 	private final Set<String> importedToPackages; // Id of the packages where this package is importedTo 
 	private final Set<SpxModuleDescriptor> enclosedModules;

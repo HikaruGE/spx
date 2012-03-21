@@ -108,12 +108,11 @@ rules
       file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.spx"];
       ast := <parse-spoofaxlang-file> file-path 
     with index-init ; index-clearall
-    with {|currently-precompiling-spx-abspath   
-    		  : current-spx-file-path := file-path; 
-	    			rules( currently-precompiling-spx-abspath :=  current-spx-file-path );    		
-	   				filename := <guarantee-extension(|"aterm.desugared")> path;
-	    		  result'   := <normalize-all> ast // returning desugared AST
-		     |};
+    with 
+    	current-spx-file-path := file-path; 
+	    filename := <guarantee-extension(|"aterm.desugared")> path;
+	    result'   := <normalize-all> ( ast , currently-precompiling-spx-abspath) // returning desugared AST
+	  with  
 		     index-init;
          packageQName    := Package(QName(["test" , "lang"]));
          moduleQName     := Module(QName(["test" , "lang" , "Identifier"]));

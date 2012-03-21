@@ -73,11 +73,11 @@ public class GetSpxIndexSummaryCommand implements ISpxlangCommand<String, IStrat
 
 		} catch (StrategoErrorExit e) {
 			Environment.logException(e);
-			throw new StrategoException("Project builder failed: " + e.getMessage() + "\nLog follows:\n\n"
+			throw new StrategoException("Command Failed: " + e.getMessage() + "\nLog follows:\n\n"
 					+ agent.getLog(), e);
 		} catch (StrategoExit e) {
 			if (e.getValue() != 0) {
-				throw new StrategoException("Project builder failed.\nLog follows:\n\n"
+				throw new StrategoException("Command Failed.\nLog follows:\n\n"
 						+ agent.getLog(), e);
 			}
 		}
@@ -99,7 +99,7 @@ public class GetSpxIndexSummaryCommand implements ISpxlangCommand<String, IStrat
 
 	}
 
-	private void setCommandIsActiveTo( boolean value){
+	private void setCommandIsActiveTo(boolean value){
 		active = value;
 	}
 

@@ -65,7 +65,7 @@ rules
 		 		Package(package-qname)   := <GetEnclosingPackageName>,
 		 		!" Failed to get current-project-path or enclosing package name @generate-esv-main"
 		 	)
- 			; dbg-compiler(!$[CodeGen | ESV | Generate-esv-main  : [<print-as-string>package-qname]])
+ 			; debug-compiler(!$[Generate-esv-main  : [<print-as-string>package-qname]] | <debug-at-linker> , <debug-level-INFO>)
 			; with-spxverify(
 		 			 relative-autogen-path := <qname-to-path>package-qname
 		 			; package-esv-main-name := $[[<get-main-file-name><GetEnclosingPackageName> ].main.packed]
@@ -87,7 +87,7 @@ rules
  			; ensure-lang-id-added(|<GetEnclosingPackageName>)
  			; esv-aterm := Module(package-esv-main-name, Import([]), <id>) // Final esv-aterm
  			; <save-artifact(WriteToBinaryFile | package-qname , root-directory , <get-main-output-path(|$[[<get-main-file-name><GetEnclosingPackageName>].main], "esv")>(root-directory , package-qname))>esv-aterm
-			; dbg-compiler(!$[$[$Codegen | ESV |$]$ Finished generation of packed esv for [<print-as-string>package-qname]])
+			; debug-compiler(!$[Finished generation of packed esv for [<print-as-string>package-qname]] | <debug-at-linker> , <debug-level-INFO>)
 			, !"Failed to generate ESV main"
 		)
 	

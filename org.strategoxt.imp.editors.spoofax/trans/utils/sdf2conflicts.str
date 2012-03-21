@@ -15,6 +15,8 @@ imports
   libstratego-sglr
 	common
 	utils/debug
+
+
 	
 signature
   constructors
@@ -25,6 +27,8 @@ overlays
 
 strategies
 
+
+		
   sdf2conflicts-store-sdf:
     ast -> ast
     where with-spxverify(
@@ -254,12 +258,12 @@ strategies
           // Debug
           print-SubtermConflicts(|msg) =
             with-spxverify(
-            	dbg-compiler(!$[msg [<print-as-string>]]);
+            	debug-compiler(!$[msg [<print-as-string>]]);
             	all-keys-SubtermConflicts;
               list-loop(
-              	dbg-compiler(!$[keys: [<print-as-string>]])
+              	debug-compiler(!$[keys: [<print-as-string>]])
               	; bagof-SubtermConflicts
-            	  ; dbg-compiler(! $[values: [<print-as-string>]])
+            	  ; debug-compiler(! $[values: [<print-as-string>]])
         	    )
             )
 

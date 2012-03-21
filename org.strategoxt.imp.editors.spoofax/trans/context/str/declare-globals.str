@@ -28,11 +28,11 @@ rules
 	// All the legacy symbol are stored in global scope despite of what current scope is .
 	// Hence, after we are overriding current scope to global scope
 	// and then, we are indexing the symbolsl.
-  declare-legacy-str-imports =  activate-global-scope( declare-rules(declare-stratego-globals-top) )
+  declare-legacy-str-imports =  activate-global-scope(declare-rules(declare-stratego-globals-top) )
      
   // declare all the strategy the rule definition inside 
   // current rules or strategies block. 
-  // inaddition it also stores it in the symbol table.
+  // in addition, it also stores it in the symbol table.
   declare-rules(s) = 
     ?list-str-def*
     ; dbg-declaration(! "------------new str analysis" | "STR" , <debug-level-INFO>) 
@@ -43,7 +43,8 @@ rules
 	      ; index-str-cookies
 	      |} 
       )
-  	; !analyzed-str-defs*
+    ; !analyzed-str-defs*
+  
   
   // Activating internal scope for the current enclosing package 
   // it actually overrides current module scope and activate 
@@ -55,31 +56,45 @@ rules
 
       
 strategies 
+	
 	declare-stratego-globals-top = alltd(declare-str-definition) 
    
 rules
-
-  // Analyzing all the rules and strategies block and store the Declarations  
+	// Analyzing all the rules and strategies block and store the Declarations  
   // in symbol table.
+  
+  
+  //TODO : refactor - combine similar rules 
+	// declare signatures 
+	declare-str-definition :  Signature( ctr* ) -> Signature(ctr'*)
+	where 
+		<declare-rules(declare-stratego-globals-top)> ctr* => ctr'*
+		  
   declare-str-definition : 
     InternalStrategies(str-defs*) -> InternalStrategies(analyzed-str-defs*)
     where 
-      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+      <activate-stratego-internal-scope(
+      	declare-stratego-globals-top
+    	)>str-defs*  =>analyzed-str-defs*
 
   declare-str-definition : 
     InternalRules(str-defs*) -> InternalRules(analyzed-str-defs*)
     where 
-      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+      <activate-stratego-internal-scope(
+      	declare-stratego-globals-top
+    	)>str-defs*  =>analyzed-str-defs*
 
   declare-str-definition : 
     Rules(str-defs*) -> Rules(analyzed-str-defs*)
     where 
-      <declare-rules(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs* 
+      <declare-rules(
+      	declare-stratego-globals-top
+    	)>str-defs*  => analyzed-str-defs* 
 
   declare-str-definition : 
     Strategies(str-defs*) -> Strategies(analyzed-str-defs*)
     where 
-      <declare-rules(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+      <declare-rules(declare-stratego-globals-top)>str-defs*  => analyzed-str-defs*
 
        
 rules
@@ -90,26 +105,10 @@ rules
     	x' := x{<declare-definition>};
       s' := <topdown(try(declare-dynrule))> s
     )
-   	/*
-   	where
-   		!x' =>  sdefId{cookie};
- 			if GetScopeType => InternalScope() 
- 			then 
-	    	with-spxverify(
-	    		defData := <newDefData(rename-id)>(<GetEnclosingPackageName> , STRDef() , sdefId);
-	    		internalId := <?DefData(_,_,_,_,<id>)>defData ;
-	    		<debug(!"index unique symbol: ")> (cookie , RenamedSDefT() , (<signature-of>def , internalId));
-	    		<index-unique-symbol-definition>(cookie , RenamedSDefT() , (<signature-of>def , internalId))
-	    	, ! $[Failed to index renamed SDefT]	
-	    	)	
-	    else
-	    	defData := <newDefData>(<GetEnclosingPackageName> , STRDef() , sdefId)	
-    	end ;
-    	<add-annotation(|defData)> x'  => x-with-defData
-	 */
+   
   
 	declare-str-definition:
-    o@OpDecl(x, t) -> OpDecl(x', t)
+    o@OpDecl(x, t) -> OpDecl(x', t) 
     where 
     	with-spxverify(
 	      cookie := <redeclare-definition>;
@@ -117,10 +116,8 @@ rules
 	      , !$[Failed to redeclare cookie @declare-str-definition with [<print-as-string>o]]
       );
       with-spxverify(
-	      // Declare congruence
-	      (x'', n) := <signature-of>;
-	      sig'     := (x'', n, 0);
-	      scoped-sig'  :=<to-scoped-symbol> sig';
+	      (x'', n) := <signature-of>; // Declare congruence
+	      scoped-sig'  :=<to-scoped-symbol> (x'', n, 0);
 	      rules(
 	        DeclareCookie: scoped-sig' -> cookie
 	      )
@@ -149,7 +146,8 @@ rules
     	with-spxverify(
 	      cookie := <redeclare-definition>;
 	      x'     := x{cookie}
-  		);
+  		)
+  	where	
     	with-spxverify(
 	      // Declare congruence
 	      (x'', n)     := <signature-of>;

@@ -59,11 +59,11 @@ rules
     (x, s, 0) -> (x, s, [])
     where
       <resolve-str-cookie> (x, s)   
+      
+  declare-cookie-of(s) =signature-of ; s;  resolve-str-cookie
+     
+  declare-cookie-of = declare-cookie-of(id)
   
-  declare-cookie-of =
-    signature-of
-    ; resolve-str-cookie
-    
   declaration-of =
     signature-of 
     ; (  ?_{<resolve-str-declaration>} 
@@ -73,29 +73,65 @@ rules
  	 
  
 rules 
-  
+	
+  get-internally-declared-cookie : 
+  	sig -> cookie
+  	where 
+  		<resolve-symbol-definitions-internal> ( sig , STRCookie(), (LookupLocalScope() , <ONLY_ONE>)); // getting symboldef
+  		map(project-from-symboldef-to-symbol); // projecting symbol
+			?[cookie] // should only contain one element  
+  	
+  get-declared-cookie: 
+  	sig -> cookie 
+  	where
+  		// search in current stratego section. if it is not found, 
+  		// search in the index to verify if it exits
+  		<to-scoped-symbol;DeclareCookie> sig => cookie 
+		<+
+  		if GetScopeType => InternalScope() 	then
+  			<get-internally-declared-cookie>sig => cookie			
+  		else
+  			activate-scope(
+		 			<resolve-symbol-definitions-internal>(sig , STRCookie(), (LookupLocalScope() , <ALL_AS_SEQUENCE>));
+		 			filter(not(is-internal-symbol(|<GetEnclosingPackageName>)));
+		 			map(project-from-symboldef-to-symbol); // projecting symbol
+		 			?[cookie] // should only contain one element   
+			 		|<GetEnclosingPackageName>
+  			 ) 
+  		end
+  				  
+  	  	
   declare-definition:
     def -> cookie
-    where with-spxverify(
-      sig := <signature-of>
-      ; scoped-sig    :=<to-scoped-symbol> sig
-      ; if not(<DeclareCookie>scoped-sig  <+ <resolve-str-cookie> sig) then
-          // declaring a new cookie 
-          cookie := <newterm>
-          ; scoped-cookie :=<to-scoped-symbol> cookie
-          ; rules(
-              DeclareCookie:  scoped-sig  -> cookie
-              STRDeclaration: scoped-cookie  -> def
-            )
-		      ; dbg-declaration(! $[Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]  | "STR|declare-definition" , <debug-level-INFO> ) 
-				  ; dbg-declaration(! $[Storing STRDeclaration : [<print-as-string>scoped-cookie] -> [<print-as-string>def]] | "STR|declare-definition" , <debug-level-INFO> )      
-      else
-       	  // using existing cookie 
-       	  cookie := <resolve-str-cookie> sig 
-      end
-    )
-		
-
+    where 
+    	with-spxverify(
+	      sig := <signature-of>
+	      // ; enable-symboltable-debugging  //TODO : remove enable debugging
+	      // ; enable-declaration-debugging  //TODO : remove enable debugging
+	      ; (
+	        	<get-declared-cookie> sig => cookie 
+	        <+ 
+	          //where(<debug(!"cookie not found for ")>sig) 
+	          cookie := <newterm> // declaring a new cookie
+	          ; scoped-cookie := <to-scoped-symbol> cookie
+	          ; scoped-sig    := <to-scoped-symbol> sig   
+	          ; rules(
+	              DeclareCookie:  scoped-sig  -> cookie
+	              STRDeclaration: scoped-cookie  -> def
+	            )
+			      ; dbg-declaration(
+			        	! $[Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]  | "STR|declare-definition" 
+		        		, <debug-level-INFO> 
+	      		  ) 
+					  ; dbg-declaration(
+					    	! $[Storing STRDeclaration : [<print-as-string>scoped-cookie] -> [<print-as-string>def]] | "STR|declare-definition" 
+					    	, <debug-level-INFO> 
+			    	  )      
+	    		)
+	    		// ; disable-symboltable-debugging
+	    		// ; disable-declaration-debugging 
+		  )
+ 
   redeclare-definition:
     def -> cookie
     where with-spxverify( 
@@ -115,8 +151,45 @@ rules
 		
   
   external SRTS-EXT-newint(|)
-
-
+		
+	get-all-declared-cookies = 
+		<resolve-all-symbol-definitions( 
+			id 
+	  | ( LookupLocalScope() , <ALL_AS_SET>) // lookup configuration ( Search Depth , Symbol Return Mode )
+		)>(<MATCH_ALL_KEYS> ,  STRCookie());
+	 	map({sig,cookie: debug; ?SymbolDef(_, sig, _ , cookie,_); !(sig,cookie)})
+			 
+ 	get-all-declarations = 
+		<resolve-all-symbol-definitions( 
+			id 
+		|( LookupLocalScope() , <ALL_AS_SET>) // lookup configuration ( Search Depth , Symbol Return Mode )
+		)>(<MATCH_ALL_KEYS> ,  STRDef());
+	 	map({cookie,def: ?SymbolDef(_, cookie, _ , def,_); !(cookie,def)})
+				  
+	  
+  print-statistics = 
+		<debug> $[ | Cookie  ---Declarations Mapping| ];
+		<debug> $[ ---------------------------------- ];
+		get-all-declared-cookies; 
+  	list-loop(
+  		{
+  			?(sig, cookie) ;
+  			<debug> $[[<ppterm>cookie] : [<ppterm>sig] :[<resolve-str-declaration;print-as-string>cookie]]
+  		}
+  	);
+  	<debug> $[  ];
+  	<debug> $[ Declaration that is not in cookie: ];
+		<debug> $[ ---------------------------------- ];
+		get-all-declarations;
+		filter(
+  		{
+  			?(cookie, decl) ;
+  			<signature-of>decl => sig;
+  			not(<resolve-str-cookie>sig);
+				<debug> $[ [<ppterm>cookie] : [<resolve-str-declaration;print-as-string>cookie]]
+  		}
+		)
+			
 rules 
   
   index-str-declarations = 
@@ -125,61 +198,63 @@ rules
 		<list-loop(
         { 
           ?cookie
-          // cookie  ---> STRDeclaration Mapping 
+          // Cookie  ---> STR DEFINITION Mapping 
           ; dbg-declaration(! $[Indexing: [<print-as-string>cookie] -> STRDef()  ->  [<print-as-string><STRDeclaration>cookie]] | "STR|index-str-declarations " , <debug-level-INFO> ) 
-          ; <index-symbol-definition>(cookie, STRDef() ,  <STRDeclaration>cookie)
-        } 
-      )><all-keys-STRDeclaration>
+          ; <index-unique-symbol-definition>(cookie, STRDef() ,  <STRDeclaration>cookie)
+        }
+    )><all-keys-STRDeclaration>
       
   
   //TODO FIX : strip all the scope . Better not to enclode it with scope.
   index-str-cookies =      
-  	dbg-declaration(! $[indexing Stratego cookies  : [<print-as-string><all-keys-DeclareCookie>]]  
+  	 dbg-declaration(! $[indexing Stratego cookies  : [<print-as-string><all-keys-DeclareCookie>]]  
     								| "STR|index-str-cookies" , <debug-level-INFO> );
     <list-loop(
 	    { ?sig
 	      ; dbg-declaration(! $[Indexing: [<print-as-string>sig] -> STRCookie() ->  [<print-as-string><DeclareCookie>sig]] | "STR|index-str-cookies" , <debug-level-INFO>)  
 	      // Signature -------> Cookie Mapping 
-	      ; <index-symbol-definition>(sig, STRCookie() ,  <DeclareCookie>sig)
+	      ; <index-unique-symbol-definition>(sig, STRCookie() ,  <DeclareCookie>sig)
 	      ; <remove-scope-from-symbol; ?sig'; signature-to-declaration-id>sig => str-id
 	      ;  dbg-declaration(! $[Indexing: [<print-as-string>str-id] -> STRSignature() ->  [<print-as-string>sig]] | "STR|index-str-cookies" , <debug-level-INFO>)
-        // Stratego ID  -------> Signature Mapping 
+        // Stratego ID , Type  -------> Signature Mapping 
         ; <index-symbol-definition>(str-id, STRSignature() , sig')  
 	    }
-    )><all-keys-DeclareCookie>  
+    )><all-keys-DeclareCookie>
+       
  
   resolve-str-declaration =
-    ? cookie
-   	; ( <STRDeclaration> <to-scoped-symbol> cookie
-	  	<+
-    		<resolve-symbol-definition>( <id>, STRDef())
-    		; dbg-declaration(!$[[<print-as-string>cookie] -> STRDef() ->  [<print-as-string><id>]] | "STR|resolve-str-declaration" , <debug-level-INFO> )
-    	)	   
-  <+
-    dbg-declaration(!$[Failed to retrive STRDef for cookie [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-declaration" , "Warning" ) 
-    ; fail
+    ? cookie; 
+    ( 
+   		<STRDeclaration> <to-scoped-symbol> cookie 	<+
+    	<resolve-symbol-definition>( cookie, STRDef()) ; 
+    	dbg-declaration(!$[[<print-as-string>cookie] -> STRDef() ->  [<print-as-string><id>]] | "STR|resolve-str-declaration" , <debug-level-INFO> )
+  	)	
+	<+
+  	dbg-declaration(!$[Failed to retrive STRDef for cookie [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-declaration" , "Warning" ); 
+  	fail
     
   resolve-str-cookie =
     ?sig ;
-    (	<DeclareCookie> <to-scoped-symbol> sig 
-    	<+	
-    	<resolve-symbol-definition>( <id>, STRCookie())
-    	; dbg-declaration(! $[resolve-str-cookie: [<print-as-string>sig] -> STRCookie() ->  [<print-as-string><id>]] | "STR|resolve-str-cookie" , <debug-level-INFO>)
-    )  
+    (
+    	<to-scoped-symbol;DeclareCookie>sig 
+   	<+	
+     <resolve-symbol-definition>( sig , STRCookie()); 
+     dbg-declaration(! $[resolve-str-cookie: [<print-as-string>sig] -> STRCookie() ->  [<print-as-string><id>]] | "STR|resolve-str-cookie" , <debug-level-INFO>)
+    ) 
   <+
-    dbg-declaration(!$[Failed to retrive STRCookie for signature [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-cookie" , "Warning") 
-    ; fail
+  	dbg-declaration(!$[Failed to retrive STRCookie for signature [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-cookie" , "Warning"); 
+    fail
   
   resolve-str-signatures =
     ?key
-    ; verify(String | key , "String @resolve-str-signatures")
+    ; verify(String | key , "String at resolve-str-signatures")
     ; <resolve-all-symbol-definitions>( <id>, STRSignature())
     ; dbg-declaration(! $[[<print-as-string>key] -> STRSignature() ->  [<print-as-string><id>]] 
                       | "STR|resolve-str-signatures" , <debug-level-INFO> )
   <+
     dbg-declaration(! $[Failed to retrive STRSignatures* for id [<print-as-string><to-scoped-symbol>]] 
-                      | "STR|resolve-str-signatures" , "Warning" )
-    ; fail
+                      | "STR|resolve-str-signatures" , "Warning" );
+    fail
       
   resolve-str-signature =
     ?key
@@ -189,5 +264,5 @@ rules
 	                      | "STR|resolve-str-signature" , <debug-level-INFO> )  
   <+
     dbg-declaration(! $[Failed to retrive STRSignature for id [<print-as-string><to-scoped-symbol>]] 
-                      | "STR|resolve-str-signature" , "Warning" )  
-    ; fail 
+                      | "STR|resolve-str-signature" , "Warning" );   
+    fail 

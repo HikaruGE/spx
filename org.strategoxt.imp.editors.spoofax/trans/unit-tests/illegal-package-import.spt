@@ -1,0 +1,42 @@
+module spoofaxlang-illegal-package-import
+
+language SpoofaxLang
+
+test illegal import declarations 1
+[[
+		package b.test 
+		module e
+			imports package1
+			
+			language language descriptions 
+			name : testlang 
+
+]] 1 errors run test-get-all-module-imports	 to [] 
+
+
+test illegal import declarations 2
+[[
+		package b.test 
+		module e
+			imports package1
+			 
+			language language descriptions 
+			name : testlang 
+
+]] 1 errors run test-get-all-legacy-imports-illegal	 to  [_]
+
+test valid legacy import declarations 
+[[
+		package b.test 
+		module e  
+			imports libstratego-lib 
+			
+			language language descriptions   
+			name : testlang 
+
+]] run test-get-all-legacy-imports_valid to  [_,_]
+
+
+
+
+

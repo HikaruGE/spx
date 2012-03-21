@@ -25,18 +25,18 @@ rules
 rules
 	get-sdf-start-symbols-to-sync = 
 		where ( 
-			<get-esv-start-symbols><GetEnclosingPackageName> => esv-start-symbols; 
-			<get-sdf-start-symbols><GetEnclosingPackageName> => sdf-start-symbols
+			GetEnclosingPackageName => package-name; 
+			<get-esv-start-symbols> package-name  => esv-start-symbols; 
+			<get-sdf-start-symbols> package-name  => sdf-start-symbols
 		)
-		;<diff(is-eq-sorts)>(esv-start-symbols,sdf-start-symbols)
+		; <diff(is-eq-sorts)>(esv-start-symbols,sdf-start-symbols)
 		; make-set
 		; map(\Sort(x) -> sort(x)\)  
 
 rules 
 	get-language-descriptor-of-package = 
 		verify(?Package(QName(_)) | <id> , "Package(QName(_))  @get-language-descriptor-of-package") 
-		; get-indexed-language-descriptor
-	  <+ 
+		; get-indexed-language-descriptor <+ 
   	  dbg-symboltable(! $[get-language-descriptor-of-package| Package ID : [<print-as-string>] | Failed]
 											| "resolve-declarations" ,"FAIL")
 	
@@ -57,24 +57,22 @@ rules
 	get-languagename-declaration-sites = get-package-qnames-by-langname
 
 rules
-  get-declared-packages-qname = 	
-  		verify( String | <id> "String expected @get-declared-packages-qname ");
-  		dbg-symboltable(! $[Index | get-declared-packages-qname by file [<print-as-string>]] | "get-declared-packages-qname" , <debug-level-INFO>);  
-			project-package-declarations(package-typed-qname)   
+  get-declared-packages-qname =	
+  		project-package-declarations(package-typed-qname)   
   
   get-all-declared-packages-qname =   
-  		dbg-symboltable(! $[Index | get-all-declared-packages-qname [<print-as-string>]] | "get-all-declared-packages-qname" , <debug-level-INFO>);
   		project-all-package-declarations(package-typed-qname)
   		
 
 rules 
+	
 	get-package-declaration = where(?Package(QName(_))) ; get-indexed-package-declaration
   
 	get-package-declaration = where(?QName(_)) ; !Package(<id>) ;get-package-declaration 
 	
 	get-package-uris = where(?Package(QName(_))) ;  project-package-declarations(package-uris)  
 	
-	get-package-uris = where(?QName(_)); !Package(<id>) ; get-package-uris    
+	get-package-uris = where(?QName(_)); !Package(<id>) ; get-package-uris     
 	
   /**
   * Get a list of Package declared in the current Project
@@ -86,9 +84,11 @@ rules
   
 rules 
 
-  get-declared-modules-qname =  dbg-symboltable(!$[get-declared-modules-qname [<print-as-string>]]|"get-declared-modules-qname" ,<debug-level-INFO>); project-module-declarations(module-typed-qname)   
+  get-declared-modules-qname =  
+  	project-module-declarations(module-typed-qname)   
   
-  get-all-declared-modules-qname = dbg-symboltable(!$[get-all-declared-modules-qname]|"resolve-declarations" ,<debug-level-INFO>); project-all-module-declarations(module-typed-qname)
+  get-all-declared-modules-qname = 
+  	 project-all-module-declarations(module-typed-qname)
   
 	get-analyzed-module-ast = get-desugared-module-ast
   /**
@@ -121,6 +121,7 @@ rules
   * @type module-qname-> Module(_,SPXModuleName(_),_)
   */
 	get-original-module-definition = verify(?Module(QName(_)) | <id> , "Module(QName(_)) @get-original-module-definition"); get-module-ast
+  
   /**
   * Returns the uri of the specified module id as the current term.   
   * 
@@ -136,7 +137,7 @@ rules
     dbg-symboltable(!$[get-module-uri| Failed to get the following uri for [<id>]]|"resolve-declarations" ,<debug-level-WARNING>)
      
   /**
-  * Returns the enclosing package of the specified module package-qname   
+  * Returns the enclosing package of the specified module qname   
   * 
   * @param None()
   * @type module-qname-> Package(QName(_))
@@ -145,7 +146,7 @@ rules
     get-indexed-module-declaration(
     	module-enclosing-package
 		)
-  	; verify(?Package(QName(_)) | <id> , "Package(QName(_)) @get-enclosing-package-qname") 
+  	; verify(?Package(QName(_)) | <id> , "Package(QName(_)) at get-enclosing-package-qname") 
     
 rules
    
@@ -162,7 +163,7 @@ rules
 	get-module-definition  = 
 	  verify(
 	  	? Module(QName(_)) 
-	  	| <id> , "Module(QName(_)) @get-module-definition"
+	  	| <id> , "Module(QName(_)) at get-module-definition"
 	  	)
 	 	; dbg-symboltable(!$[getting module declaration from symbol table | moduleID : [<print-as-string>]] |"resolve-declarations" ,<debug-level-INFO>)
     ; get-desugared-module-ast
@@ -170,7 +171,7 @@ rules
 	get-module-definition-with-location  =  
 		verify(
 	  	? m@Module(QName(_)) 
-	  	| <id> , "Module(QName(_)) @get-module-definition-with-location"
+	  	| <id> , "Module(QName(_)) at get-module-definition-with-location"
 	  	)
 	 	  ; <get-desugared-module-ast>m => module-annotated-ast   
 	 	  ; <get-module-uri> m => module-uri 
@@ -183,16 +184,17 @@ rules
 	* @param typed qualified name of the enclosing package 
 	* @returns List of Modules' Typed-QName, i.e. Module(QName(_))
 	*/ 
-	get-enclosed-modules =  verify (?Package(uqname) | <id> , "Package(uqname) @get-enclosed-modules");	get-declared-modules-qname
+	get-enclosed-modules =  verify (?Package(uqname) | <id> , "Package(uqname) at get-enclosed-modules");	get-declared-modules-qname
 
 	/**
-	*
-	* @type Package(QName(_)) -> List(Module(QName(_)))
+	*  Given enclosing scope i.e. Typed-QName of Package, it returns list of enclosed modules that requires recompilation
+	*  Thus, it only allows selective modules to be recompiled. 
+	*  
+	*	 @type Package(QName(_)) -> List(Module(QName(_)))
 	*/
-  get-enclosed-dirty-modules = verify (?Package(QName(_)) | <id> , "Package(uqname) @get-enclosed-modules");	 get-indexed-dirty-module-declaration; map(module-typed-qname)
+  get-enclosed-dirty-modules = verify (?Package(QName(_)) | <id> , "Package(uqname) at get-enclosed-modules");	 get-indexed-dirty-module-declaration;  map(module-typed-qname)
   
- 	get-enclosed-dirty-modules-to-generate = verify (?Package(QName(_)) | <id> , "Package(uqname) @get-enclosed-modules");	 get-indexed-dirty-module-declaration-to-generate; map(module-typed-qname)
-   
+ 	get-enclosed-dirty-modules-to-generate = verify (?Package(QName(_)) | <id> , "Package(uqname) at get-enclosed-modules");	 get-indexed-dirty-module-declaration-to-generate; map(module-typed-qname)
   
   /**
   * Given absolute path of the compilation unit , it returns 
@@ -215,7 +217,7 @@ rules
 	// Requires the <ID> to be typed QName to look it up in the symbol tree.
 	// Otherwise, it throws <illegal argument exception>
 	get-all-imported-modules = 
-		verify(?Package(_) | <id> , "Package(_)  @get-all-imported-modules"); 
+		verify(?Package(_) | <id> , "Package(_)  at get-all-imported-modules"); 
 		get-all-usings ; 
 		?all-imported-scope; 
 		// getting all the modules of imported packages 
@@ -226,26 +228,32 @@ rules
 		        <filter(?Module(_))>all-imported-scope // references to the modules 
           )
 	
+	// returns the packages who are using this package
 	get-used-by =  
-	  verify(?Package(_) | <id> , "Package(_) @get-all-usings");
+	  verify(?Package(_) | <id> , "Package(_) at get-used-by ");
 	  get-indexed-imported-to-refernces(?Package(QName(_)))  // returning all the packaged where this package is imported to  
 		  
 	get-all-usings =  
-	  verify(?Package(_) | <id> , "Package(_) @get-all-usings");
+	  verify(?Package(_) | <id> , "Package(_) at get-all-usings");
 	  get-indexed-import-refernces(?Package(QName(_)) + ?Module(QName(_)))  // returning all the import references of current packageId 
 	
 	get-all-usings =
 	  ?(package-untyped-qname , module-untyped-qname) 
-    ;<get-typed-qname>(ModuleType() , module-untyped-qname) =>  moduleID
-		;<get-indexed-import-refernces(?Package(QName(_)) + ?Module(QName(_)))> moduleID
-		    
+    ; <get-typed-qname>(ModuleType() , module-untyped-qname) =>  moduleID
+		; <get-indexed-import-refernces(?Package(QName(_)) + ?Module(QName(_)))> moduleID
+	
+	get-all-usings =
+		verify(?Module(_) | <id> , "Module(_) at get-all-usings")  
+		; get-indexed-import-refernces(?Package(QName(_)) + ?Module(QName(_)))
+		 
+			    
 		    
 rules
     
 	record-legacy-global-import-is-resolved =
     ?(ns,  modulename);
     if <get-legacy-artifact-details'>(ns,modulename) => Unresolved() then
-      qualifiedModuleName := Module(Name(modulename))
+      	qualifiedModuleName := Module(Name(modulename))
       ; dbg-symboltable(! $[updating import reference to [<print-as-string>(ns ,  qualifiedModuleName , Resolved())]]|"Index" , <debug-level-INFO>)
       ; <index-import>(ns, [(ns ,  qualifiedModuleName , Resolved())])
     end
@@ -259,14 +267,14 @@ rules
 	is-declared-legacy-artifact = where(get-enclosed-legacy-artifact-details => Resolved())
    
 	get-legacy-artifact-details' =
-		verify(?(ns,name) | <id> , $[(ns,name)  @get-legacy-artifact-details'])
-		; verify((?Package(QName(_))) | ns , " Package(QName(_)) as ns @get-legacy-artifact-details" )
+			verify(?(ns,name) | <id> , $[(ns,name)  at get-legacy-artifact-details'])
+		; verify((?Package(QName(_))) | ns , " Package(QName(_)) as Namespace at get-legacy-artifact-details" )
 		; <get-indexed-import-refernces(?(_,_,_))>ns
 	  ; filter(?(ns, Module(Name(name)) , Resolved())) 
-    ; ( verify(is-not-empty-list | <id> , $[non-empty list @get-legacy-artifact-details']) ; ?[<id> | _] ; ?(ns, Module(Name(name)) , <id>) //// checks whether any resolved import  found . 
-      <+ 
-        !Unresolved() // not found . Hence, marking it unresolved 
-      )
+		; ( 	
+		  		is-not-empty-list; ?[<id> | _] ; ?(ns, Module(Name(name)) , <id>) //// checks whether any resolved import  found . 
+  		<+	!Unresolved() // not found . Hence, marking it unresolved 
+       )
 rules 
 	/**
 	* Indexes module qualified names of a particular package.  
@@ -280,3 +288,6 @@ rules
 	* @type package-qualified-name -> List( Module(QName(_)) 
 	*/
 	get-enclosed-modules-of-package = verify(?Package(QName(_)) | <id> , "Package(QName(_))  @get-enclosed-modules") ; <resolve-all-symbol-definitions-with-duplicates>(<id>, DeclaredEnclosedModuleQName())  
+
+rules 
+	

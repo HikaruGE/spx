@@ -1,0 +1,88 @@
+module resolve-symbols
+
+language SpoofaxLang
+
+setup [[
+	  package A.P1
+  	module M1 
+			internal rules
+				internal-s : a -> a 
+]]
+
+test should return internal module id
+	 <get_internal_module_qtname>Package(QName(["Test" , "A"]))
+	 => Module(QName(["Test" , "A" , "__internal"] ))
+	 
+
+test should succeed to resolve internal symbol in a package scope [[
+package A.P1
+	module M2
+		rules 
+			testS = internal-s
+]] 0 error
+
+
+test  test resolve: resolve should fail without explicit import of namespace (1) {id2 is not defined} [[
+	package A.P3
+	module M21
+		rules 
+			id2 = id 
+	
+	package A.p4
+	module M34 
+		rules 
+			id3  = id2		
+]] 1 errors
+
+
+test duplicate module error [[
+	package a.p4
+	
+	module m44
+	
+	module m44
+	
+]] 1 errors 
+
+
+test  test resolve: import should resolve symbols from a different namespace(2) [[
+	package A.P3
+	module M21
+		rules 
+			id2 = id 
+	package A.p4
+	module M34
+		imports A.P3 
+		rules 
+			id3  = id2		
+]]0 errors  
+
+test  test resolve: imports works at package scope(3) [[
+	package A.P3
+	module M21
+		rules 
+			id2 = id 
+
+	package A.p4
+	module M34
+		imports A.P3 // imports works at package scope 
+		rules
+		   
+	package A.p4
+	module M35
+		imports A.P3 
+		rules	 
+			s = id2 
+			
+]]0 errors  
+                                                                            
+
+test resolve : should resolve libstratego symbol without any explicit scope
+[[
+	package A.P3
+	module M21  
+		rules 
+			id2 = concat-strings 
+
+]]
+0 errors 

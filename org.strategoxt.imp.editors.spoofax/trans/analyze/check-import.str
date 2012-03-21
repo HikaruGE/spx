@@ -38,12 +38,14 @@ rules
 	
 	
 	imports-constraint-error:
-		ImportPackage(package-qname@QName(_)) -> (package-qname , $[Importing enclosing  '[package-qname-string]' package is not allowed. ])
+		ImportPackage(Name(name)) -> (name, $[Failed to import '[name]'. Importing of the enclosing  package is not allowed.])
 		where
-			!<GetEnclosingPackageName> => Package(package-qname) 
-		where
-			package-qname-string := <convert-qname(|".")>package-qname
-	
+			!<GetEnclosingPackageName> => Package(QName([name])) 
+		
+	imports-constraint-error:
+		ImportPackage(package-qname@QName(_)) -> (package-qname , $[Failed to import '[package-qname-string]'. Importing of the enclosing  package is not allowed.])
+		where !<GetEnclosingPackageName> => Package(package-qname) 
+		where	package-qname-string := <convert-qname(|".")>package-qname
 	
 	imports-constraint-error:
 		ImportPackage(Name(package-name)) -> (package-name, $[Failed to resolve '[package-name]'.])
@@ -55,7 +57,11 @@ rules
 			) 	
 	
 	imports-constraint-error:
-		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -><imports-constraint-error>ImportSpxModule(QName([package-name]), SPXModuleName(modname))
+		ImportSpxModule(Name(package-name), SPXModuleName(modname)) -> 
+		<imports-constraint-error>ImportSpxModule(
+				QName([package-name]), 
+				SPXModuleName(modname)
+		)
 		
 	imports-constraint-error:	
 		q@ImportSpxModule(qname@QName(package-qname-parts), SPXModuleName(modname)) -> (q , $[Failed to resolve SPX module : '[module-qname-string]'. Please check spx.config for configured SPX sources. ])

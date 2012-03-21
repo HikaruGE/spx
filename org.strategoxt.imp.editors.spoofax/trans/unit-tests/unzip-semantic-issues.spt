@@ -1,0 +1,31 @@
+module unzip-semantic-issues 
+
+language SpoofaxLang
+
+test unzip-semantic-issuses (1)
+	<unzip-semantic-issuses>  
+						[(["a1"] , ["b1"] , ["c1"]),
+		         (["a2"] , ["b2"] , ["c2"]), 
+		         (["a3"] , ["b3"] , ["c3"])
+	          ];
+	?(["a3","a2","a1"],["b3","b2","b1"],["c3","c2","c1"])          
+ 	=>_     
+
+
+test unzip-semantic-issues (2)
+	![([],[],[]),
+		([],[],[])
+	 ];
+	 unzip-semantic-issuses;
+	 ? ([] , [] , [])
+	=> _ 
+
+
+test unzip-semantic-issues (3) 
+	![[],(["a1"] , ["b1"] , ["c1"]),
+		   (["a2"] , ["b2"] , ["c2"]),
+		   (["a3"] , ["b3"] , ["c3"])
+	 ];
+	 unzip-semantic-issuses;
+	 ?(["a3","a2","a1"],["b3","b2","b1"],["c3","c2","c1"])
+ =>_

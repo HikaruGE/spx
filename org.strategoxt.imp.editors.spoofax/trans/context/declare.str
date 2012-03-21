@@ -20,74 +20,68 @@ imports
 	codegen/main
 
 rules 
-	
+	// initiaze name analysis. be default, it adds default signatures and template options
 	init-declarations = 
 		init-record-signatures;
 		init-template-options
     
 rules
+	
   declare-spx-global-symbols =
-	dbg-compiler(!$[----Declaring global Symbols for: [<print-as-string>]]);
-	list-loop(
-			{| GetEnclosingModuleName
-			 : 	declare-current-module-scope;
-		 		with-spxverify(
-					get-desugared-module-ast;
-					declare-internal( declare-spxmodules-all( declare-global-symbols))
-			  	)
-			|}	
-	)
-	
-	delcare-spx-scoped-symbols = 
-		dbg-compiler(!$[----Declaring local Symbols for: [<print-as-string>]]);
-		declare-internal(
-			declare-spxmodules-all(
-				declare-local-symbols
-			)
+		debug-compiler(!$[----Declaring global Symbols for: [<print-as-string>]]);
+		list-loop(
+				{| GetEnclosingModuleName
+				 : 	declare-current-module-scope;
+			 			with-spxverify(
+							get-desugared-module-ast;
+							declare-internal(declare-global-symbols)
+				  	)
+				|}	
 		)
-	
-	
+
+	delcare-spx-scoped-symbols = 
+		declare-internal(declare-local-symbols)
+		//; print-statistics
+		  
 	declare-internal(declare-symbols) =  
-		origin-track-forced(declare-symbols) => annotated-moduleDef
+		? desugared-module-def
+		; origin-track-forced(declare-spxmodules-all(declare-symbols)) => annotated-moduleDef
 		; !annotated-moduleDef => Module(attrb* , modname , section*)  // updating module definitions
 		; with-spxverify(
 			 <get-annotation(get-package-annotation)>modname => Package( package-qname)
 			  ; mId := <get-module-typed-qname>(package-qname, modname)
 			  ; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
   	  )
+  //	; <debug(!"desugared : ")><ppterm> desugared-module-def
+	//  ; <debug(!"analyzeed : ")><ppterm> annotated-moduleDef
   	    
-	
 rules 
+	
 	declare-spxmodules-all(s):
 		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*)
 		where
 			<alltd(s)>section* => m-sections*
 
-	
 	declare-local-symbols:
 		SDFSection(definition*) -> SDFSection(declared-definition*)
-		where
-			<declare-sdf-definition-main>definition* => declared-definition*  
+		where <declare-sdf-usage-main>definition* => declared-definition*  
 				 
-
 	declare-local-symbols:
-		SDFSectionEH(_,definition*) -><declare-local-symbols>SDFSection(definition*)
+		SDFSectionEH(s,definition*) -> SDFSectionEH(s,declared-definition*)
+		where <declare-sdf-usage-main>definition* => declared-definition*
 
 	declare-local-symbols:
 	  STRSection(def*) -> STRSection(m-definition*)
     where
     	<declare-str-local-definition-main>def* => m-definition*
        
-      
   declare-local-symbols: ESVSection(def*) -> <id>
 
-  // TemplateLang
   declare-local-symbols:
     TemplateSection(definition*) -> TemplateSection(declared-definition*)
     with
      <declare-template-definition-main> definition* => declared-definition* 
 
-  // TemplateLang
   // FIXME: move to spoofax.configuration?
   declare-local-symbols:
   	TemplateOptions(option*) -> TemplateOptions(declared-option*)
@@ -96,26 +90,36 @@ rules
 
 rules
 
-	declare-global-symbols: SDFSection(def*) -> <id>
+	declare-global-symbols: 
+		SDFSection(def*) ->SDFSection(declared-definition*)
+		where	<declare-sdf-definition-main>def* => declared-definition*  
 
-	declare-global-symbols: SDFSectionEH(_,def*) -> <id>
+	declare-global-symbols: 
+		SDFSectionEH(s,def*) -> SDFSectionEH(s,declared-def*)
+		where	<declare-sdf-definition-main>def* => declared-def*  
+	
 
-	declare-global-symbols: s@STRSection(def*) -> STRSection(m-definition*)
-	where
-		m-definition* := <declare-stratego-globals-top>def*
+	declare-global-symbols: 
+		s@STRSection(def*) -> STRSection(m-definition*)
+		where m-definition* := <declare-stratego-globals-top>def*
 	
 	
 	declare-global-symbols: 
 		ESVSection(def*) -> ESVSection(declared-definition*)
-		where 
-			declared-definition* := <declare-esv-globals-top>def*;
-			current-package-name := <GetEnclosingPackageName>;
-			with-spxverify(
-				//storing esv section
-				<index-symbol-definition>(current-package-name, ESVSection() ,  declared-definition*)
-				, !$[Failed to index esv section of [current-package-name]] 
-			) 
-	
+		where declared-definition* := <declare-esv-globals-top>def*;
+					current-package-name := <GetEnclosingPackageName>;
+					
+					// storing all the esv sections in index 
+					// so that when packed esv file is generated, it can get 
+					// all the sections and just work on it. 
+					// This is added due to allowing seperate  compilation to work.
+					// during seperate compilation , only the modules that have been 
+					// changed are taken into account.
+					with-spxverify(
+						<index-symbol-definition>(current-package-name,  ESVSection() ,  declared-definition*) 
+						, !$[Failed to index esv section of [current-package-name]]
+					) 
+			 
   // TemplateLang
   declare-global-symbols: TemplateSection(def*) -> <id>
 
@@ -125,10 +129,10 @@ rules
 rules
 
 	// Declaring current scope for further analyze
-	declare-current-scope(| package-typed-qname , module-typed-qname)=
+	declare-current-scope(| package-typed-qname , module-typed-qname) =
 		with-spxverify(
-		    <declare-current-package-scope>package-typed-qname
-		   ;<declare-current-module-scope>module-typed-qname 
+		    <declare-current-package-scope>package-typed-qname;
+		    <declare-current-module-scope>module-typed-qname 
     )
 
 	declare-current-package-scope :

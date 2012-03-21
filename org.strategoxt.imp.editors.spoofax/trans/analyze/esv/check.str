@@ -5,6 +5,7 @@ imports
 	context/-
 	context/esv/-	
 	context/str/-
+	context/sdf/-
 imports 
 	utils/debug 
   include/SpoofaxLang
@@ -19,12 +20,35 @@ rules
   	where
   		dbg-analysis(! $[ErrorChecking | ESV Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>)
 		where
-  		error-esv*   := <collect-all(constraint-esv-error, conc)> ast;
-  		warning-esv* := <flatten-list><collect-all(constraint-esv-warning, conc)> ast;
-  		info-esv*    := []
+  		error-esv*   :=  <flatten-list><collect-om(constraint-esv-error, conc)> ast;
+  		warning-esv* := <collect-om(constraint-esv-warning, conc)> ast;
+  		info-esv*    := <flatten-list><collect-om(constraint-esv-info, conc)> ast
+
+rules 
+	get-esv-sorts : values* -> <?Values(<id>);map(!Sort(<id>)) <+ id>values*
+
 
 rules
-	constraint-esv-error:
+	
+	constraint-esv-error:  
+		sSym@StartSymbols(values*) -> err-messages*
+		where <get-esv-sorts>values*	=> sorts*
+		where
+			<filter(constraint-esv-sort-error(|<id>))>sorts* => err-messages*;
+			if !err-messages* => [] then 
+				fail
+			end	
+	
+	constraint-esv-error :
+		Constructor(x) -> (x, $[Unknown constructor "[x]"])
+		where
+    	require(<verify-declared-construction-by-name> x)
+    	
+		
+	constraint-esv-error :
+    s@Sort(x) -> <constraint-esv-sort-error(|x)>s
+    		
+	constraint-esv-sort-error(|originSym):
     Sort(x) -> (x, $[Unknown sort "[x]"])
     where
     	require(<verify-sdf-sort-declaration-exists> x)
@@ -48,18 +72,19 @@ rules
    			; not(ensure-is-unique)
 					
 rules
-	
-	constraint-esv-warning:  
-		sSym@StartSymbols(sorts*) -> err-messages*
+	constraint-esv-info:  
+		sSym@StartSymbols(values*) -> err-messages*
+		where <get-esv-sorts>values*	=> sorts*
 		where
-			s* := <get-sdf-start-symbols> <GetEnclosingPackageName>; // getting all the context-free-start-symbols for the package   	
-			<filter(unknown-start-symbol-error(|s*))>sorts* => err-messages*;
+			<get-sdf-start-symbols> <GetEnclosingPackageName> => s*; // getting all the context-free-start-symbols for the package   	
+			<filter(unknown-start-symbol-error(| sSym, s*))>sorts* => err-messages*;
 			if !err-messages* => [] then 
 				fail
 			end
 	
-	unknown-start-symbol-error(|start-symbols-found-in-sdf-def) : 
-		s@Sort(x) -> (s, $[Undefined Start Symbol :  "[x]".])
+	//TODO FIX : unknown start symbol error - undeterministic behavior
+	unknown-start-symbol-error(|root-symbol, start-symbols-found-in-sdf-def) : 
+		Sort(x) -> (root-symbol , $[ESV start symbol : "[<print-as-string>x]" is not defined as a SDF start symbol. However, it is automatically considered as a SDF start symbol(if the sort it valid).])
 		where 
 			<not(fetch-elem(?sort(x)))>start-symbols-found-in-sdf-def
 			   		

@@ -1,0 +1,47 @@
+/**
+* Unit tests for the Teststratego language.
+*/
+module path
+
+language SpoofaxLang
+
+
+test should identify known extensions (1)
+  <has-known-extensions>"c:\\test.sdf" => "c:\\test.sdf"  
+
+
+
+test should identify known extensions (2)
+  <has-known-extensions>"c:\\test.rtree" 
+  => "c:\\test.rtree"
+  
+test should fail if provided unknown extensions
+  <has-known-extensions>"c:\\test.doc" 
+  fails
+  
+test get output path(1)  
+   <get-output-path(|"sdf")>( "c:/test" , QName(["a" , "b" , "c"])) => "c:/test/a/b/c.sdf"
+   
+
+test get output path(2)  
+  <get-output-path(|"sdf")>( "c:/test" , QName([])) => "c:/test"
+
+
+test convert qualified name with dash (1)
+  <convert-qname(|"-")>QName(["package" , "Name"]) => "package-Name"
+
+
+test convert qualified name with dash (with empty list)(2)
+	<convert-qname(|"-")>QName([]) => ""
+
+test get-main-file-name (1)
+	<get-main-file-name>QName(["package" , "Name"]) => "package-Name"
+
+
+test get-main-file-output-path (1)
+	<get-main-output-path(|"sdf")> ("c:/test" , QName(["package" , "Name"])) 
+	=> "c:/test/package-Name.sdf"
+
+test get-output-path with prefix 	
+	<get-output-path(|"main", "sdf")> ("c:/test" , QName(["package" , "Name" , "A"]))
+	=> "c:/test/package/Name/A-main.sdf"

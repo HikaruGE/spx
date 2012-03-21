@@ -34,13 +34,13 @@ strategies
   template-sections-to-esv:
     section* -> completion*
     where with-spxverify(
-      verify(List | section* , "List ::template-sections-to-esv")
+      verify(List | section* , "List at template-sections-to-esv")
     )
     where with-spxverify(
       completion* := <filter(template-section-to-esv); concat> section*
     )
     where with-spxverify(
-      verify(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion* , "ListOf(?CompletionTemplateEx(_, _, _, _))  ::template-module-to-esv")
+      verify(ListOf(?CompletionTemplateEx(_, _, _, _)) | completion* , "ListOf(?CompletionTemplateEx(_, _, _, _))  at template-module-to-esv")
     )
 
   /** @type TemplateSection -> List(CompletionTemplate) */

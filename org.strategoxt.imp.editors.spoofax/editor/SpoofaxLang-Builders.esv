@@ -13,8 +13,12 @@ builders
 
   provider                  : include/spoofaxlang.jar
 
-	observer                  : editor-analyze
+	observer                  : editor-analyze-with-eval-exec-time
 
+  builder : "Show AST" = generate-aterm (openeditor) (realtime) (source)
+  
+  builder : "Show Analyzed AST" = show-analyzed-ast (openeditor) (realtime) (source)
+    
   builder : "Compile" = editor-compile-spx-all-incrementally
   
   builder : "Clean Compile" = editor-clean-and-compile-spx-all 
@@ -26,13 +30,12 @@ builders
 	builder : "Clean Project" = editor-clean-spx
 
   builder : "Show SPXConfiguration" =    show-configuration(openeditor) 
-
-	builder : "Abstract Syntax" = generate-aterm (openeditor) (realtime) (meta) (source)  
-
+	
   builder : "Normalize-All" =  normalize(openeditor) (realtime) (meta) (source)
   
   builder : "Name Analysis (for selection)" = generate-name-analysis (openeditor) (realtime) (meta) (source)
   
+  builder : "Show Parameterized SDF" = show-parameterized-sdf (openeditor) (realtime) (source)
 	  /*
   builder : "test-resolve" =
     test-resolving-symbol (openeditor) (realtime) (meta)

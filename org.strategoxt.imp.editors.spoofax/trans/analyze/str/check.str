@@ -13,39 +13,63 @@ imports
   context/sdf/declare-signature
   context/str/-
   context/symboltable
+  context/declare
+	context/scope-tree
 	
 rules
   analyze-section: 
-    STRSection(ast) -> ( errors, warnings, [])
+    s@STRSection(ast) -> ( errors, warnings, [])
     where
        dbg-analysis(! $[ErrorChecking | STR Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>) 
 	     ; with-spxverify(
 			       {|IsNoConflict
-			       : errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast
-			       ; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
+			       	: 	errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast
+			       		; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
 			        |}
 	       )
 rules 
-  is-declared =
-      one(?_{cookie} + ?SVar(_{cookie}))
-       
-rules // Constraints
+	// internal utils 
+  is-declared =   one(?_{cookie} + ?SVar(_{cookie}))
+  
+  // checks whether current module is compiled ( name-analyzed) or reusing symbols 
+  // from the symboltable  
+  ensure-enclosing-module-is-compiled  = <is-a-compiled-module><GetEnclosingModuleName>     
 
+rules 
+	stratego-global-constraint-error':
+    c@CallT(SVar(x), s*, t*) -> (x, $[Strategy or rule '[x]' not defined])
+    where 
+    	not(ensure-enclosing-module-is-compiled)
+    where	
+    	<signature-of>c 
+    	
   stratego-global-constraint-error:
     CallT(SVar(x), s*, t*) -> (x, $[Strategy or rule '[x]' not defined])
     where
       require(
          is-declared 
       )
-      
+  
+  stratego-global-constraint-error:
+    o@Op(x, t*) -> (o, $[Constructor [x]/[<length> t*] not declared])
+    where  not(ensure-enclosing-module-is-compiled)
+    where
+    	require(
+    			declare-cookie-of(strip-annotation)
+    	<+	<is-declared-signature(|<length> t*)>x
+  		)
+
   stratego-global-constraint-error:
     Op(x, t*) -> (x, $[Constructor [x]/[<length> t*] not declared])
+    where 
+    	ensure-enclosing-module-is-compiled
     where
       require(
          is-declared 
-      <+ is-declared-signature(|<length> t*)
+      <+ <is-declared-signature(|<length> t*)>x
     	)
 
+  // local check 
   stratego-global-constraint-error:
     Var(x) -> (x, $[Variable '[x]' is not declared])
     where

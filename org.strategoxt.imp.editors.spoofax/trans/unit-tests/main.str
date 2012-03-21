@@ -1,0 +1,43 @@
+module main 
+
+imports 
+	include/SpoofaxLang 
+	normalize/signatures 
+	context/-
+// Test helper
+
+
+rules 
+	
+rules 
+	test-get-all-import-package-b	= 
+		!Package(QName(["b" , "test"]));
+		get-all-usings;
+		is-list 
+			
+	test-get-all-import-package-a	= 
+		!Package(QName(["a"]));
+		get-all-usings;
+		is-list 
+	
+	
+	test-get-all-module-imports = 
+		!Module(QName(["b" , "test" , "e"])) ;
+		get-all-usings;
+		is-list  
+		 
+					
+rules 
+	
+	test-get-all-legacy-imports-illegal  =
+		!Package(QName(["b" , "test"])) ; 
+		get-all-enclosed-legacy-artifacts ;
+		is-list;
+		?[(Package(QName(["b","test"])),_ , Unresolved())]
+		
+	
+	test-get-all-legacy-imports_valid  =
+		!Package(QName(["b" , "test"]));
+		get-all-enclosed-legacy-artifacts ;
+		is-list;
+		?[(Package(QName(["b","test"])),_, Resolved()), (Package(QName(["b","test"])),_, Unresolved())]	

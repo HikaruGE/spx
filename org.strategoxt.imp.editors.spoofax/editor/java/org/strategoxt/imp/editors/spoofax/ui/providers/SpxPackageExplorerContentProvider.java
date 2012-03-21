@@ -7,7 +7,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.strategoxt.imp.editors.spoofax.SpxProjectDependencyGraphProvider;
-import org.strategoxt.imp.editors.spoofax.SpxProjectsAnalyzer;
+import org.strategoxt.imp.editors.spoofax.SpoofaxlangWorkspace;
 import org.strategoxt.imp.editors.spoofax.ui.model.SpoofaxlangCnfRoot;
 import org.strategoxt.imp.editors.spoofax.ui.model.SpxImportReference;
 import org.strategoxt.imp.editors.spoofax.ui.model.SpxImportReferenceGroup;
@@ -32,7 +32,7 @@ public class SpxPackageExplorerContentProvider implements ITreeContentProvider{
 		ArrayList<Object> results = new ArrayList<Object>();
 
 		if ( inputElement instanceof SpoofaxlangCnfRoot){
-			Set<IProject> projects = SpxProjectsAnalyzer.getWorkspaceProjects();
+			Set<IProject> projects = SpoofaxlangWorkspace.getWorkspaceProjects();
 			results.addAll(SpxProjectDependencyGraphProvider.getDependencyEmptyDependencyGraphs(projects));
 		}
 

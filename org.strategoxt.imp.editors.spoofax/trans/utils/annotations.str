@@ -10,7 +10,7 @@ imports
 rules
   add-annotation(|new-anno): elem -> elem{new-anno, anno*}
 		where
-			anno* := <get-annos> elem
+			anno*:= <get-annos> elem
 
 	add-annotations(|new-annos): elem -> out
 		where

@@ -28,20 +28,25 @@ strategies
   
   declare-bodies-top = alltd(declare-bodies)
 
-rules
+strategies 
+	// strategies to differentiate internal and public strategie or rule blocks
     
   declare-bodies: 
     InternalRules(str-defs*) -> InternalRules(analyzed-str-defs*)
     where 
     	// activate-stratego-internal-scope automatically calls declare-rules
-      <activate-stratego-internal-scope(declare-bodies-top)>str-defs*  
+      <activate-stratego-internal-scope(
+      	declare-bodies-top
+    	)>str-defs*  
       => analyzed-str-defs*
        
 
   declare-bodies: 
     InternalStrategies(str-defs*) -> InternalStrategies(analyzed-str-defs*)
     where
-	    <activate-stratego-internal-scope( declare-bodies-top ) >str-defs*  
+	    <activate-stratego-internal-scope( 
+	    	declare-bodies-top 
+    	) >str-defs*  
 	    => analyzed-str-defs*
              
   declare-bodies: 
@@ -49,13 +54,16 @@ rules
     where 
       <declare-rules(
       		declare-bodies-top
-    		)
-  		>str-defs*  =>analyzed-str-defs* 
+    		)>str-defs*  
+    		=>analyzed-str-defs* 
 
   declare-bodies: 
     Strategies(str-defs*) -> Strategies(analyzed-str-defs*)
     where 
-      <declare-rules(declare-bodies-top)>str-defs*  =>analyzed-str-defs*
+      <declare-rules(
+      	declare-bodies-top
+    		)
+  		>str-defs*  =>analyzed-str-defs*
 
 rules
         
@@ -265,6 +273,7 @@ rules
     Var(x{}) -> Var(x')
     where
       x' := x{<declare-cookie-of>}
+      
 rules 
   // Uses inside definition bodies
   declare-bodies:
@@ -285,7 +294,7 @@ rules
       x' := x{<declare-cookie-of>}
     <+
       // HACK: a higher-order strategy can be passed as an argument, 
-      // as in s1(s2), where s2 has arguments. We can only check if there
+      // as in s1(s2), where s2 has no arguments. We can only check if there
       // is a strategy called s2, independent of the number of
       // (strategy/term) arguments to s2.
       // map(to-java) => Call(SVar("map"), [CallNoArgs(SVar("to-java"))])
@@ -293,8 +302,9 @@ rules
       ; filter(?(x,_,_))
       ; fetch-elem(\key@(x, s*, t*) -> <resolve-str-cookie>\)
       ; x' := x{<id>}
+    <+
+      x' := x
       
-
   declare-bodies:
     Op(x, t*) -> Op(x', t'*)
     where
@@ -302,6 +312,7 @@ rules
     where with-spxverify(
       t'* := <declare-bodies-top> t*
 		)
+
 rules 
   dr-scope-declare-cookies(defs, s):
     t -> t'

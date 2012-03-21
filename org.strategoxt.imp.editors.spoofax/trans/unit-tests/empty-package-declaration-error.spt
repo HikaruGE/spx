@@ -1,0 +1,10 @@
+module empty-package-declaration-error
+
+language Spoofaxlang 
+
+
+test valid legacy import declarations 2
+[[
+		package c.test  
+]]  
+   

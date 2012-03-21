@@ -101,11 +101,11 @@ public class GetSpxIndexSummariesCommand implements ISpxlangCommand<Set<IProject
 			monitor.setTaskName("Building Index Summary is done.");
 		} catch (StrategoErrorExit e) {
 			Environment.logException(e);
-			throw new StrategoException("Project builder failed: " + e.getMessage() + "\nLog follows:\n\n"
+			throw new StrategoException("Command Failed: " + e.getMessage() + "\nLog follows:\n\n"
 					+ currentIOAgent.getLog(), e);
 		} catch (StrategoExit e) {
 			if (e.getValue() != 0) {
-				throw new StrategoException("Project builder failed.\nLog follows:\n\n"
+				throw new StrategoException("Command Failed.\nLog follows:\n\n"
 						+ currentIOAgent.getLog(), e);
 			}
 		}

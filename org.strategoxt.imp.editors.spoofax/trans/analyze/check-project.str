@@ -6,4 +6,3 @@ module analyze/check-project
 rules
 	analyze-global: () -> <id>
 	
-	

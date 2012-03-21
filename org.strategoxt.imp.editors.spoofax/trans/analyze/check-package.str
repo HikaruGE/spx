@@ -21,29 +21,22 @@ imports
 
 rules
 	package-constraint-warning :
-		package-typed-qname@Package(untyped-qname) -> (untyped-qname , $[No definitions of Language Name in the Package. Hence, this package will be considered as a langauge library only.])
-		where 
-			not(<get-language-name>package-typed-qname)
+		package-typed-qname@Package(untyped-qname) ->(package-typed-qname,	$[No definitions of Language Name in the enclosing Package. Hence, this module will be considered as a part of a langauge library.])
+		where not(<get-language-name>package-typed-qname)
+	
 	
 	package-constraint-error :
-		package-typed-qname@Package(untyped-qname) -> (package-typed-qname , $[Multple definitions of Language Name in the Package. Following definition is found : [<print-as-string>configure-lang-names]])
-		where 
-			<get-all-language-name>package-typed-qname => configure-lang-names;
-			is-not-empty-list;
-			make-set;
-			not(ensure-is-unique)
-			
+		package-typed-qname@Package(untyped-qname) ->( package-typed-qname ,  $[Multple definitions of Language Name in the enclosing Package. Following definition is found : [<print-as-string>configured-lang-names]])
+		where	get-all-language-name => configured-lang-names;
+					is-not-empty-list;
+					make-set;
+					not(ensure-is-unique)
+
 rules 
 	analyze : p@Package(untyped-name) -> <id>
-	with
-		current-scope := p
-	where 
-		errors*   := <collect-all(package-constraint-error, conc)> p  ;
-		warnings* := <collect-all(package-constraint-warning, conc)>p  ;
-		infos*    := []
-	where 	
-		rules(
-			GetSemanticProblems :  current-scope  ->  ( errors* , warnings*, infos*)
-		)
-		; dbg-compiler(!$[ErrorChecking | Found semantic problems for ([<print-as-string> current-scope]) Problems :[<print-as-string> ( errors* , warnings*, infos*)]])
-		 
+	where with-spxverify(	current-scope := p  ,!"failed to setup current scope")
+	where errors*   := <collect-all(package-constraint-error, conc)> p;
+				warnings* := <collect-all(package-constraint-warning, conc)>p;
+				infos*    := []
+	where rules( GetSemanticProblems:  current-scope  ->  ( errors* , warnings*, infos*)); 
+				debug-compiler(!$[Found semantic problems for ([<print-as-string> current-scope]) Problems :[<print-as-string> ( errors* , warnings*, infos*)]]	| "analyze" , <debug-level-INFO>) 

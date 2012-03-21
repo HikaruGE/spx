@@ -19,7 +19,7 @@ signature
 		Package					 : Namepace 
 		Package					 : QName -> Namespace
 		Module					 : QName -> Namespace
-	
+		Unqualified			 : Namespacce 	
 	
 	constructors
 		

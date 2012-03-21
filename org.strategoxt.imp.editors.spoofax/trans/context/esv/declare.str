@@ -78,9 +78,18 @@ rules
      where
     	dbg-symboltable(! $[ ScopeTree| [<print-as-string>package-typed-qname] storing  following language Id : [<print-as-string>id-string]] | "store-langauge-properties" , <debug-level-INFO>)  
 	 
-	store-context-free-start-symbols(|module-typed-qname) : 
+	 store-context-free-start-symbols(|module-typed-qname): 
+	 	StartSymbols(Values(sorts*)) -> <id>
+	 	where 
+	 		<map(!Sort(<id>))>sorts* => sorts'*
+	 	where 
+	 		<store-context-free-start-symbols(|module-typed-qname)>StartSymbols(sorts'*)
+	 	
+	store-context-free-start-symbols(|module-typed-qname): 
 	 	StartSymbols(sorts*) -> <id>
-	 	where
+	 	where 
+	 		not(?StartSymbols(Values(_)))
+ 		where
 	 	  verify(?Module(QName(_))| module-typed-qname , "Module(QName(_)) @store-langauge-properties");
 	 	  <get-existing-langauge-descriptor>module-typed-qname => LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, sdfStartSymbols);       
       langDef' := LanguageDescriptor( package-typed-qname, langNames , langIds, <conc>(esvStartSymbols,sorts*), sdfStartSymbols); 

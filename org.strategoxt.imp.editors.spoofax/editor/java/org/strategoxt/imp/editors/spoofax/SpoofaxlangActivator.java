@@ -26,6 +26,10 @@ public class SpoofaxlangActivator extends Activator {
 	public void stop(BundleContext context) throws Exception {
 		try{
 			changeListener.removeListenerFrom(ResourcesPlugin.getWorkspace());
+			SpoofaxlangWorkspace.closeSpoofaxLangWorkspace(ResourcesPlugin.getWorkspace());
+		}
+		catch(Exception ex){
+			System.err.println("Unhandled Exception during SpoofaxlangActivator.stop. Error Details : " + ex.getMessage());
 		}
 		finally{
 			super.stop(context);

@@ -17,22 +17,10 @@ imports
 	utils/debug 
 			
 rules
+
 	//TODO : better handling of Typed and Untyped QName
 	//Strongly typing/untyping qname
-	
-	get-untyped-qname : 
-		typed-qname -> u-qname
-		where
-			!typed-qname => Package(u-qname)
-		<+ 
-		  	!typed-qname => Module(u-qname)
 
-	get-typed-qnames(|Type) : 
-		list-qname -> result
-		where 
-			<is-list>list-qname
-		 	; <map(get-typed-qname(|Type))>list-qname => result
-		
 	get-typed-qname(|Type) = 
 		?QName(q-name-parts*)
 		; where(<is-list>q-name-parts*)

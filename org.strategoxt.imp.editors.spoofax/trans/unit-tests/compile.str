@@ -23,5 +23,5 @@ rules
 		with 
 			<store-currently-analyzing-ast>(<concat-strings>[project-path, "/" ,path] , ast)	 
 		with 
-			compile-all
+			<compile-all>()
 	

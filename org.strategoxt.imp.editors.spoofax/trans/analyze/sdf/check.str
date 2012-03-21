@@ -9,13 +9,18 @@ imports
   context/-
   include/SpoofaxLang
   utils/attributes
+  normalize/signatures 
+
 rules
-	verify-sdf-symbol-declaration-exists =
-		<verify-symbol-exists>( <id>, SDFDeclaration())
-  <+
-    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive SDF declaration for symbol [<print-as-string>]] 
-                 | "verify-sdf-symbol-declaration-exists" ,<debug-level-WARNING>)
-    ; fail 
+	
+	verify-sort-is-declared =
+		?sort(x);
+		activate-scope(
+			result := <resolve-all-symbol-definitions( id | (LookupLocalScope() , <ONLY_ONE>))>(x,  SortDeclaration())
+			| <GetEnclosingPackageName>
+		);	
+		<is-not-empty-list>result
+   
       
 rules
 	analyze-section: SDFSectionEH(_, ast) -> <analyze-sdf-errors>ast
@@ -57,14 +62,15 @@ rules
 				
 	
 strategies
-	
-	//checks whether constructor rhs-sort is marked for having declared multiple times 
+	/* TODO : FIX */
+	//checks whether constructor rhs-sort is marked for having declared multiple times
+/*	 
 	has-duplicate-sdf-definitions(|constructor-name) =
 		?rhs-sort-name;
-		declarations := <resolve-symbol-declarations(all-keys-has-duplicate-opeartion-definition, bagof-has-duplicate-opeartion-definition)><to-scoped-symbol>rhs-sort-name;
- 		filter(? (constructor-name,_ ,rhs-sort-name));
+		get-duplicate-sort-declarations;
+		filter(? (constructor-name, _  ,rhs-sort-name));
  		is-not-empty-list
- 	
+*/ 	
  
   // Tests if something is a non-terminal in terms of the AST produced.
   is-non-terminal =
@@ -81,15 +87,18 @@ rules  //global checks
 
   context-free-syntax-warning:
     sort(x) -> (x, $[No definition for [x]])
-    where
-      not(<verify-sdf-symbol-declaration-exists> x)
+    where require(
+    				verify-call-sites-already-registered(|Unqualified()) <+
+    				verify-sort-is-declared
+    			)
 
   context-free-syntax-sort-error:
     parameterized-sort(_, _) -> [] // not supported
 
   context-free-syntax-sort-error:
     'sorts(_) -> [] // ignored
-
+	
+/*	
 	context-free-syntax-warning:
     p@prod(p*, s, a*) -> (p, $[Possibly multiple definitions of "[x]" [msg-to-append].])
     where
@@ -101,7 +110,8 @@ rules  //global checks
     		msg-to-append := ""
     	end;
     	<has-duplicate-sdf-definitions(|op-name)>x 	 
-
+*/
+	
 	context-free-start-symbols-error:	
    	sorts* -> err-messages*
    	where

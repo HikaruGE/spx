@@ -1,0 +1,129 @@
+module imports
+
+language SpoofaxLang
+
+test get import declarations 1 [[
+package a.test 
+	module a2 
+
+package a 
+	module a1	
+		imports a.test 
+		
+package b.test
+	module c 
+		imports a.test 
+		imports a
+	
+// ---------------
+// language names 
+// ---------------
+package a.test  
+	module a3  
+	language 
+		name : alang
+		
+package b.test 		
+	module e 
+	language 
+		name : blang
+
+		
+package a 		
+	module d 
+	language 
+		name : dlang
+
+					
+]] run test-get-all-import-package-b  to [_,_]
+
+
+test get import declarations 2 [[
+package a.test 
+	module a2 
+
+package a 
+	module a1	
+		imports a.test 
+		
+package b.test
+	module c 
+		imports a.test 
+		imports a
+	
+// ---------------
+// language names 
+// ---------------
+package a.test 
+	module a3 
+	language 
+		name : alang
+		
+package b.test 		
+	module e 
+	language 
+		name : blang
+
+package a 		
+	module d 
+	language 
+		name : dlang
+]]run test-get-all-import-package-a to  [_]
+
+
+test get module import declarations 1 [[
+package a.test 
+	module a2 
+
+package a 
+	module a1	
+		imports a.test 
+		
+package b.test
+	module c 
+		imports a.test 
+		imports a
+	
+// ---------------
+// language names 
+// ---------------
+package a.test 
+	module a3 
+	language 
+		name : alang
+		
+package b.test 		
+	module e 
+	language 
+		name : blang
+
+package a 		
+	module d 
+	language 
+		name : dlang	
+]] run test-get-all-module-imports  to  [_,_]
+
+ 
+test illegal import declarations 1
+[[
+		package b.test 
+		module e
+			imports package1.test3
+			
+			language language descriptions 
+			name : testlang 
+
+]] 1 errors run test-get-all-module-imports to [] 
+
+test illegal import declarations 2
+[[
+		package b.test 
+		module e
+			imports package1.test3
+			
+			language language descriptions 
+			name : testlang 
+
+]] 1 errors run test-get-all-import-package-b to [] 
+ 
+

@@ -36,6 +36,7 @@ imports
 imports
 	 editor/main
 	 codegen/main
+	 unit-tests/main 
 /*
 	unit-tests/templatelang/-
 	unit-tests/utils/-
@@ -58,13 +59,17 @@ rules
 			new-compile-session(
 				enable-command-line-mode
 	  		; get-package-list
-				; compile-internal
+				; compile-main
 			)
 		where
 			prim("SPX_index_get_summary" , <get-project-path>);
 			?index-summary
 			 	
-	
+	 /**
+   * Remove all the index entry related ti a compilation unit 
+   * located at resource-location.
+   * 
+   */
   clean-resource-from-spx-index-jvm : 
   	(current-project-location,resource-location) -> <id>
   	where 
@@ -81,32 +86,63 @@ rules
 			index-clean-resource(|resource-location)
 	
 rules
-
-  editor-complete:
-    (node, position, ast, path, project-path) -> proposals
-    where
-      proposals := <propose-completion <+ ![]> node
-
-  editor-resolve:
-    (sort(x), position, ast, path, project-path) -> target
-    where
-      target := <resolve-atleast-one-sdf-declaration> x
+// 
+//   editor-complete:
+//     (node, position, ast, path, project-path) -> proposals
+//     where
+//       proposals := <propose-completion <+ ![]> node
+// 
+//   editor-resolve:
+//     (sort(x), position, ast, path, project-path) -> target
+//     where
+//       target := <resolve-atleast-one-sdf-declaration> x
 
  /*  TODO : Fix Editor Resolve
-  editor-resolve:
-    (unparameterized(x), position, ast, path, project-path) -> target
-    where
-      target := <parse-spoofaxlang-file> <resolve-import> x
+  // editor-resolve:
+  //   (unparameterized(x), position, ast, path, project-path) -> target
+  //   where
+  //     target := <parse-spoofaxlang-file> <resolve-import> x
  */
 
 rules
 
+	show-analyzed-ast:
+	  (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      <guarantee-extension(|"analyzed.aterm")> path  => filename; 
+      <editor-analyze>(ast, path, project-path); ?(<id> , _ ,_ ,_)  => result  
+
+ 
+   /**
+   * Generates Aterm representation of the sytnax 
+   *
+   */
   generate-aterm:
     (selected, position, ast, path, project-path) -> (filename, result)
     with
       filename := <guarantee-extension(|"aterm")> path;
-      result   := selected // we just return the input term
-
+      result   := selected
+  
+  
+  show-parameterized-sdf:
+		(selected, position, ast, path, project-path) -> None()
+		where  abs-path := <concat-strings>[project-path, "/" ,path]
+	  where with-spxverify(
+	  				<guarantee-extension(|".sdf")> path  => filename; 
+	    			<editor-analyze>(ast, path, project-path); ?(<id> , _ ,_ ,_)
+	    		)
+	  where <get-declared-packages-qname> abs-path => p* ; debug(!"0")
+	  where <get-declared-modules-qname>abs-path => m*   ; debug(!"1")
+	  where <list-loop
+	  				(
+	  					?p@Package(QName(_)); debug(!"2");
+	  					<filter(where(get-enclosing-package-qname; ?p))>m*; 	debug(!"3");
+	  					{|	GetEnclosingPackageName:
+					   				<declare-current-package-scope>p; debug(!"4");
+					   				<generate-sdf-mix-main>m* ; debug(!"5")			 
+	  					|}
+	  				)> p* 
+       
 strategies
 
   main =

@@ -1,9 +1,11 @@
 module context/signatures
  
 signature constructors
-	Public	:	 Visibility
-	Internal:  Visibility	
-
+	
+	
+	Public	 :	 Visibility
+	Internal :  Visibility	
+  Local		 :  Visibility
 
 	InternalScope : ScopeType
 	GlobalScope   : ScopeType
@@ -11,6 +13,8 @@ signature constructors
 	
 	
 	DefData : Package * Type* Visibility * ID * InternalID  -> DefData 
+	
+	RefData : ID * Type * List(Term)  * Namepace -> RefData  // RefData( ID , Type = STR| DYNSTR | OP , RESOLVED_SIGNATURE , ORIGIN_NAMESPACE) 
 	
 	InternalID : ID
 
@@ -45,8 +49,6 @@ signature constructors
 	ModuleType				: Type
 	PackageType				: Type
 	SDFType				  	: Type
-	 
-	
 	
 	STRDef                    : Type
 	RenamedSDefT              : Type
@@ -57,10 +59,17 @@ signature constructors
 	SDFDeclaration            : Type  
 	NamespaceSortDeclaration  : Type
 	SDFUsage 									:	Type
+	
 	//templatelang 
 	TemplateOptions   : Type
 	CanNotBeBlankFlag : Type   
 
+
+signature constructors 
+	
+	VisibilityType : Visibility -> MetaAnno 
+	SymbolType     : Type       -> MetaAnno
+	
 signature constructors 
 		
 	BooleanType : Type

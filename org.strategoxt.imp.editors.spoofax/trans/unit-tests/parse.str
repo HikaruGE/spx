@@ -8,17 +8,18 @@ imports
 	
 rules 
 	
-	parse-tests : 
-		a@(selected, position, ast, path, project-path) -> None()
-	where
-		<try(parse-sdf-test)>a;
-		<try(parse-str-test)>a;
-		<try(parse-def-test)>a;
-		<try(parse-rtree-test)>a
+	parse-legacy-artifacts-tests: 
+		project-path -> project-path
+		where debug 
+		where
+			<try(parse-sdf-test)>project-path;
+			<try(parse-str-test)>project-path;
+			<try(parse-def-test)>project-path;
+			<try(parse-rtree-test)>project-path
 			
 		
 	parse-sdf-test:
-		(selected, position, ast, path, project-path) -> None()
+		 project-path -> None()
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.sdf"] 
 		where 
@@ -32,7 +33,7 @@ rules
 			<debug>$[FAILED...]
 			
 	parse-str-test:
-		(selected, position, ast, path, project-path) -> None()
+		project-path -> None()
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.str"]
 		where 
@@ -47,7 +48,7 @@ rules
 				
 	
 	parse-def-test:
-		(selected, position, ast, path, project-path) -> None()
+		project-path -> None()
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/SDF.def"]
 		where 
@@ -60,8 +61,8 @@ rules
 		<+ 
 			<debug>$[FAILED...]		
 			
-		parse-rtree-test:
-		(selected, position, ast, path, project-path) -> None()
+	parse-rtree-test:
+		project-path -> None()
 		with 
 			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.rtree"]
 		where 

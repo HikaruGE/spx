@@ -23,5 +23,5 @@ strategies
     parse-stream(
       strsglr-report-parse-error
     | <import-term(lib/Stratego-Sugar.tbl)>
-    )
+    ) 
  	

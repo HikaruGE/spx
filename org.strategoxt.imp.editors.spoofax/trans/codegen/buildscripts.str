@@ -35,19 +35,27 @@ rules
 			?(package-qnames* , main-ant-output-file-name, main-ant-output-path, autogen-ant-output-file-name);
 			cache-path := <spx-cache-path(|"cache.buid.xml")>main-ant-output-path;
 			<dirname; ensure-directory-exists> main-ant-output-path; // ensures the directory exists
+			
+			// OPTIMIZATION : only generating the ant script specific to packages 
+			// if there is a new package or if there is mismatch in the number of packages generated last 
+			// time and this time. 
+			//
+			// Thus, it only generates the package specific ANT script fragements only if 
+			// there is any modification on the list of packages to be compiled
 			if not(<file-exists>cache-path) <+ not(<packages-not-modified>package-qnames*) then 
 				with-spxverify(
 					packages-specific-ant-string := <packages-specific-ant>(package-qnames*, main-ant-output-file-name ,autogen-ant-output-file-name);
 					<save-to-file>(cache-path ,packages-specific-ant-string);
 					<refresh-file>cache-path;
-					<index-generated-package-ids>package-qnames* 
+					<index-generated-package-ids> package-qnames* 
 					, !$[Failed to create autogen build script - [main-ant-output-file-name]]  	
 				);
+				
 				ensure-build-file-is-upto-date( id |cache-path , main-ant-output-path)
 			end;
 			ensure-build-file-is-upto-date( not(<file-exists> main-ant-output-path) <+ <is-newer> (main-ant-output-path, cache-path) |cache-path , main-ant-output-path) 
 		
-		 packages-not-modified : 
+		 packages-not-modified: 
 			new-package-qnames*  -> <id>
 		 	 where 
 		 	 	old-package-qnames* := <get-generated-package-ids>;  

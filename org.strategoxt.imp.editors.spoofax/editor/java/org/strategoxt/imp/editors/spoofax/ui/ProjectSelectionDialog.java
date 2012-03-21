@@ -14,7 +14,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.dialogs.FilteredItemsSelectionDialog;
 import org.strategoxt.imp.editors.spoofax.Activator;
-import org.strategoxt.imp.editors.spoofax.SpxProjectsAnalyzer;
+import org.strategoxt.imp.editors.spoofax.SpoofaxlangWorkspace;
 import org.strategoxt.imp.editors.spoofax.ui.providers.ProjectDetailsSearchLabelProvider;
 import org.strategoxt.imp.editors.spoofax.ui.providers.ProjectSearchLabelProvider;
 
@@ -66,7 +66,7 @@ public class ProjectSelectionDialog extends FilteredItemsSelectionDialog{
 	@Override
 	protected void fillContentProvider(AbstractContentProvider contentProvider, ItemsFilter itemsFilter, IProgressMonitor progressMonitor) throws CoreException {
 		
-		Set<IProject> projects = SpxProjectsAnalyzer.getWorkspaceProjects(); 
+		Set<IProject> projects = SpoofaxlangWorkspace.getWorkspaceProjects(); 
 		
 		progressMonitor.beginTask("Searching Projects...", projects.size()); 
 		

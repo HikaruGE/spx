@@ -1,0 +1,10 @@
+module config
+
+language SpoofaxLang
+
+
+test get legacy extension names 
+	expected := ["sdf" , "def" , "str" , "rtree"];
+	get-known-legacy-extensions;
+	?expected
+=> _

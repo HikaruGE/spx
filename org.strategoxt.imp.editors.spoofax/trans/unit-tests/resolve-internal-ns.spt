@@ -1,0 +1,13 @@
+module resolve-internal-ns
+
+language SpoofaxLang
+
+test should fail resolve imported internal symbols[[
+	package A.P2
+	module M2
+		rules 
+			testS  = internal-s-test
+
+]]1 error     
+
+ 

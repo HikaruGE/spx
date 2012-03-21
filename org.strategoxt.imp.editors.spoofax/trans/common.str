@@ -77,7 +77,7 @@ rules
   	where
     	not(<eq>("", fileContent))
     where
-    	dbg-compiler(!$[Writing to the following file : [fileName] the following content: 
+    	debug-compiler(!$[Writing to the following file : [fileName] the following content: 
       							[<print-as-string>fileContent] 
     	])
     with

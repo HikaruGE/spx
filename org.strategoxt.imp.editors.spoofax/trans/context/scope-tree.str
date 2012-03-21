@@ -6,18 +6,19 @@ imports
 	context/resolve-symbols
 	context/symboltable
 	normalize/signatures
+	context/-
 imports 	
 	common
 	utils/debug
 	utils/contract
 
 rules
-	store-declared (| namespace) = where(not(?(_,_))) ; <store-declared(|namespace)>(<id> ,<id>)
+	store-declared (|namespace) = where(not(?(_,_))) ; <store-declared(|namespace)>(<id> ,<id>)
 	
 	store-declared(| namespace) : 
 		(x,d) -> <id>
 		where
-			rules( Declared :+ (namespace,x) -> d )
+			rules(Declared :+ (namespace,x) -> d )
 			
 	get-declared(|namespace) = !(namespace, <id>);  Declared  		 
 	
@@ -39,35 +40,126 @@ rules
 			filter(?(namespace, _));
 			map(\y -> <rules(Declared :- y)>\)
 	
+
+ enable-scope-with-spx-verify( s ) = with-spxverify(s)
+  
+  activate-internal-scope(s):
+    x -> y
+    where 
+        dbg-symboltable(!$[Entering new-internal-scope [<print-as-string> x].]|"activate-internal-scope(s)" , <debug-level-INFO>)
+    where
+      with-spxverify(
+         {| CurrentScope,GetScopeType:
+              with-spxverify(
+                if not(GetEnclosingPackageName) then
+                  fail 
+                end
+              , !$[ Could not find any enclosing package to create an internal scope]  
+              )
+              ; scope_id :=  <get_internal_module_qtname><GetEnclosingPackageName> 
+              ; rules (CurrentScope : _ -> scope_id)
+              ; rules (GetScopeType := InternalScope()) 
+              ; <s>x => y // performing transformation
+        |}
+        , !$[Failed to create an internal scope.]  
+       )
+    where 
+        dbg-symboltable(!$[Exiting new-internal-scope [<print-as-string> x].]|"activate-internal-scope(s)" , <debug-level-INFO>) 
+          
+  
+  activate-global-scope(s):
+    x -> y 
+    where 
+  		dbg-symboltable(!$[enter global-scope with [<print-as-string>x].]|"activate-global-scope(s)" , <debug-level-INFO>)
+    where
+    	with-spxverify(
+    		{| GetScopeType:
+    			    rules (GetScopeType := GlobalScope()); 
+  						activate-scope(s | Globals()) => y 
+       	|}
+     		, !"Failed to activate global scope"
+     	)		
+    where 
+    	dbg-symboltable(!$[exit global-scope [<print-as-string> x].]|"activate-global-scope(s)" , <debug-level-INFO>) 
+        
+  	
+   activate-scope(s|scope):
+    x -> y 
+    where 
+    	dbg-symboltable(!$[enter scope [<print-as-string>scope] with [<print-as-string>x].]|"activate-scope(s)" , <debug-level-INFO>)
+    where
+        {| CurrentScope :
+           	scope_id := scope
+            ; rules (CurrentScope: _ -> scope_id) 
+            ; <s>x => y // performing transformation
+        |}
+    where 
+        dbg-symboltable(!$[exit global-scope [<print-as-string> x].]|"activate-global-scope(s)" , <debug-level-INFO>) 
+        	
+  
+rules   
+  // Creates a new local scope . Local scope and enclosed symbols 
+  // get deleted while exiting scope.
+  new-local-scope(s):
+    x -> y 
+    where 
+        dbg-symboltable(!$[Entering new-local-scope [<print-as-string> x].]|"new-local-scope(s)" , <debug-level-INFO>)
+    where
+        {| CurrentScope :
+            get-current-scope => parent-namespace;
+            
+            // defining a new scope 
+            scope_id := <symtab_new_scope(|parent-namespace)>;
+            rules (CurrentScope: _ -> scope_id) ;
+            
+            // performing transformation
+            <s> x => y;
+            
+            // destrorying newly created scope 
+            symtab_destroy_scope(|scope_id)
+        |}
+  	where 
+        dbg-symboltable(!$[Exiting new-local-scope [<print-as-string> x].]|"new-local-scope(s)" ,<debug-level-INFO>)
+  
+   symtab_new_scope(|parent-namespace) = prim("SPX_symtab_new_scope" ,  <get-project-path>  , parent-namespace)
+   
+   symtab_destroy_scope(|scope-id) = prim("SPX_symtab_destroy_scope", <get-project-path>  , scope-id)
+        
+   get-current-scope = GetEnclosingModuleName <+ GetEnclosingPackageName  <+ !Globals()     
+
 rules
 	
-	add-to-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @add-to-compile-queue ") ; store-declared(|CurrentlyCompilingFlag())
+	add-to-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) at add-to-compile-queue ") ; store-declared(|CurrentlyCompilingFlag())
 	
-	is-in-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @is-in-compile-queue") ;  get-declared(|CurrentlyCompilingFlag())
+	is-in-compile-queue = verify(?Package(QName(_))  |<id> , "Package(QName(_)) at is-in-compile-queue") ;  get-declared(|CurrentlyCompilingFlag())
 	
 	should-compile-this-package = not(is-in-compile-queue)
 	
-	add-to-compiled-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) @add-to-compiled-modules") ;   store-declared(|CompiledModuleFlag() )	
-
-	is-a-compiled-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) @is-a-compiled-module") ;  get-declared(|CompiledModuleFlag())
+	get-all-compiled-packages =  get-all-declared-by-type(|CurrentlyCompilingFlag()) ; make-set
 	
-	add-to-analyzed-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) @add-to-analyzed-modules") ;   store-declared(|AnalyzedModuleFlag() )	
+	add-to-compiled-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) at add-to-compiled-modules") ;   store-declared(|CompiledModuleFlag() )	
 
-	is-a-analyzed-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) @is-a-analyzed-module") ;  get-declared(|AnalyzedModuleFlag())
+	is-a-compiled-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) at is-a-compiled-module") ;  get-declared(|CompiledModuleFlag())
+	
+	add-to-analyzed-modules = verify((?Module(QName(_)) , String)  |<id> , "Module(QName(_)) at add-to-analyzed-modules") ;   store-declared(|AnalyzedModuleFlag() )	
+
+	is-a-analyzed-module = verify(?Module(QName(_))  |<id> , "Module(QName(_)) at is-a-analyzed-module") ;  get-declared(|AnalyzedModuleFlag())
 
 	get-all-analyzed-modules-locations =  get-all-declared-by-type(|AnalyzedModuleFlag()) ; make-set
 	
-	add-to-analyzed-packages-queue = 	verify(?Package(QName(_))  |<id> , "Package(QName(_)) @add-to-compile-queue ") ; store-declared(|AnalyzedPackageFlag())
+	get-all-analyzed-packages = get-all-declared-by-type(|AnalyzedPackageFlag());make-set
 	
-	is-in-analyzed-packages-queue  = verify(?Package(QName(_))  |<id> , "Package(QName(_)) @is-in-compile-queue") ;  get-declared(|AnalyzedPackageFlag())
+	add-to-analyzed-packages-queue = 	verify(?Package(QName(_))  |<id> , "Package(QName(_)) at add-to-compile-queue ") ; store-declared(|AnalyzedPackageFlag())
 	
+	is-in-analyzed-packages-queue  = verify(?Package(QName(_))  |<id> , "Package(QName(_)) at is-in-compile-queue") ;  get-declared(|AnalyzedPackageFlag())
+
 	set-already-reinitialized =  <store-declared(|ReinitCompileSessionFlage())> <get-constructor>ReinitCompileSessionFlage()
 	
 	is-already-reinitialized =  <get-declared(|ReinitCompileSessionFlage())> <get-constructor>ReinitCompileSessionFlage()	
 	
-	is-legacy-artifact-resolved = verify( ?(ns,modulename,resolved-path) | <id> , "(ns,modulename,resolved-path) @is-legacy-artifact-resolved");  !(modulename,resolved-path) ; get-declared(|ResolvedExternalArtifactFlag(ns))
+	is-legacy-artifact-resolved = verify( ?(ns,modulename,resolved-path) | <id> , "(ns,modulename,resolved-path) at is-legacy-artifact-resolved");  !(modulename,resolved-path) ; get-declared(|ResolvedExternalArtifactFlag(ns))
 	
-	add-legacy-artifact-as-resolved = verify( ?(ns , modulename, path) | <id> , "(ns , modulename, path)  @add-legacy-artifact-as-resolved") ; !((modulename,path), path) ; store-declared(|ResolvedExternalArtifactFlag(ns)) 
+	add-legacy-artifact-as-resolved = where(verify( ?(ns , modulename, path) | <id> , "(ns , modulename, path)  at add-legacy-artifact-as-resolved") ; !((modulename,path), path) ; store-declared(|ResolvedExternalArtifactFlag(ns))) 
 
 signature constructors 
 	LibInGlobalNamespace : Flag 
@@ -78,7 +170,7 @@ rules
 		; <index-symbol-definition>(module-name, LibInGlobalNamespace(),  module-name)
 	  
 	  
-	is-lib-exists-in-global-cache= 
+	is-lib-exists-in-global-cache = 
 		? module-name
 		; <resolve-symbol-definition>(module-name, LibInGlobalNamespace())
 

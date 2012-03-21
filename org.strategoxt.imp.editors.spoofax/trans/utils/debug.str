@@ -23,14 +23,18 @@ rules
 	debug-level-WARNING = !"Warning"
 	
 	debug-level-ERROR  = !"Error" 
+	
+	debug-at-generator = !"Generator"
+	
+	debug-at-linker = !"Linker"
 			
 rules 
 	
 	is-debug-enabled : 
 		flag -> <id>
 		where
-				to-index := <get-constructor>flag;
-				<get-declared(|flag)> to-index 
+			to-index := <get-constructor>flag;
+			<get-declared(|flag)> to-index 
 					  
 	enable-debug-flag : 
 		flag -> <id>
@@ -85,11 +89,9 @@ rules
 
 	disable-compiler-debugging   = where(!DebugCompilerFlag() ;  disable-debug-flag)
 
-  	debug-compiler(msg) = where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler$]$ [<msg>]])  
-
-	dbg-compiler(s) = debug-compiler(s)
+ 	debug-compiler(msg) = where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler$]$ [<msg>]])  
 	
-	dbg-compiler(msg|site, type) =  where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler|[site]|[type]$]$ [<msg>]])  
+	debug-compiler(msg | site, type) =  where(not(<is-debug-enabled>DebugCompilerFlag() <+ DebugAll)<+   <debug>$[ $[$Compiler|[site]|[type]$]$ [<msg>]])  
 
 	
 rules
@@ -100,7 +102,7 @@ rules
     ; where(
           total := <diff-times> (<times>,starttime)
         ; t1 := <self-children-user-time; ticks-to-seconds; real-to-string(|3)> total
-        ; str := <concat-strings> [msg, ": ", t1, " s"]
+        ; <concat-strings> [msg, ": ", t1, " s"]
         ; debug
       )
 

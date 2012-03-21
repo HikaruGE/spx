@@ -22,375 +22,309 @@ imports
 	analyze/main
 	lib/editor-common.generated
 
-//TODO : refactor : move it to declare all when handling all types of legacy artifacts. Currently only considering STR Libs
-rules
-	// Starting a new compilation session
-	new-compile-session(s) =
-  		{| 	GetSemanticProblems, Declared:  
-			dbg-compiler(!$[-----------------::new-compile-session::-----------------]);
-			with-spxverify(
-				where(compile-init)
-				; s 
-	    	; compile-unload
-	    	, !" new compile session failed unexpectedly. "  
-        )  
-	   |}
-
 rules				
 	
-		
 	// Compiler initialization
 	compile-init =
-		where (
-			index-init 
-		<+ 
-			debug(! $[Failed to initialize SemanticIndex for [<get-project-path>] at this moment."])
-		);
-		// Getting Source directory to start parsing files if needed.
-		// Otherwise, it reads from the cache
-		where(
-			get-all-spx-sources  => spx-sources
-		);
-		
-		//event to perform oninit activities related to index-updating  
-		on-init-index-updating;
-		
-		//Iterating all the configured source directory
-		<list-loop(parse-spx-sources)> spx-sources;
-		
-		//Initializes global symbols / default primitives
-		init-declarations;
-		
-		//event to perform oncompleted activities related to index-updating 
-		on-index-updating-completed 
-		
+		?initialize-for ;
+		where ( index-init	<+ debug(! $[Failed to initialize SemanticIndex for [<get-project-path>] at this moment."])	);
+		on-init-index-updating; 		//event to perform oninit activities related to index-updating
+		if !initialize-for ; not(?(_,_)) then 
+				get-all-spx-sources 
+			; list-loop(parse-spx-sources) //Iterating all the configured source directory
+		else
+			<normalize-all>initialize-for // (ast, filepath)
+		end ;	
+		init-declarations;					//Initializes global symbols / default primitives
+		on-index-updating-completed //event to perform oncompleted activities related to index-updating 
 	
-	// save state of current compile session
-	compile-save-state = index-save
+	compile-save-state = index-save // save state of current compile session
 	  
+	compile-clean-symboltable = index-clearall 
+	
 	//closes any underlying connection 
-	compile-unload = 
-  		//closes and saves current state of symbol table.
-		index-close
+	compile-unload = debug-time (index-close | "Saving Index" ) //closes and saves current state of symbol table.
 
 	// Pre-compilation before starting up actual compilation
 	// Before starting primary compilation,
 	// pre-compile normalize the parsed tree
 	// and creates scope-tree and namespace-reference table for
 	// performing further compilation.
-	pre-compile-compilation-unit =
-		origin-track-forced(normalize-all) // normalize and builds scope-tree and  partial symbol table with the local information availble
-	
+	pre-compile-compilation-unit = normalize-all  // normalize and builds scope-tree and  partial symbol table with the local information availble
+
+rules 
+	// Creating a new compilation session. 
+	// First  it initializes environment for the current compilation session. 
+	// Then, it invokes strategy S passed as argument to perform compilation.
+	new-compile-session(s) =
+  	 {| GetSemanticProblems, Declared 
+		  : debug-compiler(!$[-----------------::new-compile-session::-----------------]);
+				with-spxverify(
+						where(compile-init)
+					; s
+					//; debug-time(compile-unload | "Index Saving State: ")
+					, !" new compile session failed unexpectedly. "  
+        )  
+	   |}
+
 rules
 	
-	// compiling all the package 
+	// compiling all the packages available in the current project  
+	// current project can also specify other project as reference
+	// hence, it imports those and consider them during the compilation process
 	compile-all =
+		 debug-time( 
 		 new-compile-session(
-		  	p* := <get-package-list>  
-		  	; <compile-internal> p*
+		  		get-package-list  
+		  	;	compile-main
 				; <get-all-analyzed-modules-locations>()
-				; mark-issues-of-file
+				; mark-issues-of-files
 			)
-	
-	compile-packages-of: 
-		(ast, file-abs-path) -> 
-		<compile-packages-of(fail, fail , id)>(ast, file-abs-path) 
-		 	
+			| "compile-all"
+			)
+
 	// compiles all the packages stored at the filepath specified
-	compile-packages-of (should-compile-forward-refs, get-forward-references, generate-code): 
-		(ast, file-abs-path) -> (ast', issues*)
-		where
-			new-compile-session(
-			 	<get-declared-packages-qname> file-abs-path => list-of-package-qname 
-				; dbg-compiler(!$[----compile-packages-of:: compiling following packages [<print-as-string>list-of-package-qname] .])
-				; <compile-internal>list-of-package-qname // Compiling
-			  
-			  ; <get-semantic-problmes-by-file>file-abs-path => issues*// getting list of errors
-				; dbg-compiler(!$[----compile-packages-of:: get semantic problems of current file .])
-				; if not(<fail-if-has-errors>issues*) then
-				  	dbg-compiler(!$[----compile-packages-of:: found errors .]);
-				  	// if there is error, setting flag that found errors 
-				  	with-spxverify ( 
-				  		rules(HasErrors :=  True())
-							, !"Failed to set HasErrors to True()"
-						);
-						additional-qnames* := [];
-						dbg-compiler(!$[----Errors in current AST: [<print-as-string>issues*]])	  // get errors for this file only
-				  else
-						dbg-compiler(!$[----compile-packages-of:: No errors found.]);
-						// compiling additional packages 
-						// where current packages are imported to ( forward references) 
-						// Lazy/Incremental compilation is employed.
-						// only compiling following packages if 
-						// there is no error from compiling current packages and all its depending packages
-						if should-compile-forward-refs then 
-							<mapconcat(get-forward-references)>list-of-package-qname => additional-qnames*;
-							where(<debug>$[Compiling following additional packages :[<print-as-string>additional-qnames*]]);
-							compile-internal
-						else
-							additional-qnames* := []	
-						end	
-				end
-				; dbg-compiler(!$[----compile-packages-of:: getting analyzed AST to mark errors .])
-				; <get-analyzed-ast>ast => ast'
-				; <get-related-files-of-packages><conc>(list-of-package-qname , additional-qnames*)
-				; debug-time( mark-issues-of-file | " -- marking issues of file")
-	  		; dbg-compiler(!$[----compile-packages-of:: error marking is done.])  
-				; generate-code		
-			  ; dbg-compiler(!$[----compile-packages-of:: code is generated as well.])
-				; <debug>$[ ------------------------------------------------
-		    ]  
-  
-		 )
-		 
-	// internal strategy of compilation used by different main compile strategies
-	compile-internal: 
-		list-of-package-qname* -> list-of-package-qname*
-		where
-			<debug>$[Now compiling packages : [<separate-by(|" , ");concat-strings><map(?Package(<id>);convert-qname(|"."))>list-of-package-qname*]]
-		where
-		  debug-time(
-			  	compile-main
-			  	| "--Compilation Done"
-		  )
-		where    
-			debug-time(
-			  	analyze-main
-			  	| "--Error Analyses Done"
-		  )
-		   			
-		   				 	
-	mark-issues-of-file = 
-		verify(List | <id> , "List of files path (absolute)@mark-issues-of-file")
-		; list-loop(
-	  		{
-					?file-path
-					; (e, w, n) := <get-semantic-problmes-by-file>file-path
-					;	if !e ; ?[_|_] then   
-				 	  		  <debug(!"----FileName : ")><base-filename>file-path
-						  	; <debug> $[----Errors  [<print-as-string>(e, w, n)] ]
-					  		; with-spxverify ( 
-				  				 rules(HasErrors :=  True() )
-								  )
-						end;
-						if not(is-in-command-line-mode) then 
-							spx-compilation-unit-ast := <get-indexed-compilation-unit> file-path 
-				 			;	( <set-spoofax-markers(|file-path)>(spx-compilation-unit-ast,  e, w, n)	 
-			 				<+
-			 					<debug(!"Failed to set Error Markers for ")>file-path;
-				 				fail
-			 				)
-			 			end	 
-	  		}	
-			)	
+	compile-packages-of = compile-packages-of(id)
 	
-	// Set markers for a given spoofax file
-  // Current term: (ast-desugared, errors, warnings, notes) tuple
-  // file-path: path of the spoofax compilation unit
-  set-spoofax-markers(|file-path) =  is-in-command-line-mode < id + prim("SSL_EXT_set_markers", file-path)
-
+	compile-packages-of(exec-generate-code): (ast, file-abs-path) 	-> (ast', issues*)
+		where new-compile-session(
+						debug-time (
+						 		<get-declared-packages-qname> file-abs-path => list-of-package-qname 
+							; debug-time(<compile-main> list-of-package-qname  | "compile-main")// Compiling
+						  ; <get-semantic-problmes-by-file>file-abs-path => issues* // getting list of errors of current file
+						  ; if not(<fail-if-has-errors>issues*) then
+							  	set-has-errors // checking whether there are errors 
+						  	end
+							; get-all-analyzed-packages	
+							; get-related-files-of-packages
+							; filter(not(is-equal-path(| file-abs-path)))
+							; mark-issues-of-files
+							; <exec-generate-code> list-of-package-qname // only generating codes for the changed packages  		 
+						  ; <get-analyzed-ast >ast => ast'  // returing currenly analyzed AST
+						  | "compile-package-of"
+					  )    
+		 		 )	
+			     
 rules
-	compile-main =
-		? list-of-package-qnames
-		; dbg-compiler(!$[compile-main:: compiling packages : [<print-as-string>] with modules:
-																		[<print-as-string><get-declared-modules-qname>])
-			 ])
-		  
-		//Phase 1:  Resolve-all-import-reference for the listed packaged
-		//				  in this way => dependecy list will be created automatically for
-		//				  efficient analysis
-		; dbg-compiler(!$[compile-main:: resolving-package-reference:])
-		; resolve-package-references
-		//Phase 2:  Compile all the legacy artifacts referred by Spx Packages
-		//				  and make them accessible in the Global Scope
-		; dbg-compiler(!$[compile-main:: compile-legacy-artifacts:])
-		; compile-legacy-artifacts 
-		//Phase 3:  Compile Packagesand make them accessible in the different package
-		//					namespace.
-		//					Use the dependency graph to first compile the depending on packages.
-		//					TODO : Optimize. Phase 2 and Phase 3 can be compiled together.
-		; list-loop(compile-spx-package)  
-		  
+	
+  compile-main:
+  	list-of-package-qname* -> list-of-package-qname*
+		where debug-compiler(!$[Now compiling following packages : [<separate-by(|" , ");concat-strings><map(?Package(<id>);convert-qname(|"."))>list-of-package-qname*]])
+		where	compile-default-legacy-artifacts
+		where compile-spx-packages 
+		where compile-spx-modules
+	 	where analyze-main 
 
-	compile-spx-package:
+rules 	
+	
+	compile-spx-packages =  
+		where (is-list);
+		list-loop(compile-spx-packages)
+		
+	compile-spx-packages:
 		package-typed-qname@Package(untyped-qname) -> <id>
-		where
-			if should-compile-this-package  then //For handling circular referneces of packages marking this package as currently being compiled
-				
-				dbg-compiler(!$[--Compiling SPX Packages:: [<print-as-string>package-typed-qname]]);
-				with-spxverify( <add-to-compile-queue> package-typed-qname  , ! "failed to add in compile queue")
-				
-				// Getting List of Packages/Modules that this package is depending on.
-				// Idea is to analyze/compile the dependent package first.
-				; <get-all-usings>package-typed-qname=> depending-typedqname*
-				; dbg-compiler(!$[--Compiling SPX Packages:: List of dependending-on packages/modules : [<print-as-string>depending-typedqname*]  ])
-			  
-			  	// Start Compiling the dependent Spx Artifacts
-				; <list-loop(compile-depending-spx)>depending-typedqname*
-				;{| GetEnclosingPackageName 
-				  : 	
-				  	<declare-current-package-scope> package-typed-qname
-						// Now, since all the depending-on artifacts are compiled
-						// start compiling the enclosing modules of this package.
-						// Note: currently we are not considering any nested packages.
-						; modules-to-compile* := <get-enclosed-dirty-modules>package-typed-qname
-						; if <is-not-empty-list> modules-to-compile* then 
-								<debug>$[Now compiling modules : [<separate-by(|",");concat-strings><map(?Module(<id>);convert-qname(|"."))>modules-to-compile*]]  
-							end
-						//; dbg-compiler(!$[--Compiling SPX Packages:: compiling following modules(dirty) : [<print-as-string>modules-to-compile*]])
-						; <declare-spx-global-symbols>modules-to-compile* 
-						; <list-loop(compile-spx-module)>modules-to-compile*
-        |}
-		  else
-				dbg-compiler(!$[--Compiling SPX Packages:: Ignored as already in the queue : [<print-as-string>]])
-			end
-
-
-	// Compiles imported spx packages/modules
-	compile-depending-spx:
-		typed-qname -> typed-qname
-		where
-			dbg-compiler(! $[----Compiling Depending SPX:: Compiling depending-on spx package/module :[<print-as-string>]])
-		where
-			if !typed-qname => Package(QName(_)) then
-				<compile-spx-package>typed-qname
-			else
-				if !typed-qname => Module(QName(_)) then
-						// Even when only a module is imported using ImportSpxModule(_,_),
-						// The whole package is compiled to check consistency , and find
-						// semantic errors.
-						// In later step , when look up is performed, any symbol other than
-						// symbols that consist in this particular module are marked/realized
-						// as private symbols.
-						enclosing-package-typed-qname := <get-enclosing-package-qname>typed-qname;
-						<compile-spx-package>enclosing-package-typed-qname
-				else
-					dbg-compiler(!$[----Compiling Depending SPX:: Illegal depending spx artifact: [<print-as-string> typed-qname]]);
-					fail
-				end
-			end
-
-	// Compiles Spx Modules
-	compile-spx-module:
-		module-typed-qname@Module(untyped-qname) -> <id>
-		where
-			if not(<is-a-compiled-module>module-typed-qname) then
-				dbg-compiler(!$[----Compiling module:: [<print-as-string>]]);
-				
-				<get-module-definition-with-location>module-typed-qname => (module-decl,location) ;
-				
-				{|GetEnclosingModuleName:
-						<declare-current-module-scope> module-typed-qname;
-						<delcare-spx-scoped-symbols>module-decl
-				|}
-				
-				; with-spxverify(
-				  	<add-to-compiled-modules>(module-typed-qname,location)
-			  	  // Indexing langauge descriptor for this package if it does exists 
-        		; try(<index-language-descriptor><get-declared-language-definition>module-typed-qname)
-    		  	)
-			else
-				dbg-compiler(!$[----Compiling module:: Ignored as already in the queue : [<print-as-string>]]) //this package is not compiled before
-			end
-			
-rules
-
-	// Compile sdf, str, esv modules which are imported in the global nameepsace
-	compile-legacy-artifacts: 
-		package-tqnames* -> package-tqnames*
-		where
-			<make-set>package-tqnames* => upackages
-			; dbg-compiler(!$[compile-legacy-artifacts of :: [<print-as-string>upackages]])
-		where
-			//TODO : Make it configurable which lib to include by default. Hence remove following hardcoding.
-	    <compile-legacy-artifact>(Globals() , Module(Name("libstratego-lib")) ,Unresolved())
-	    ; <list-loop(
-	      	compile-legacy-artifact-package
-	      	)>upackages
+		where not(should-compile-this-package)
+		where debug-compiler(!$[--Compiling SPX Packages-- ignored as already processed by compiler : [<print-as-string>]])  
 	
+	compile-spx-packages:
+		package-typed-qname@Package(untyped-qname) -> <id>
+		where should-compile-this-package
+		where	debug-compiler(!$[--Compiling SPX Package-- [<print-as-string>package-typed-qname] ----------------
+					])
+		where	with-spxverify(	<add-to-compile-queue> package-typed-qname , ! "Error : Failed to add package in Compile Queue"	)
+		where compute-dependency-graph // computing dependecy graph for the current packate
+		where compile-depending-spx-artefacts
+		where {|	GetEnclosingPackageName 
+			  	 :			<declare-current-package-scope>    package-typed-qname
+			  	 			; <compile-package-legacy-artifacts> package-typed-qname
+			  	 			// Now, since all the depending-on artifacts are compiled
+								// start compiling the enclosing modules of this package.
+								// Note: currently we are not considering any nested packages.
+								; modules-to-compile* := <get-enclosed-dirty-modules>package-typed-qname
+								; if <is-not-empty-list> modules-to-compile* then 
+											debug-compiler(!$[----Name Analysis-Global Symbols----  [<separate-by(|",");concat-strings><map(?Module(<id>);convert-qname(|"."))>modules-to-compile*]])  
+									end
+								// declaring all the global symbols for all the dirty modules of this package 
+								; <declare-spx-global-symbols>modules-to-compile*
+					|}
+					; debug-compiler(!$[--Compiling SPX Package-- done global analyses for [<print-as-string>package-typed-qname] ---------------- 
+			  		])		  
+
+rules 		  
+	compile-depending-spx-artefacts: 	// Compiles imported spx packages/modules 
+		p@Package(QName(_))-> p
+		where with-spxverify(
+							get-all-usings 
+						; debug-compiler(!$[--Compiling SPX Package-- List of dependending-on packages/modules : [<print-as-string>]  ])
+						;	list-loop(compile-depending-spx(|p))
+						,	!" Error : Failed to compile imported packages."
+					)
+	
+	compile-depending-spx(|usedby):
+		p@Package(QName(_))-> p
+		where	debug-compiler(! $[----Compiling Depending SPX---- Compiling spx package [<print-as-string>] used by [<print-as-string>usedby]])
+		where	compile-spx-packages
+		
+	compile-depending-spx(|usedby):
+		m@Module(QName(_))-> m
+		where	debug-compiler(! $[----Compiling Depending SPX---- Compiling spx package [<print-as-string>] used by [<print-as-string>usedby]])
+		where	
+			// Even when only a module is imported using ImportSpxModule(_,_),
+			// The whole package is compiled to check consistency , and find
+			// semantic errors.
+			// In later step , when look up is performed, any symbol other than
+			// symbols that consist in this particular module are marked/realized
+			// as private symbols.
+			enclosing-package-typed-qname := <get-enclosing-package-qname>m;
+			<compile-spx-packages>enclosing-package-typed-qname
+
+rules 			
+		
+	compile-spx-modules =  
+		where (is-list)
+		; get-all-compiled-packages
+		;	mapconcat(get-enclosed-dirty-modules) 	
+		; list-loop(compile-spx-modules) // name analysis - local symbols  
+	
+	compile-spx-modules:
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where <is-a-compiled-module>module-typed-qname
+		where debug-compiler(!$[----Compiling module:: Ignored as already in the queue : [<print-as-string>]]) //this package is not compiled before
+		
+	compile-spx-modules:
+		module-typed-qname@Module(untyped-qname) -> <id>
+		where not(<is-a-compiled-module>module-typed-qname) 
+		where	debug-compiler(!$[----Compiling module:: [<print-as-string>]])
+		where <get-module-definition-with-location>module-typed-qname => (module-decl,location) ;
+					{|	GetEnclosingModuleName
+					 :	<declare-current-package-scope> <get-enclosing-package-qname> module-typed-qname;
+							<declare-current-module-scope> module-typed-qname;
+							<delcare-spx-scoped-symbols>module-decl
+					|}
+					; with-spxverify(
+				  		<add-to-compiled-modules>(module-typed-qname,location)
+			  	  	// Indexing langauge descriptor for this package if it does exists 
+        			; try(<index-language-descriptor><get-declared-language-definition>module-typed-qname)
+  		  		)
+rules
+	compile-default-legacy-artifacts =
+		activate-global-scope(
+			<compile-legacy-artifact>(Globals() , Module(Name("libstratego-lib")) ,Unresolved())
+	  )  
+		//TODO : Make it configurable which lib to include by default. Hence remove following hardcoding.
+
 	//Compile  a particular legacy SDF + STR Artifacts . Currently it only supports STR legacy artifacts . TODO  : add others
-	compile-legacy-artifact-package : 
+	compile-package-legacy-artifacts: 
 	  p@Package(qname) -> p
-	  where
-	    dbg-compiler(! $[compile-legacy-artifact-package:: Current Package: [<print-as-string>]])
-			; with-spxverify(
-				 <get-all-enclosed-legacy-artifacts> p => legacy-artifact-details*
-			  )
-			; dbg-compiler(!$[compile-legacy-artifact-package:: Artifact List:[<print-as-string>legacy-artifact-details*]])
-			; with-spxverify(
-					!legacy-artifact-details* 
-					; list-loop({
-					  	verify(?(Package(QName(_)) , Module(_) ,_) 
-											|<id> ,"Illegal Argument ::compile-legacy-artifact-package. Expected : ?(Package(QName(_)) , Module(_) ,_) ")
+	  where	debug-compiler(! $[compile-legacy-artifact-package| Current Package: [<print-as-string>]])
+	  where  with-spxverify( <get-all-enclosed-legacy-artifacts> p => legacy-artifact-details* )
+					; debug-compiler(!$[compile-legacy-artifact-package| Artifact List:[<print-as-string>legacy-artifact-details*]])
+					; with-spxverify(
+							!legacy-artifact-details* 
+							; list-loop(
+						  	{
+						  		verify(?(Package(QName(_)) , Module(_) ,_) 
+												|<id> ,"Illegal Argument ::compile-legacy-artifact-package. Expected : ?(Package(QName(_)) , Module(_) ,_) ")
 							
-							; compile-legacy-artifact
-						<+
-							dbg-compiler(!$[compile-legacy-artifact-package:: Failed to resolve legacy artifact [<print-as-string>]]) 
-						}
-						)
-			 )	
+									; compile-legacy-artifact
+								<+
+									debug-compiler(!$[compile-legacy-artifact-package:: Failed to resolve legacy artifact [<print-as-string>]]) 
+								})
+			 			)	
 rules
 	
 	compile-legacy-artifact:
 		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
-		where 
-			not(!resolving-path => Unresolved())
-		where	
-			dbg-compiler(!$[compile-legacy-artifact:: planning to compile following legacy artifact: [<print-as-string>]])
-			// check to see if already taken care off.
-			; if not( <is-legacy-artifact-resolved>(namespace, modulename, resolving-path)) then 
+		where <is-legacy-artifact-resolved>(namespace, modulename, resolving-path) 
+	
+	compile-legacy-artifact:
+		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , resolving-path) -> legacy-artifact-details
+		where not(!resolving-path => Unresolved())
+		where not( <is-legacy-artifact-resolved>(namespace, modulename, resolving-path)) // check to see if already taken care off.
+		where	debug-compiler(!$[compile-legacy-artifact| planning to compile following legacy artifact: [<print-as-string>]]);
 					with-spxverify(
-						{| GetEnclosingPackageName
-						 : <declare-current-package-scope> namespace;
-							 // Verify that the resource has a known extension.
-									<is-string>resolving-path
-								;	<has-known-extensions>resolving-path 
-								; {| GetEnclosingModuleName 
-								  
-			    				   : 	internal-module-qualified-name := <get_internal_module_qtname> <GetEnclosingPackageName>;
-			    				   		<declare-current-module-scope>internal-module-qualified-name ;
+						<is-string>resolving-path // Verify that the resource has a known extension.
+						;	<has-known-extensions>resolving-path 
+						; {| GetEnclosingModuleName 
+					  	 : 		internal-module-qualified-name := <get_internal_module_qtname> <GetEnclosingPackageName>;
+    								<declare-current-module-scope>internal-module-qualified-name ;
 										// Known Extension found. Handling it.
 										// Parsing the legacy content.
 										// Recoding the declarations for further analysis.
-										dbg-compiler(!$[compile-legacy-artifact:: Compiling following legacy artifacts : [<print-as-string>resolving-path] for package:[<GetEnclosingPackageName;print-as-string>]]);
+										debug-compiler(!$[compile-legacy-artifact:: Compiling following legacy artifacts : [<print-as-string>resolving-path] for package:[<GetEnclosingPackageName;print-as-string>]]);
 										<declare-legacy-artifact(|resolving-path)><parse-legacy-artifact>resolving-path;
 										<add-legacy-artifact-as-resolved> (namespace, modulename,resolving-path)
-				 					|}
-						|} 
-					 	<+
-						dbg-compiler(!$[compile-legacy-artifact:: Error occured in handling [<print-as-string>resolving-path]. Hence, it is ignored.])
+	 							|}
+		 				<+ 	debug-compiler(!$[compile-legacy-artifact:: Error occured in handling [<print-as-string>resolving-path]. Hence, it is ignored.])
 					)
-				end
-						
+					
 	compile-legacy-artifact:
 		legacy-artifact-details@(namespace, m@Module(Name(modulename)) , Unresolved()) -> <id>
-		where
-			dbg-compiler(!$[compile-legacy-artifact:: planning to compile following legacy artifact: [<print-as-string>]])
-		where
-			// check to see if already taken care off.
-			if not( <is-legacy-artifact-resolved>(namespace, modulename, Unresolved())) then 
-				// we are only supporting legacy STR lib at this moment which are not located in the file system .
-	      		// Hence, it is unresolved , we are giving it a try to resolve it as a lib and store its symbols 
-	      		// in global namespace so that it can be used by all  other packages in the project.
-        		// checking whether lib exists in cache. If it is , that means it is there in symbol-table. 
-        		// hence, it is not required to read and declare all the symbols again.
+		where	debug-compiler(!$[compile-legacy-artifact| planning to compile following legacy artifact: [<print-as-string>]])
+		where	not( <is-legacy-artifact-resolved>(namespace, modulename, Unresolved())) // check to see if already taken care off. 
+		where		
+			// we are only supporting legacy STR lib at this moment which are not located in the file system .
+	    // Hence, it is unresolved , we are giving it a try to resolve it as a lib and store its symbols 
+	    // in global namespace so that it can be used by all  other packages in the project.
+      // checking whether lib exists in cache. If it is , that means it is there in symbol-table. 
+      // hence, it is not required to read and declare all the symbols again.
           
-	    		//Design Decision : Symbols of legacy str libs are stored in the global namespace. It is decided to increase 
-	    		// performance of indexing. Since, legacy STR libs do not changes frequently, if we store it in global-cache
-	    		// it could be reused for a long time.   
-    			dbg-compiler(!$[compile-legacy-artifact:: Declaring Legacy ModuleName  [<print-as-string>modulename]]) 
-  				; if not(<lib-exists-in-cache>modulename) then
-	          	// checking whether lib exists in global namespace. if it is, then doing nothing. 
-	          	// invalidate global cache is possible via clearing whole index or calling invalidate primitive
-	          	// hence, if lib changes which is quite unlikely, clearing index will re-read it back  
-	         		if not(<is-lib-exists-in-global-cache>modulename ) then 
-          			<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports>modulename // storing legacy import declaration
-			 					; <index-lib-in-global-cache> modulename 
-							end
-			  	end  
-    			// Setting flag to denote that lib with modulename is resolved
-				; <record-legacy-global-import-is-resolved>(namespace , modulename)
-				; <add-legacy-artifact-as-resolved> (namespace, modulename,Unresolved())  
-		 	<+
-				dbg-compiler(!$[compile-legacy-artifact::  Error :  failed to resolve folloiwng import ast : [<print-as-string>legacy-artifact-details]])
-			end
+		  //Design Decision : Symbols of legacy str libs are stored in the global namespace. It is decided to increase 
+		  // performance of indexing. Since, legacy STR libs do not changes frequently, if we store it in global-cache
+		  // it could be reused for a long time.   
+	    if not(<lib-exists-in-cache>modulename) then
+		  	// checking whether lib exists in global namespace. if it is, then doing nothing. 
+		  	// invalidate global cache is possible via clearing whole index or calling invalidate primitive
+		    // hence, if lib changes which is quite unlikely, clearing index will re-read it back  
+		    	if not(<is-lib-exists-in-global-cache>modulename ) then 
+	        	<get-cached-lib-ast(read-stratego-signatures); declare-legacy-str-imports>modulename; // storing legacy import declaration
+				 		<index-lib-in-global-cache> modulename // update that import is resolved  
+					end
+  		end 
+	  	;	if (not(!namespace => Globals())) then  
+  				<record-legacy-global-import-is-resolved>(namespace , modulename) // Setting flag to denote that lib with modulename is resolved
+				end
+			; <add-legacy-artifact-as-resolved> (namespace, modulename,Unresolved())
+		<+
+			debug-compiler(!$[compile-legacy-artifact::  Error :  failed to resolve folloiwng Import: [<print-as-string>legacy-artifact-details]])
+			
+rules 
+			  
+	mark-issues-of-files =
+		where (is-list); 
+		list-loop(
+		{	?file-path
+			;	(e, w, n) := <get-semantic-problmes-by-file>file-path	
+			;	if <is-not-empty-list> e then   
+					set-has-errors;
+					debug-compiler(!$[----FileName : [<base-filename>file-path] --- Errors : [<print-as-string>(e, w, n)]])  
+				end
+			;	<queue-mark-errors>(file-path,e, w, n)
+		})	
+		
+	// FIXME: MISSING IMPLODER ATTACHMENT WHEN COMPILED FROM ANT SCRIPT
+	// It could not find origin or term attachment while setting up the markers 
+	//-------------------------------------------------------------------- 
+	
+	queue-mark-errors:  
+		(file-path , errors*, warnings*, notes*) -> <id>
+		where is-in-command-line-mode // do nothing 
+		
+	queue-mark-errors: 
+		(file-path , errors*, warnings*, notes*) -> <id>
+		where not(is-in-command-line-mode)
+		where !(file-path , errors*, warnings*, notes*) ;
+			 		queue-strategy(|"mark-issues" , $[marking issues of [<print-as-string>file-path]])
+
+	mark-issues: 
+		(file-path,  errors*, warnings*, notes*) -> <id>
+		where spx-compilation-unit-ast :=		<get-spxcompilation-unit>file-path
+		where <set-spoofax-markers(|file-path)>(spx-compilation-unit-ast,  errors*, warnings*, notes*)	<+	
+					<debug(!"Failed to set Error Markers for ")>file-path
+	 				; fail
+	
+	// FIXME : disable command line mode. fix why origin tracking is not working. 	
+	// Set markers for a given spoofax file
+  // Current term: (ast-desugared, errors, warnings, notes) tuple
+  // file-path: path of the spoofax compilation unit
+  set-spoofax-markers(|file-path) =  is-in-command-line-mode < id + prim("SSL_EXT_set_markers", file-path)

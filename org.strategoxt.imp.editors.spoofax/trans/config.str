@@ -284,14 +284,12 @@ rules
 		
 	// Returns all the external sournce collected from the project references 
  	get-external-sources: spx-projects* -> result
-		where 
-			not (?[])
-	  	;!spx-projects* => [current-project-path|rest*]
-	 	where
-	 		if not(ref := <resolve-external-sources>current-project-path)  then
-	 			 ref := []
-	 		end
-	 		;result := <conc>( ref , <get-external-sources>rest* )
+		where	not (?[])
+	  			;	!spx-projects* => [current-project-path|rest*]
+	 	where	if not(ref := <resolve-external-sources>current-project-path)  then
+	 			 		ref := []
+	 				end
+	 				;	result := <conc>( ref , <get-external-sources>rest* )
 	 	
 	get-external-sources: []  -> []
 	 

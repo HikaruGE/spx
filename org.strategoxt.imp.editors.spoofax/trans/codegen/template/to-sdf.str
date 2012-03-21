@@ -189,7 +189,7 @@ rules
     end;
     filter(template-element-to-sdf)
 
-  template-element-to-sdf:
+  template-element-to-sdf:  
     String(x) -> <string-to-sdf> x
 
   template-element-to-sdf:
@@ -255,3 +255,4 @@ strategies
         rules(Restrictions :+= sdf)
       end
     })
+
