@@ -42,7 +42,7 @@ signature constructors
  
 signature constructors
 	DeclaredEnclosedModuleQName : Type
- 	   
+ 	ImportedPackageAlias : Type    
 signature constructors 
 	// symbol types
 		

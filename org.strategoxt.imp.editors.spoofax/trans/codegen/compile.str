@@ -45,12 +45,7 @@ rules
 	//closes any underlying connection 
 	compile-unload = debug-time (index-close | "Saving Index" ) //closes and saves current state of symbol table.
 
-	// Pre-compilation before starting up actual compilation
-	// Before starting primary compilation,
-	// pre-compile normalize the parsed tree
-	// and creates scope-tree and namespace-reference table for
-	// performing further compilation.
-	pre-compile-compilation-unit = normalize-all  // normalize and builds scope-tree and  partial symbol table with the local information availble
+	
 
 rules 
 	// Creating a new compilation session. 
@@ -195,10 +190,10 @@ rules
 		module-typed-qname@Module(untyped-qname) -> <id>
 		where not(<is-a-compiled-module>module-typed-qname) 
 		where	debug-compiler(!$[----Compiling module:: [<print-as-string>]])
-		where <get-module-definition-with-location>module-typed-qname => (module-decl,location) ;
-					{|	GetEnclosingModuleName
+		where {|	GetEnclosingModuleName
 					 :	<declare-current-package-scope> <get-enclosing-package-qname> module-typed-qname;
 							<declare-current-module-scope> module-typed-qname;
+							<get-module-definition-with-location>module-typed-qname => (module-decl,location) ;
 							<delcare-spx-scoped-symbols>module-decl
 					|}
 					; with-spxverify(

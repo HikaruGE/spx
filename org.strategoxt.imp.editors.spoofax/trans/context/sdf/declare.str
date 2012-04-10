@@ -20,7 +20,7 @@ imports
 	libstratego-sdf
   lib/editor-common.generated
 	include/SpoofaxLang
-	
+	normalize/main
   
 rules
 	setof-sdf-declarations = resolve-sdf-declarations
@@ -54,7 +54,7 @@ rules
  //	Instead of declaring in the Global Scope
  // now it is declared in a particular Scope.
  // Here scope is defined by (Package-QName, Module-QName)
- declare-sdf-definition-main= 	alltd(declare-sdf-definition)
+ declare-sdf-definition-main = alltd(declare-sdf-definition)
  
  declare-sdf-usage-main = alltd(declare-sdf-usage)
 
@@ -65,6 +65,7 @@ rules
 		where store-context-free-start-symbols(|<GetEnclosingModuleName>)
 
 rules
+	
 	declare-sdf-definition:
     renamings(y) -> <id>
     where	<all(try(?symbol(_, <id>); declare-sdf-simple-definition))> y
@@ -77,14 +78,11 @@ rules
 
 rules
 
-  declare-sdf-definition:
-    p@prod(lhs, sort, attrs) -> <id>
-    where	<declare-sdf-definition-internal> (p, lhs, sort, attrs) 
-
+  declare-sdf-definition: p@prod(lhs, sort, attrs) -> prod(lhs, sort, attrs)  where	<declare-sdf-definition-internal> (p, lhs, sort, attrs) 
   
-    declare-sdf-definition-internal:
+ 	declare-sdf-definition-internal:
     (prod, lhs, sort, attrs) -> <id>
-    where dbg-declaration(! $[declaring sdf : [<print-as-string>prod]]| "SDF" , <debug-level-INFO> )
+    where dbg-declaration(! $[declaring sdf : [<print-as-string>prod]]| "declare.declare-sdf-definition-internal" , <debug-level-INFO>)
     where	x  := <get-rhs-sort-name>sort
     where if <is-lexical-sort>sort + IsInsideLexicalSyntaxBlock then 
     				sortType :=  LEXSort()
@@ -92,28 +90,33 @@ rules
     				sortType :=  CFSort()
     			end 		
     where	<declare-signature>prod
-  	where	with-spxverify(<topdown(try(declare-namespace-def))> lhs	,	!"declare-sdf-definition-internal | Failed while storing namespace-def ")
+  	// TODO FIX : enable namespace annotation. currently it is not fully supported 
+  	//where	with-spxverify(<topdown(try(declare-namespace-def))> lhs	,	!"declare-sdf-definition-internal | Failed while storing namespace-def ")
   	where	with-spxverify(
       			if <fetch-cons-name> attrs => cons then
 	      			tuple := (x, cons);
 	       			<index-symbol-definition>(tuple , SDFDeclaration() , prod ) // Needed for Sort.Cons references to the production.
 	      		end
-	    			, !"declare-sdf-definition-internal | Failed while storing sort.cons references "      
+	    			, !"Failed while storing sort.cons references at declare.declare-sdf-definition-internal"      
      		 	)
     where	with-spxverify(
       			<index-symbol-definition>(x, SDFDeclaration(),prod );
       			<index-symbol-definition>(x , SortDeclaration(), (x, sortType));
-    	  		dbg-declaration(! $[Storing Declaration : [<print-as-string>x]  -> [<print-as-string>prod]]  | "SDF" , <debug-level-INFO> ) 
-      			, !"declare-sdf-definition-internal | Failed while storing production in symbol table"
+    	  		dbg-declaration(
+    	  			!$[Storing Declaration : [<print-as-string>x]  -> [<print-as-string>prod]]  
+    	  			| "declare.declare-sdf-definition-internal" 
+    	  			, <debug-level-INFO> 
+	  			  ) 
+      			, !"Failed to index production at declare.declare-sdf-definition-internal"
       		) 
  
   declare-signature:
   	p@prod(lhs, sort, attrs) -> <id>
   	where with-spxverify(
-  						if not(<attrs(fetch(?reject()))> attrs) then
+						if not(<attrs(fetch(?reject()))> attrs) then
 	        		<store-operation-declaration>p
 	      		end
-      			, !$[declare-sdf-definition-internal | Failed while trying to store operation declaration with following production [<print-as-string> p]]
+      			, !$[Failed while trying to store operation declaration with following production [<print-as-string> p] at declare.declare-sdf-definition-internal]
   				)
  
  declare-namespace-def:
@@ -147,36 +150,37 @@ rules
 
 
 rules
-	declare-sdf-usage:
-		prod(lhs, sort, attrs) -> <id>
-    where <alltd(declare-sdf-usage)>lhs
-
-
-	declare-sdf-usage:
-		'sorts(s*) -> <id>
-		where <alltd(declare-sdf-usage)>s*
-
-	declare-sdf-usage:
-		context-free-start-symbols(s*) -> <id>
-		where <alltd(declare-sdf-usage)> s*	
-
-  declare-sdf-usage:
-		lexical-start-symbols(s*) -> <id>
-	  where <alltd(declare-sdf-usage)>s*
-	
-	declare-sdf-usage:
-    kernel-start-symbols(s*) -> <id>
-    where <alltd(declare-sdf-usage)>s*
-
-	//TODO : 
-  // declare-sdf-usage:
-  //   qsort(qname , x) -> <id>
-  // 
+	declare-sdf-usage: 'sorts(s*) -> 'sorts(s') where <alltd(declare-sdf-usage)>s* => s' 
+			
+	declare-sdf-usage: context-free-start-symbols(s*) -> context-free-start-symbols(s') where <alltd(declare-sdf-usage)>s* =>s'
+		
+  declare-sdf-usage: lexical-start-symbols(s*) -> lexical-start-symbols(s') where <alltd(declare-sdf-usage)>s* =>s'
+  	
+	declare-sdf-usage: kernel-start-symbols(s*) -> kernel-start-symbols(s') where <alltd(declare-sdf-usage)>s* =>s'
     
+  declare-sdf-usage: prod(lhs, sort, attrs) -> prod( lhs' , sort, attrs) where <alltd(declare-sdf-usage)>lhs => lhs'
+  
+  declare-sdf-usage: prod(lhs, sort, attrs) -> prod( lhs' , sort, attrs) where <alltd(declare-sdf-usage)>lhs => lhs'
+  
+  declare-sdf-usage:
+    QualifiedSort(Name(_), x) -> result 
+  	where basic-sdf-desugar
+  				;	declare-sdf-usage
+  				; ?result   
+  
+  declare-sdf-usage:
+    QualifiedSort(q@QName(_), x) -> QualifiedSort(q' , x)
+    where	!q;
+    			((is-declared-package;!Package(q))  
+			<+  (is-declared-module; !Module(q) ; get-enclosing-package-qname) 
+			<+  !Unresolved())=> q'
+	  where if not(!q' => Unresolved()) then 
+	  				with-spxverify( <index-sdf-usage(|q')>x , !"Indexing Qualified SDF Sort Call Sites failed. ")
+	  			end	
+	  			
 	declare-sdf-usage:
     sort(x) -> <id>
-    where with-spxverify( <index-sdf-usage(|Unqualified())>x , !"Indexing SDF Sort Call Sites failed. ")
-
+    where with-spxverify( <index-sdf-usage(|Unqualified())>x , !"Indexing SDF Sort Call Sites failed. ") 
 
 	// For legacy artifacts only.
 	// It is required for import def or sdf file. currently we support parameterized sort in 
@@ -199,52 +203,58 @@ rules
 								fetch-sort-and-context
 								|(LookupAllScope(), <ALL_AS_SET>)
 							)>(sortName,  SortDeclaration())
-						; is-not-empty-list 
-						;	(		(filter(?(_, _, InternalScope())); is-not-empty-list)   
-							<+	(filter(?(_, _, GlobalScope()))  ; is-not-empty-list)    
-							<+  (filter(?(_, _, PublicScope()))  ; is-not-empty-list) 
-							)
-						;	?[(s,c,t)|_] 
-						; !(s,(s,c,t))
-						; index-sdf-usage(|namespace)
+							; is-not-empty-list 
+							;	(		(filter(?(_, _, InternalScope())); is-not-empty-list)   
+								<+	(filter(?(_, _, GlobalScope()))  ; is-not-empty-list)    
+								<+  (filter(?(_, _, PublicScope()))  ; is-not-empty-list) 
+								)
+							;	?[(s,c,t)|_] 
+							; !(s,(s,c,t))
+							; index-sdf-usage(|namespace)
 					<+ 
-						<debug(!"Failed to find sdf sort : " )> sortName		   	
-				 end
+							dbg-declaration(
+								!$[ Failed to find sort : [<print-as-string>sortName]] 
+               	| "declare.index-sdf-usage" , <debug-level-WARNING>
+               	)
+    		 end
 					   
 	index-sdf-usage(|namespace) : 
-  	(sortName , v) -> <id>
+  	(sortName , symbolDef) -> <id>
   	where with-spxverify( 
-  					<index-symbol-definition> ((sortName,namespace), SDFUsage() , v) 
+  					<index-unique-symbol-definition> ((sortName,namespace), SDFUsage() ,symbolDef) 
 					, "Indexing  SDF Call Sites Failed"
 					)
 					 
   get-sdf-usage(|namespace) :
-  	sortName -> result 
-  	where <resolve-all-symbol-definitions(project-from-symboldef-to-symbol |(LookupLocalScope(), <ONLY_ONE>))> ((sortName , namespace),  SDFUsage())
-  				; ensure-is-unique
-  				; ?result   
-					
+  	sortName -> r 
+  	where
+  		activate-scope(
+  			<resolve-all-symbol-definitions(project-from-symboldef-to-symbol |(LookupLocalScope(), <ONLY_ONE>))> ((sortName , namespace),  SDFUsage())
+				; ensure-is-unique
+				; ?r
+			|	<GetEnclosingPackageName>
+			)
+  
+  fetch-sort-and-context: 
+		SymbolDef(m@Module(QName(_)), t1 ,t2, s, t4) -> <fetch-sort-and-context> SymbolDef(<get-enclosing-package-qname>m, t1 ,t2, s, t4)
+		where <is-string>s 
+	
+	fetch-sort-and-context: 
+		SymbolDef(p@Package(QName(_)), _ ,_, sortName, _) -> (sortName , p, resolved-from)
+		where <is-string>sortName 
+		where GetEnclosingPackageName => enclosing-package
+		where if <?p>enclosing-package then 
+						resolved-from := InternalScope()
+					else
+						resolved-from := PublicScope()
+					end
 
+	fetch-sort-and-context: 
+		SymbolDef(Globals(), _ ,_, sortName, _) -> (sortName , Globals(), GlobalScope())
+ 		where <is-string>sortName
 	
-	fetch-sort-and-context = 
-		?SymbolDef(context, _ ,_, sortName, _) ;
-		<is-string>sortName;
-		GetEnclosingPackageName => enclosing-package;
-		GetEnclosingModuleName  => enclosing-module;
-		switch !context
-        case ?enclosing-package                       : !InternalScope()
-        case ?enclosing-module                        : !InternalScope()
-        case (?Package(QName(_)) + ?Module(QName(_))) : !PublicScope()
-        case ?Globals()                               : !GlobalScope()
-    end;
-  	?referred-scope;  
-    !(sortName , context, referred-scope)  
- 	
-	fetch-sort-and-context = 
-		?SymbolDef(context, k ,t, (sortName,_), is-overloaded) ;
-		<fetch-sort-and-context>SymbolDef(context, k ,t, sortName , is-overloaded)
-				
-	
+	fetch-sort-and-context: SymbolDef(context, k ,t, (sortName,_), is-overloaded) -> <fetch-sort-and-context>SymbolDef(context, k ,t, sortName , is-overloaded)
+
 	verify-call-sites-already-registered(|namespace): 
 		sortName  ->  <id>
 		where is-string 
@@ -257,11 +267,7 @@ rules
   	?sort(<id>);
   	verify-call-sites-already-registered(|namespace)
   	
-  
-  	
 signature constructors 
 	SDFSortType : Type 
 	CFSort   : SDFSortType 
 	LEXSort  : SDFSortType
-	
-	

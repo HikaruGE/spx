@@ -38,10 +38,10 @@ public final class SpoofaxlangWorkspace {
 		command.execute();
 	
 		if( command.getResult()){
-			System.out.println("[org.spoofaxlang] Index is closed successfully for : "+ workspace.getRoot().getName());
+			System.out.println("[org.spoofaxlang] Index is closed successfully for the current workspace");
 		}
 		else
-			System.out.println("[org.spoofaxlang] Index close failed for: "+ workspace.getRoot().getName());
+			System.out.println("[org.spoofaxlang] Index close failed for the current workspace");
 		
 	}
 

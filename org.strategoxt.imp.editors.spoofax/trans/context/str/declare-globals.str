@@ -133,12 +133,7 @@ rules
       	redeclare-definition
     	)
 	
-  declare-str-definition:
-    ExtOpDecl(x, t) -> <id>
-    where  
-    	with-spxverify(
-   			redeclare-definition
-   		)
+  declare-str-definition: ExtOpDecl(x, t) -> <id> where  with-spxverify(redeclare-definition )
 	
   declare-str-definition:
     Overlay(x, t, d) -> Overlay(x', t, d)
@@ -202,4 +197,4 @@ rules
     ; scoped-sig := <to-scoped-symbol> sig
     ; rules(DeclareCookie: scoped-sig -> cookie)
 		; dbg-declaration(! $[declare-dr-rule [<print-as-string>prefix]| Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]
-		                  | "STR" , <debug-level-INFO> )  
+		                  | "STR" , <debug-level-INFO> ) 

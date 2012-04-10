@@ -1,5 +1,4 @@
- module context/str/declare-locals
-
+module context/str/declare-locals
 imports
 	libstrc		
 	libstratego-lib
@@ -22,7 +21,6 @@ imports
 	spoofaxlang  
 	
 strategies 
-  
   // Declarations inside definition bodies , i.e., analyzing strategies local declarations
   declare-str-local-definition-main =  declare-bodies-top 
   
@@ -34,8 +32,7 @@ strategies
   declare-bodies: 
     InternalRules(str-defs*) -> InternalRules(analyzed-str-defs*)
     where 
-    	// activate-stratego-internal-scope automatically calls declare-rules
-      <activate-stratego-internal-scope(
+    	<activate-stratego-internal-scope(
       	declare-bodies-top
     	)>str-defs*  
       => analyzed-str-defs*
@@ -415,10 +412,7 @@ rules
         file := <parse-stratego-file> str
       end
 	
-	to-signatures =
-    basic-stratego-desugar-top;
-    topdown(try(remove-stratego-bodies))
-
+	to-signatures = basic-stratego-desugar-top; topdown(try(remove-stratego-bodies))
 
   remove-stratego-bodies:
     SDefT(x, s*, t*, s) -> SDefT(x, s*, t*, s')
@@ -426,9 +420,7 @@ rules
       s' := <collect-all(?RDecT(_, _, _))> s
    	)
    	
-  remove-stratego-bodies:
-    Import(_) -> ()
+  remove-stratego-bodies: Import(_) -> ()
    
-  remove-stratego-bodies:
-    ImportWildcard(_) -> ()
+  remove-stratego-bodies: ImportWildcard(_) -> ()
 

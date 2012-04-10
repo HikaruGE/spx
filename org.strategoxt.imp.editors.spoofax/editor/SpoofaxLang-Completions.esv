@@ -6,6 +6,7 @@ completions
      // Semantic (identifier) completion:
      completion proposer:      editor-complete
      completion trigger: "imports "
+     completion trigger: "package "
      completion trigger: "\."
      
 
@@ -15,7 +16,6 @@ completions
 
 completions 
 
-	completion template: "package " <p> " \n\t module " <m>  "\n" (blank)
 	completion template: "module " <m>  "\n" (blank) 
 	
 completions

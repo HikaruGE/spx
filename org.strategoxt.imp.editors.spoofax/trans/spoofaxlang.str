@@ -157,7 +157,7 @@ strategies
     generate-aterm;
     normalize;
     generate-name-analysis;
-    build-incrementally-service;
+    //build-incrementally-service;
     // Completions
     editor-complete;
     // References

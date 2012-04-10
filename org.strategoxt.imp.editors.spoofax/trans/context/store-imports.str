@@ -35,6 +35,38 @@ rules
 						|}
 					 	, !$[Failed compute-dependency-graph: [<print-as-string> p]]	
 					)
+		where get-all-usings;
+				 	list-loop(
+				 		!(p, <id>)
+						;	(get-imported-package-alias <+ store-imported-package-alias)
+				 	)
+	
+	
+	store-imported-package-alias:
+		(p@Package(QName(_)) , i@Package(q@QName(_))) -> <id>
+		where	<?QName(<id>)>q;
+					map(explode-string;	Hd;to-upper;![<id>]; implode-string); 
+					concat-strings; 
+					newname => n
+ 		where 
+			<debug(!"storing alias : ~")>(i , ImportedPackageAlias() , n);
+			activate-scope(
+				<index-unique-symbol-definition> ( i , ImportedPackageAlias() , n)
+				|p
+			)
+			
+	get-imported-package-alias: 
+		(p@Package(QName(_)) , i@Package(QName(_))) -> alias
+		where activate-scope(
+						alias :=	<resolve-all-symbol-definitions(
+												project-from-symboldef-to-symbol
+												|(LookupAllScope(), <ONLY_ONE>)
+											)>(i,  ImportedPackageAlias())
+						|p
+					)
+		where !alias
+					;	ensure-is-unique  
+						 			 			
 rules
   
   compute-module-dependencies: 

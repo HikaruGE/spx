@@ -71,13 +71,11 @@ rules	// Package specific semantic error checking
 		where
 			if should-analyze-this-package  then //FOR handling circular referneces   
 				{| GetEnclosingPackageName 
-				 : rules ( 
-		 			 	 GetEnclosingPackageName:= package-typed-qname
-		 			 )
-	 			 ; <analyze> package-typed-qname // analyzing current package's declaration
-				 ; with-spxverify ( // analyzing all the enclosed module definition
+				 :	<declare-current-package-scope>package-typed-qname
+		 		 ;	<analyze> package-typed-qname // analyzing current package's declaration
+				 ; 	with-spxverify ( // analyzing all the enclosed module definition
 		   				<list-loop(analyze-spx-module)><get-enclosed-modules>package-typed-qname
-					 )		
+					 	)		
 				 |}		
         ; with-spxverify( <add-to-analyzed-packages-queue>package-typed-qname )
 		  <+
@@ -94,8 +92,8 @@ rules	// Package specific semantic error checking
 			if not(<is-a-analyzed-module>module-typed-qname) then
 				<get-module-definition-with-location> module-typed-qname => (module-decl,location);
 				{| GetEnclosingModuleName
-			   : rules( GetEnclosingModuleName := module-typed-qname)
-				 ; <analyze-module-definition>module-decl
+			   : 	<declare-current-module-scope>module-typed-qname
+				 ; 	<analyze-module-definition>module-decl
 			   |}
 				 ; with-spxverify(<add-to-analyzed-modules>(module-typed-qname,location))	   
 				<+ 

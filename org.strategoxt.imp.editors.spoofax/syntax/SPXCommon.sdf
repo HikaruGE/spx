@@ -23,6 +23,7 @@ exports
 
     -> EOF
 
+  
   lexical restrictions
 
     %% Ensure greedy matching for lexicals
@@ -41,6 +42,7 @@ exports
 
   context-free restrictions
 
+    
     %% Ensure greedy matching for comments
 
     LAYOUT? -/- [\ \t\n\r]
@@ -55,8 +57,9 @@ exports
 		"imports"
 		"language" 
 		"definition"
-		
-		-/- [A-Za-z0-9\_]
+		"keywords"
+		"follow-restriction"
+		"words" -/- [A-Za-z0-9\_]
 
 
 	lexical syntax
@@ -107,7 +110,9 @@ exports
  		"__internal"				-> Reserved
  		"template"          -> Reserved
  		"templates"         -> Reserved
- 	   
+ 	   "keywords"					-> Reserved
+ 	   "words" 					      -> Reserved
+ 	   "follow-restriction"  -> Reserved
  		Reserved 						-> ReservedName[[ESV]]
  		ReservedName[[ESV]]	-> ID {reject}
 

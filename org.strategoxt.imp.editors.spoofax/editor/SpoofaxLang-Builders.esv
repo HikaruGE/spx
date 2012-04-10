@@ -46,4 +46,4 @@ builders
   builder : "TemplateLang: show pretty printer"       = build-templatelang-str (openeditor) (realtime) (source)
   builder : "TemplateLang: inline placeholders"       = build-expand-template (openeditor) (realtime)
 
-  on save		: build-incrementally-service
+  on save		: generate-artefacts-on-save

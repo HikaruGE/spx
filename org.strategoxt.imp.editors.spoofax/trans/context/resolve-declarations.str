@@ -57,14 +57,9 @@ rules
 	get-languagename-declaration-sites = get-package-qnames-by-langname
 
 rules
-  get-declared-packages-qname =	
-  		project-package-declarations(package-typed-qname)   
+  get-declared-packages-qname =	 project-package-declarations(package-typed-qname)   
   
-  get-all-declared-packages-qname =   
-  		project-all-package-declarations(package-typed-qname)
-  		
-
-rules 
+  get-all-declared-packages-qname =	project-all-package-declarations(package-typed-qname)
 	
 	get-package-declaration = where(?Package(QName(_))) ; get-indexed-package-declaration
   
@@ -73,6 +68,7 @@ rules
 	get-package-uris = where(?Package(QName(_))) ;  project-package-declarations(package-uris)  
 	
 	get-package-uris = where(?QName(_)); !Package(<id>) ; get-package-uris     
+
 	
   /**
   * Get a list of Package declared in the current Project
@@ -84,11 +80,9 @@ rules
   
 rules 
 
-  get-declared-modules-qname =  
-  	project-module-declarations(module-typed-qname)   
+  get-declared-modules-qname = project-module-declarations(module-typed-qname)   
   
-  get-all-declared-modules-qname = 
-  	 project-all-module-declarations(module-typed-qname)
+  get-all-declared-modules-qname = project-all-module-declarations(module-typed-qname)
   
 	get-analyzed-module-ast = get-desugared-module-ast
   /**
@@ -281,7 +275,8 @@ rules
 	*
 	* @example : <index-enclosed-modules>(packageqname, module-qname)
 	*/
-	index-enclosed-modules = verify(?(p@Package(QName(_)) , m@Module(QName(_)))|<id> , "(PackageQName, ModuleQName) @index-enclosed-modules") ; <index-symbol-definition>(p,DeclaredEnclosedModuleQName(),m) 	
+	index-enclosed-modules = verify(?(p@Package(QName(_)) , m@Module(QName(_)))|<id> , "(PackageQName, ModuleQName) @index-enclosed-modules") ; <index-symbol-definition>(p , DeclaredEnclosedModuleQName(), m ) 	
+	
 	/**
 	* Returns the enclosed module names of the specified package id .  
 	*

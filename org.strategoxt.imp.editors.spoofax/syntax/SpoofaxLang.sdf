@@ -43,6 +43,7 @@ exports
     Grammar[[SDF]] -> Section {cons("SDFSection")}
     Decl[[STR]]    -> Section {cons("STRSection")}
     Section[[ESV]] -> Section {cons("ESVSection")}
+    
     ImportSection  -> Section
     ConceptSection -> Section
 
@@ -65,7 +66,7 @@ exports
     QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
     QID		  				           -> LegacyImportName {cons("Name")}
     {ID "." }+			 -> QName	 {cons("QName")}
-	  ID	 					   -> QName	 {cons("Name"),prefer}
+    ID	 					   -> QName	 {cons("Name"),prefer}
     ID  					   -> SPXModuleName	 {cons("SPXModuleName")}
 
 	context-free syntax %% Imports
@@ -83,8 +84,8 @@ exports
 
 	context-free syntax
     LegacyImportName				 		-> ImportedModule{cons("ImportLegacyArtifact")}
-    QName "::" SPXModuleName 				-> ImportedModule{cons("ImportSpxModule"),prefer}
-    QName		   					   		-> ImportedModule{cons("ImportPackage")  , prefer}
+    QName "::" SPXModuleName 		-> ImportedModule{cons("ImportSpxModule"),prefer}
+    QName		   					   		  -> ImportedModule{cons("ImportPackage")  , prefer}
     QName "as" ID					   		-> ImportedModule{cons("ImportPackageWithAlias"),prefer}
 
 	context-free syntax
@@ -123,11 +124,22 @@ exports
     "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
     StrCon[[SDF]]               -> Constructor
 
-  %% for testing only. playing with code-contracts in spoofax lang.
   context-free syntax
-    
     "internal" "strategies" Def[[STR]]*     -> Decl[[STR]] {cons("InternalStrategies")}
     "internal" "rules"      Def[[STR]]*     -> Decl[[STR]]{cons("InternalRules")}
     
-		Var[[STR]] "as" ID -> Var[[STR]] {avoid, cons("VarWithType")}
+ 		Var[[STR]] ":" ID -> Var[[STR]] {avoid, cons("VarWithType")}
 
+    QName	"."	Id[[STR]]	   -> SVar[[STR]] {avoid , cons("QualifiedSVar")}
+		QName	"." Sort[[SDF]]  -> QualifiedSort{cons("QualifiedSort")}
+		QualifiedSort          -> Symbol[[SDF]]
+		
+	context-free restrictions
+		QualifiedSort -/- [a-zA-Z0-9\.\-]
+		
+	context-free syntax 
+		
+		"language keywords" KeywordSymbols Keywords  KeywordRestriction?   -> Section         {cons("KeywordSection")}
+		"symbols"  Symbol[[SDF]]+                                          -> KeywordSymbols  {cons("KeywordSymbols")}
+		"words"    ID+                                                     -> Keywords        {cons("Keywords")}
+		"follow-restriction"  Lookaheads[[SDF]]                            -> KeywordRestriction{cons("FollowRestriction")}       	

@@ -17,7 +17,8 @@ imports
 	utils/contract
 	config
 	common
-
+	normalize/main 
+	
 rules
 	parse-spx-sources :
 		(sourcedir , searchOption) -> <id>
@@ -54,16 +55,15 @@ rules
 
  	parse-and-precompile-if-needed: 
  		filename -> <id>
- 		where
- 			if has-extension(|"spx") then
-	 			debug-compiler(! $[Pre-Compiling| Parsing following file : [<print-as-string>]]);
-	 			open-spx-compilation-unit(
-					spx-compilation-unit-path,
-					spx-precompiled-cache-path,
-					parse-spoofaxlang-file ,
-					pre-compile-compilation-unit
-				)
-			end
+ 		where	if has-extension(|"spx") then
+	 					debug-compiler(! $[Pre-Compiling| Parsing following file : [<print-as-string>]]);
+	 					open-spx-compilation-unit(
+							spx-compilation-unit-path,
+							spx-precompiled-cache-path,
+							parse-spoofaxlang-file ,
+							normalize-all
+						)
+					end
 
 rules 
 	  

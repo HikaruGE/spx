@@ -10,22 +10,34 @@ imports
 	utils/contract
 	
 rules
-  open-spx-compilation-unit(resolve-spx-path, resolve-cache-path, parse-file, precompile):
+	
+	open-spx-compilation-unit(precompile|cache-path): 
+		(spx-compilation-unit , path) -> <id>
+		where 
+		  <precompile <+ throw-precompile-exception>( spx-compilation-unit, path);
+      if <file-exists>path then
+          <WriteToBinaryFile> (cache-path, spx-compilation-unit); // updating cache on filesystem (e.g., ignore libstratego-lib)
+          debug-compiler(!$[Updating cache for following CompilationUnit: [<print-as-string>path]]| "cache" , <debug-level-INFO>)
+      end
+     
+	
+  	//TODO : Take the following whole logic in indexing structure based on cached path and actual path.
+		//For example  - 
+  	//if <verify-indexing-needed> (cache-path, path) then
+  	//   ast := read it from file
+  	//   index-compilation-init ( path , ast) 
+  	//   <precompile> ast
+  	//else
+  	//   ast : = get-compilation-unit 
+  	//end     
+	open-spx-compilation-unit(resolve-spx-path, resolve-cache-path, parse-file, precompile):
     path -> <id>
+    where is-string
     where with-spxverify(
-    	full-path := <resolve-spx-path>path;
-    	cache-path := <resolve-cache-path> full-path;
-    	path' := <get-normalized-path> full-path
-    	//TODO : Take the following whole logic in indexing structure based on cached path and actual path.
-    	//For example  - 
-    	//if <verify-indexing-needed> (cache-path, path) then
-    	//   ast := read it from file
-    	//   index-compilation-init ( path , ast) 
-    	//   <precompile> ast
-    	//else
-    	//   ast : = get-compilation-unit 
-    	//end     
-  	)
+    				full-path := <resolve-spx-path>path;
+    				cache-path := <resolve-cache-path> full-path;
+    				path' := <get-normalized-path> full-path
+  				)
   	where with-spxverify(
 		  if <is-newer> (cache-path, path) ; not(<get-currently-analyzing-ast-from-cache> full-path)then
       	debug-compiler(! $[Already updated . Hence, doing nothing] | "cache" , <debug-level-INFO>) 
@@ -37,20 +49,7 @@ rules
         end;
         
         debug-compiler(! $[Precompiling [path']]| "cache" , <debug-level-INFO>);
-        
-        //2. precomiling it so update the index and related artifacts
-        <precompile <+ throw-precompile-exception>( spx-compilation-unit, path');
-        
-        
-        //3. precomile is successful . Hence updating the existing cache. 
-        //   cache acts as a marker to indicate whether compilation and 
-        //   code generation is needed. 
-        //   if it is in cache and updated than source code 
-        //	it means the precompilation is not needed.
-        if <file-exists>full-path then
-          <WriteToBinaryFile> (cache-path, spx-compilation-unit); // updating cache on filesystem (e.g., ignore libstratego-lib)
-          debug-compiler(!$[Updating cache for following CompilationUnit: [<print-as-string>full-path]]| "cache" , <debug-level-INFO>)
-        end
+				<open-spx-compilation-unit( precompile | cache-path)>(spx-compilation-unit, path')
     	end
   	)		
 

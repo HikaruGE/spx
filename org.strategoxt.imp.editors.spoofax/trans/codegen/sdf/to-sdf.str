@@ -32,14 +32,13 @@ imports
 	utils/sdf2conflicts
 
 rules
-
-	 emit-sdf:
- 		m@Module(attrb* , modname , section*) -> m
+	emit-sdf:
+ 		Module(attrb* , modname , section*) -> <id>
  		where	with-spxverify(
  						project-path := <ProjectPath>
  						; package-typed-qname := <GetEnclosingPackageName>
 						; module-typed-qname  := <GetEnclosingModuleName>
-						, !"Failed to create current scope at emit-sdf"
+						, !"Failed to create current scope at to-sdf.emit-sdf"
 					)	
 		where	!module-typed-qname  => Module(module-untyped-qname)
 			 		; !package-typed-qname => Package(package-untyped-qname)
@@ -49,7 +48,8 @@ rules
     where	sdf-string := <pp-sdf-string'> 'module( // sdf2conflicts here collects information for the parenthesation in the prettyprinter
     																		<qname-to-path>module-untyped-qname, 
     																		<to-sdf-imports-block>section* , 
-    																		<to-sdf-section-block;sdf2conflicts-store-sdf>section* 
+    																		//<to-sdf-section-block;sdf2conflicts-store-sdf>section* 
+    																		<to-sdf-section-block>section*
     																		)
     			; <save-artifact(| package-untyped-qname , root-directory, output-path)>sdf-string 
 					; debug-compiler(!$[SDF: Finishing generation of SDF for [<print-as-string> module-untyped-qname]. ] | <debug-at-generator> , <debug-level-INFO>)
@@ -57,8 +57,8 @@ rules
 	
 	
 rules	
-	
-	generate-sdf-main:  module-qname* -> <id>
+	generate-sdf-main:  
+		module-qname* -> <id>
 		where Package(package-qname)   := <GetEnclosingPackageName>
 		where debug-compiler(!$[SDF: Generating main failed for the following package : [<print-as-string> package-qname].] | <debug-at-linker> , <debug-level-INFO>)
 		where 		
@@ -75,7 +75,7 @@ rules
 	 				resultant-sorts := <get-sdf-start-symbols-to-sync ; is-not-empty-list <+ ![]>;
 	 				if not(!resultant-sorts => []) then
 		 				start-symbol-syntax := [exports(context-free-start-symbols(resultant-sorts))]
-	 				else
+	 				else	
 	 					start-symbol-syntax := []
 	 				end
 	 				, !"getting & syncing start symbols failed"
@@ -98,9 +98,10 @@ rules
 	to-sdf-section-block : 
 		sections* -> sdf-section-block
 		where with-spxverify(verify( List |sections* , "List expected"))
-		where	sdf-section* := <conc> (
-			  		<collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc)> sections*,
-			  		<collect-om(?TemplateSection(_)); template-sections-to-sdf> sections*
+		where	sdf-section* := <conc;flatten-list> (
+			  		<collect-om(?SDFSection(<id>) + ?SDFSectionEH(_, <id>), conc) > sections*,
+			  		<collect-om(?TemplateSection(_))    ; template-sections-to-sdf> sections*,
+			  		<collect-om(?KeywordSection(_,_,_)) ; keyword-sections-to-sdf > sections*
 					);
 					if <ensure-list-is-not-empty>sdf-section* then
 						sdf-section-block := <to-generated-artifact-block(desugar-spxsdf-to-sdf , \s -> [exports(s)]\)>sdf-section*
@@ -128,8 +129,14 @@ rules
  		where	is-string
 	
 	to-sdf-import-statement:
-		Package(QName(_)) -> <to-sdf-mix-module-name> 
-					  
+		p@Package(QName(_)) -> r 
+		where	to-sdf-mix-module-name => mix-module-name  
+		where	with-spxverify( 
+							ctx := <get-imported-package-alias> (<GetEnclosingPackageName>,p) 
+						, !$[Failed to get alias for package [<print-as-string>p] in [<print-as-string><GetEnclosingPackageName>]] 
+				  )
+		where r := 'module(parameterized(mix-module-name, [sort(ctx)]))
+						  
 	to-sdf-import-statement:
 			Module(q@QName(_)) -> result
 			where !q  
@@ -176,51 +183,28 @@ rules
     box2text-string(|80)
 
 rules
-  
-	desugar-spxsdf-to-sdf = list-to-conc-grammars; topdown(repeat(desugar-sdf-redux)) ; alltd(parameterize-sdf)
-	
+	desugar-spxsdf-to-sdf = list-to-conc-grammars; topdown(repeat(desugar-sdf-redux)) ; alltd(to-sdf-sort)
+
   // TODO: also support Constructor("Module(<2>, <1>)") => {ast("...")}?
   //desugar-sdf-redux:
   //  term(default(fun(quoted(s)))) -> term(default(appl(unquoted("cons"), [fun(quoted(s))])))
-  desugar-sdf-redux:
-    Constructor(s) -> sdf-cons(s)
+  desugar-sdf-redux:  Constructor(s) -> sdf-cons(s)
 
   // HACK: remove scope from output
-  desugar-sdf-redux:
-    term(default(appl(unquoted("scope"), [s]))) ->  term(default(appl(unquoted("scope"), [])))
+  desugar-sdf-redux: term(default(appl(unquoted("scope"), [s]))) ->  term(default(appl(unquoted("scope"), [])))
 
-  desugar-sdf-redux:
-    namespacedef(_, s) -> s
+  desugar-sdf-redux: namespacedef(_, s) -> s
 
-  desugar-sdf-redux:
-    namespaceref(n) -> sort(s')
-    where
-      s' := < resolve-NamespaceSort-declaration <+ !"ID"> n
+  desugar-sdf-redux: namespaceref(n) -> sort(s') where  s' := < resolve-NamespaceSort-declaration <+ !"ID"> n
 
-  desugar-sdf-redux:
-    namespaceref2(n, s) -> s
-
-	parameterize-sdf:
-    prod(lhs, sort, attrs) -> prod(lhs', sort, attrs)
-  	where 
-  		lhs' := <alltd(rename-external-sort)>lhs
-  
-  rename-external-sort: 
-  	sort(x) -> sort(x')
-  	where 
-  		x' := x // TODO parameterize sort 1 : parameterized-sort(x, [sort(context)])
- 			// get-sdf-usage 
- 				
+  desugar-sdf-redux: namespaceref2(n, s) -> s
+				
 rules
+  list-to-conc-grammars: [g1, g2 | gs] -> conc-grammars(g1, <list-to-conc-grammars> [g2 | gs])
 
-  list-to-conc-grammars:
-    [g1, g2 | gs] -> conc-grammars(g1, <list-to-conc-grammars> [g2 | gs])
+  list-to-conc-grammars: [g1] -> g1
 
-  list-to-conc-grammars:
-    [g1] -> g1
-
-  list-to-conc-grammars:
-    [] -> []
+  list-to-conc-grammars: [] -> []
 
 rules
 
@@ -326,3 +310,66 @@ rules
 	to-sdf-mix(|mix-context) = 
 		?(sortName ,_);
 		!symbol(sort(sortName), parameterized-sort(sortName, [sort(mix-context)]))
+		
+rules
+
+	to-sdf-sort: prod(lhs, sort, attrs) -> prod(lhs', sort, attrs) where lhs' := <alltd(to-sdf-sort)>lhs
+
+  to-sdf-sort: QualifiedSort(Unresolved(), x) -> sort(x)
+
+  to-sdf-sort: 
+  	q@QualifiedSort(p@Package(QName(_)), x) -> sort'
+  	where <get-sdf-usage(|p)>x;
+  				<get-imported-package-alias>(<GetEnclosingPackageName>, p) => ctx;
+  				sort' := parameterized-sort(x, [sort(ctx)])
+			<+
+  				sort' := sort(x)	 
+  	
+  to-sdf-sort: 
+  	sort(x) -> sort'  
+  	where  
+  		(s,c,t) := <get-sdf-usage(|Unqualified())>x;
+  		?(_, _, PublicScope());
+  	  if <?Module(QName(_))>c then 
+				ns:=<get-enclosing-package-qname>c
+			else 
+				ns := c
+			end;		  
+			ctx := <get-imported-package-alias>(<GetEnclosingPackageName>, ns);  
+		  sort' := parameterized-sort(x, [sort(ctx)])
+		<+
+			sort' := sort(x) 		
+			
+rules 
+ 	
+	keyword-sections-to-sdf:
+ 		keyword-sections -> sdf-sections 
+ 		where <mapconcat(keyword-sections-to-sdf)>keyword-sections => sdf-sections 
+ 	
+ 	keyword-sections-to-sdf:	 
+ 			<is-string> -> lit(x)
+ 			where x := <concat-strings>[ "\"" , <id> , "\""]
+
+	keyword-sections-to-sdf:
+		(id-sort , literals*) -> lexical-syntax(prod*) 
+		where ?(_ , <is-list>)
+		where prod* := <map(<keyword-sections-to-sdf>(id-sort , <id>) )>literals*
+	
+	keyword-sections-to-sdf:
+		(id-sort , l@lit(x)) -> prod([l], id-sort, attrs([reject()]))
+	
+	keyword-sections-to-sdf: 
+		KeywordSection(KeywordSymbols(s*) , Keywords(w*), Some(FollowRestriction(restriction))) -> sdf-section*  
+		where literals* := <map(keyword-sections-to-sdf)>w*
+		where sorts*    := <map(to-sdf-sort)>s*     
+		where to-sdf-restriction-section:=
+						lexical-restrictions(
+							[ follow(
+						 				literals*
+						 			,	restriction
+						 	 	)	
+							]
+						) 
+					;	<map(<keyword-sections-to-sdf>(<id>, literals*))>sorts* => to-sdf-keyword-prouction-sections*
+					; <conc>( [to-sdf-restriction-section] , [to-sdf-keyword-prouction-sections*]) => sdf-section* 
+					 				

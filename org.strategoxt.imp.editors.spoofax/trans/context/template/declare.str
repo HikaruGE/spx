@@ -6,7 +6,10 @@ imports
   utils/annotations
   context/symboltable
   context/signatures
+  normalize/signatures
+  context/scope-tree
   common
+	 
 	
 signature
   constructors
@@ -54,7 +57,7 @@ rules
   declare-sdf-usage:
     Placeholder(sort(x), _, _) -> <id>
     where with-spxverify(
-      <index-sdf-usage>( x , x)
+      <index-sdf-usage(|Unqualified())>x
     )  
 
 

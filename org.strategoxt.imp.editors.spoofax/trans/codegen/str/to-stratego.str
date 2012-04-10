@@ -66,7 +66,9 @@ rules
 				output-path-rtree    := <get-output-path(|"rtree")>(root-dir, module-untyped-qname)
 				, ! "emit-str-rtree: failed to get output-path-rtree @emit-str-rtree"
 			)
-			; str-section-def := <conc>(<collect-om(?STRSection(<id>), conc)> section* ,<get-name-analysis>section*)
+			// TODO FIX : enable name analysis. currently it is not fully supported  
+			//; str-section-def := <conc>(<collect-om(?STRSection(<id>), conc)> section* ,<get-name-analysis>section*)
+			; str-section-def := <collect-om(?STRSection(<id>), conc)> section* 
 			; str-aterm := Module(
 			 										 <qname-to-path>module-untyped-qname,
 			 										 <conc>(<to-str-imports-block(|module-untyped-qname)>section*,
@@ -86,21 +88,24 @@ rules
  		  		)
 		where	debug-compiler(!$[Stratego: Generate-str-main from package-name: [<print-as-string>package-qname]] | <debug-at-linker> , <debug-level-INFO> )
 		where	with-spxverify(
-	 			 			main-str-module-name :=  <get-main-file-name><GetEnclosingPackageName>
-	       		; pp-module-name := <conc-strings>(main-str-module-name, "-prettyprinter")
-				 		; str-aterm := Module(main-str-module-name, [
-				   			Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*),
-				    		Imports([Import(pp-module-name)])
-		 		   		]
-			     		)
-	 			 		; str-string := <pp-stratego-string> <parenthesize-Stratego>  str-aterm
+	 			 			main-str-module-name :=  <get-main-file-name><GetEnclosingPackageName>;
+	       			module-imports := Imports(<get-str-imports(|<GetEnclosingPackageName>)>module-qname*);
+	       			if templatelang-enabled then 
+	       				pp-module-name := <conc-strings>(main-str-module-name, "-prettyprinter");
+	       				all-import* := [module-imports, Imports([Import(pp-module-name)])] 
+				 			else 
+				 				pp-module-name := "";
+				 				all-import* := [module-imports ]
+				 			end
+				 			;	str-aterm := Module(main-str-module-name, all-import*)
+	 			 		; str-string := <pp-stratego-string> <parenthesize-Stratego> str-aterm
 		    	)
 		  		; with-spxverify(
 			 			  <save-artifact(save-to-file      | package-qname , root-directory, <get-main-output-path(|main-str-module-name, "str")>(root-directory, package-qname))>str-string
 						; <save-artifact(WriteToBinaryFile | package-qname , root-directory, <get-main-output-path(|main-str-module-name, "rtree")>(root-directory, package-qname))>str-aterm
 		  			)
 					; debug-compiler(!$[Stratego: Generation of Main STR Module for package : [<print-as-string> package-qname] is done] | <debug-at-linker> , <debug-level-INFO> )
-	where <generate-str-templates-main>(package-qname , module-qname* , pp-module-name, root-directory)
+					where <generate-str-templates-main>(package-qname , module-qname* , pp-module-name, root-directory)
 		
 
 	// Generating pretty-printer if templatelang is enabled 

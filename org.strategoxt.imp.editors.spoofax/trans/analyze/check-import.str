@@ -30,11 +30,8 @@ rules
 	
 	imports-constraint-error:
 		ImportPackage(package-qname@QName(_)) -> (package-qname , $[Failed to resolve '[package-qname-string]'. Please check spx.config for configured SPX sources. ])
-		where
-			!package-qname;
-			require(is-declared-package)
-		where
-			package-qname-string := <convert-qname(|".")>package-qname
+		where	!package-qname;	require(is-declared-package)
+		where	package-qname-string := <convert-qname(|".")>package-qname
 	
 	
 	imports-constraint-error:

@@ -37,13 +37,23 @@ rules
   // (the completion identifier in the AST provides additional context information)
   editor-complete:
     (node, position, ast, path, project-path) -> proposals*
+    where debug 
     where editor-init
     where <alltd(compute-proposals)> ast 
-    where proposals* := <Proposals>()
+    where <Proposals>() <+	![] => proposals* 
     where <debug(!"Final Proposals : ")>proposals*
-    
-  
+			
 rules
+	
+	compute-proposals:
+		Package(Name(COMPLETION(prefix)) , _)-> <id> 
+		where debug(!"-") 
+		where get-package-list
+					;	map(?Package(<id>);convert-qname(|".")) 
+					=> proposals
+					; rules(Proposals: () -> proposals) 	
+
+
 	compute-proposals:
     Package(Name(package-name) , modules* ) -> <id>
     where not(<Proposals>())
@@ -52,6 +62,12 @@ rules
         
 	compute-proposals:
     Package(package-qname@QName(_) , modules* ) -> <id>
+		where <one(?COMPLETION(prefix))>package-qname
+		where debug(!"----")
+
+	compute-proposals:
+    Package(package-qname@QName(_) , modules* ) -> <id>
+    where <not(one(?COMPLETION(prefix)))>package-qname
     where not(<Proposals>())
     where	{| GetEnclosingPackageName
          	 :		rules(GetEnclosingPackageName := Package(package-qname))
@@ -86,8 +102,27 @@ rules
 					;	map(?Package(<id>);convert-qname(|"."))
 					; filter(string-starts-with(|full-prefix)) => proposals
 					; rules(Proposals: () -> proposals) 	
-
-
+	
+	
+	compute-proposals:
+		prod(lhs, rhs, attr) -> <id>
+		where <oncetd(?QualifiedSort(ctx, COMPLETION(t)))>lhs
+		where <debug(!"---")>ctx
+		where <debug(!"---")>t
+	
+	
+	compute-proposals:
+		prod(lhs, rhs, attr) -> <id>
+		where <oncetd(?sort(COMPLETION(prefix))+ ?NOCONTEXT(COMPLETION(prefix)))>lhs
+		where debug(!"1: ")
+		where <get-all-usings><GetEnclosingPackageName>
+					;	map(?Package(<id>);convert-qname(|"."))
+					; filter(string-starts-with(|prefix); not(?"")) => proposals1
+		where debug(!"2: ")
+		where activate-scope(<resolve-all-of-current-scope-by-type> SortDeclaration() | <GetEnclosingPackageName>) => proposals2
+		where debug(!"3: ")
+		where rules(Proposals: () -> [proposals1,proposals2]) 			
+  
 rules
 	
 	editor-analyze-with-eval-exec-time: 
@@ -114,7 +149,7 @@ rules
 	// 	  		!issues => ( errors, warnings, infos)
 	// 	
 	
-	
+	//TODO FIX : tempoirarily added. replace compile-packages-of with the following strategy 
 	editor-analyze: 
  		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos)
     where abs-path := <concat-strings>[project-path, "/" ,path]
@@ -128,33 +163,29 @@ rules
     			end  
 	 	where with-spxverify(
 	    			<store-currently-analyzing-ast> (<get-normalized-path>abs-path  , ast);
-	    			<compile-current-ast> (ast, abs-path) => (analyzed-ast , issues') 
+	    			<editor-analyze> (ast, abs-path) => (analyzed-ast , issues') 
 					);  
 		  		!issues' => ( errors, warnings, infos)
 		
-		
-	setup-editor-analyze: 
-		(resource-abs-path,project-path) -> <id>
-		where if not(IsAnalyzing; is-equal-path(|resource-abs-path)) then // checking previously analyzed resource
-						debug(!"Saving previous unsaved State : ")  
-			 			//compile-unload;
-			 			//index-init
-			 		end 
-		where	spxlang-editor-init(|project-path)
-    where	rules (IsAnalyzing:= resource-abs-path)
-		
-	
-	
-	//TODO FIX : tempoirarily added. replace compile-packages-of with the following strategy 
-	compile-current-ast = 
-    ?(ast, file-absolute-path);
-    index-init;
-  	on-init-index-updating;
-			<normalize-all> (ast, file-absolute-path);
-			init-declarations; 
+	//TODO FIX : tempoirarily added for testing . 	
+	editor-analyze:  
+ 		(ast, path, project-path) -> (ast, [], [], [])
+  	where <string-ends-with(|".spt")> path
+  	where <not(?CompilationUnit(_,_))>ast
+
+	//TODO FIX : tempoirarily added for testing .
+	editor-analyze= 
+    ?(compilation-unit, file-absolute-path);
+		index-init;
+   	on-init-index-updating;
+		<open-spx-compilation-unit(normalize-all|<spx-precompiled-cache-path>file-absolute-path)>(compilation-unit, file-absolute-path);
+		init-declarations; 
 		on-index-updating-completed;
 		!file-absolute-path; 
-    where(get-declared-packages-qname; 	compile-main) ;
+		where(
+    	get-declared-packages-qname; 	
+    	compile-main
+  	) ;
     get-semantic-problmes-by-file => issues* ;
     if not(<fail-if-has-errors>issues*) then
         set-has-errors // checking whether there are errors 
@@ -163,11 +194,67 @@ rules
     get-related-files-of-packages ; 
     filter(not(is-equal-path(| file-absolute-path))) ;
     mark-issues-of-files ; 
-    !(<get-analyzed-ast>ast , issues*)				
-    
-    
-	editor-analyze:  
- 		(ast, path, project-path) -> (ast, [], [], [])
-  		where <string-ends-with(|".spt")> path
-  		where <not(?CompilationUnit(_,_))>ast
-  		
+    !(<get-analyzed-ast>compilation-unit, issues*)				
+  
+  //TODO FIX : tempoirarily added for testing .  
+	setup-editor-analyze: 
+		(resource-abs-path,project-path) -> <id>
+		where if not(IsAnalyzing; is-equal-path(|resource-abs-path)) then // checking previously analyzed resource
+						debug(!"Saving previous unsaved State : ")
+		//	 			compile-unload
+			 		end 
+		where	spxlang-editor-init(|project-path)
+    where	rules (IsAnalyzing:= resource-abs-path)
+
+rules 
+	// on save event 
+	// build-incrementally-service:
+	// 	(selected, position, ast, path, project-path) -> None()
+	// 	where	not(HasErrors)
+	// 	where	spxlang-editor-init(|project-path);
+	// 					with-spxverify(
+  //  					abs-path := <concat-strings>[project-path, "/" ,path]
+	// 						; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	//   					; <build-spx-incrementally>(ast, abs-path) 
+	//    				)
+
+	// build-incrementally-service:
+	// 		(selected, position, ast, path, project-path) -> None()
+	// 		where	HasErrors;
+	// 					<debug>$[Compilation Failed.Please fix the errors before building the artifacts : [<print-as-string>path]]
+	// 			
+
+	//TODO FIX : tempoirarily added for testing purpose. replace it with build-incrementally 
+	// simplified generate artefacts on save 
+	generate-artefacts-on-save:
+		(selected, position, ast, path, project-path) -> None()
+		where	HasErrors
+		where <debug>$[Compilation Failed.Please fix the errors before building the artifacts : [<print-as-string>path]]
+		
+	generate-artefacts-on-save:
+		(selected, position, ast, path, project-path) -> None()
+		where	not(HasErrors)
+		where abs-path := <concat-strings>[project-path, "/" ,path]
+   	where	<setup-editor-analyze>(abs-path , project-path)
+   	where	with-spxverify(
+  					<store-currently-analyzing-ast> (<get-normalized-path>abs-path  , ast);
+  					<generate-artefacts-on-save>(ast, abs-path) 
+   				)
+	
+	generate-artefacts-on-save = 
+   ?(ast, file-absolute-path);
+   	index-init;
+   	on-init-index-updating;
+   	init-declarations; 
+		on-index-updating-completed;
+		!file-absolute-path; 
+		get-semantic-problmes-by-file => issues* ;
+    if not(<fail-if-has-errors>issues*) then
+      set-has-errors // checking whether there are errors 
+    else
+  		!file-absolute-path; 
+  		index-on-init-code-generation;
+  		get-declared-packages-qname; 
+			list-loop(generate-spx-package);	
+			index-on-complete-code-generation 
+    end    	

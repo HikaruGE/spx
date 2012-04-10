@@ -15,6 +15,7 @@ imports
 	context/sdf/declare
 	context/signatures
 	utils/annotations
+	utils/path
 
 
 // TODO : refactor common functionily in seperate rules/strategy
@@ -109,7 +110,7 @@ rules
 	store-operation-declaration:
 		p@prod(lhs, rhs-sort, attrs) -> <id>
 		where
-			 	if is-lexical-sort then
+			 	if <is-lexical-sort>rhs-sort then
 			 		if not (IsInsideLexicalSyntaxBlock ) then
 			 			// Karnel Syntax and not marked as Lexical Syntax Block.
 			 			// Hence, marking it as a lexical syntax
@@ -131,14 +132,14 @@ rules
 		?(p, lhs , rhs-sort, attrs(attribute-list))
   	;	rhs-sort-name := <get-rhs-sort-name>rhs-sort
   	;	{|	lhs-sort, get-op-name
-  	 	 :		<find-sorts>lhs
-  					;	<try(get-opration-name)>attribute-list
-  					;	if operation-name := <get-op-name> then
-  								lhs-operands-types := <reverse><bagof-lhs-sort>
-  							;	create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)
-  						else
-  								dbg-declaration(!$[Failed to retrive Operation Name . Hence Ignoring : [<print-as-string> p].] |"Signature" , "Warning")
-  						end
+	 	 :			<find-sorts>lhs
+					;	<try(get-opration-name)>attribute-list
+					;	if operation-name := <get-op-name> then
+							lhs-operands-types := <reverse><bagof-lhs-sort>
+						;	create-opname2opdecl-mapping(|operation-name , lhs-operands-types, rhs-sort-name , p)
+						else
+							dbg-declaration(!$[Failed to retrive Operation Name . Hence Ignoring : [<print-as-string> p].] |"Signature" , "Warning")
+						end
   		  |}
 
 	store-operation-declaration-internal = 
@@ -166,11 +167,12 @@ rules
 			 |}
 	*/
 
-  find-sorts = alltd(get-sort-decl)
-
+  
 rules
 
-	// Gets sort declaration from the production
+	//TODO : use collect-all instead of using dynamic rule to collect all the sort name from LHS
+	find-sorts = alltd(get-sort-decl) 
+
 	get-sort-decl:
 		a@alt(frstSort , restSort*) -> a
 		where
@@ -180,8 +182,7 @@ rules
 					;	inner-sort* := <bagof-lhs-sort;reverse>
 					;	intermediate-resultant-sort-type :=<string-replace(|"(", "_Of_");string-replace(|")", "")> <separate-by(|"_"); concat-strings>inner-sort*
 			|}
-			// storing intermediate operation declarations
-			; <map(create-opname2opdecl-mapping(|"", intermediate-resultant-sort-type, "[N/A]" ))>inner-sort*
+			; <map(create-opname2opdecl-mapping(|"", intermediate-resultant-sort-type, "[N/A]" ))>inner-sort*// storing intermediate operation declarations
 			; rules( lhs-sort :+ _ -> intermediate-resultant-sort-type)
 
 	get-sort-decl:
@@ -219,40 +220,33 @@ rules
   		;rules ( lhs-sort :+ _ -> ret-string)
 
  	get-sort-decl:
- 		p@parameterized-sort(x, _) ->p
-		where 
-			with-spxverify(
-  			rules( lhs-sort :+ _ -> x)
-			)
+ 		p@parameterized-sort(x, _) -> p
+		where with-spxverify( rules( lhs-sort :+ _ -> x))
 
-  get-sort-decl:
+  get-sort-decl:  	
+  	QualifiedSort(qname, x) -> <id>
+  	where qname-string := <convert-qname(|"_")>qname  
+  	where <get-sort-decl> sort( <concat-strings>[qname-string , "_",  x ])
+ 
+ 	get-sort-decl:  	
   	s@sort(x) -> s
-  	where 
-  		with-spxverify(
-  			rules( lhs-sort :+ _ -> x)
-			)
+  	where	with-spxverify(rules( lhs-sort :+ _ -> x))
 
 	get-sort-decl:
 		o@opt(parameterized-sort(x, _)) -> o
-  	where 
-  		with-spxverify(
-  			rules( lhs-sort :+ _ -> $[Option([x])])
-			)
+  	where with-spxverify(	rules( lhs-sort :+ _ -> $[Option([x])]))
 
 	get-sort-decl:
 		opt(sort(x)) -> opt(sort(x))
-  	where 
-  		with-spxverify(
-  			rules( lhs-sort :+ _ -> $[Option([x])])
-			)
+  	where with-spxverify(	rules( lhs-sort :+ _ -> $[Option([x])]))
 
 	get-sort-decl:
 		i@iter-star-sep(operand1, operand2) -> i
  		where 
  			with-spxverify( 
 				{|lhs-sort:
- 					 <find-sorts>operand1
- 					  ;<find-sorts>operand2
+ 					 		<find-sorts>operand1
+ 					  ;	<find-sorts>operand2
  					  ; inner-sorts-tostring := <reverse;separate-by(|"_");concat-strings><bagof-lhs-sort>
 			  |}
 			 	;ret-string := $[List([<string-replace(|"(", "_Of_");string-replace(|")", "")>inner-sorts-tostring])]
@@ -291,11 +285,10 @@ strategies
 	assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)=
 		? [hd|tl]
 		; (expected-op-name , expected-op-sorts*, ex-resultant-sort) := hd
-		; (
-				operation-name := expected-op-name
-				;opernand-sorts* := expected-op-sorts*
-				;resultant-sort := ex-resultant-sort
-		  <+
+		; (	operation-name := expected-op-name
+			;	opernand-sorts* := expected-op-sorts*
+			;	resultant-sort := ex-resultant-sort
+	  	<+
 				<assert-equal-signature(|operation-name, opernand-sorts*, resultant-sort)>tl
 			)
 
@@ -333,13 +326,13 @@ strategies
 
 
 	record-operation-definition ( |scoped-op-name ,  opname , operand-sort* ,  resultant-sort) =
-		where (
-	  	arg-length := <length>operand-sort*
-			;<index-symbol-definition>(scoped-op-name  , OperationSignature(),(opname  , arg-length ))
-      ;<index-symbol-definition>(scoped-op-name  , OperationDeclaration(),(opname  , operand-sort* , resultant-sort)) 
-      ;dbg-declaration(!$[Stored operation declaration : [<print-as-string> ( opname , operand-sort* ,  resultant-sort) ].]
+		where	(	
+			arg-length := <length>operand-sort*
+			;	<index-symbol-definition>(scoped-op-name  , OperationSignature(),(opname  , arg-length ))
+      ;	<index-symbol-definition>(scoped-op-name  , OperationDeclaration(),(opname  , operand-sort* , resultant-sort)) 
+      ;	dbg-declaration(!$[Stored operation declaration : [<print-as-string> ( opname , operand-sort* ,  resultant-sort) ].]
        		             |"Signature" , <debug-level-INFO>) 
-			;dbg-declaration(! $[Stored operation signature   : [<print-as-string> scoped-op-name] -> [<print-as-string> (opname, <length>operand-sort*)].] 
+			;	dbg-declaration(! $[Stored operation signature   : [<print-as-string> scoped-op-name] -> [<print-as-string> (opname, <length>operand-sort*)].] 
 			                 | "Signature" , <debug-level-INFO>) 
 		)
 
@@ -360,13 +353,8 @@ strategies
 			index-operation-signature-flag	
 		end
 
-signature constructors 
-	OperationSignatureFlag : Flag 
-	HasDuplicateOperationDefinition : Flag 
 	
 rules 
-	
-		
 	index-operation-signature-flag = 
 		<get-constructor> OperationSignatureFlag() => cons-name;
 		<index-symbol-definition>(cons-name, OperationSignatureFlag(),  cons-name)
@@ -374,4 +362,8 @@ rules
 	is-operation-signature-initialized = 
 		<get-constructor> OperationSignatureFlag() => key ;  
 		<resolve-symbol-definition>(key, OperationSignatureFlag())   
-		
+
+signature 
+	constructors 
+		OperationSignatureFlag : Flag 
+		HasDuplicateOperationDefinition : Flag 

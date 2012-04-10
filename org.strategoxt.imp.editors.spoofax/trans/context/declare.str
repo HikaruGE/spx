@@ -39,32 +39,34 @@ rules
 				|}	
 		)
 
-	delcare-spx-scoped-symbols = 
-		declare-internal(declare-local-symbols)
-		//; print-statistics
-		  
+	delcare-spx-scoped-symbols = declare-internal(declare-local-symbols)
+
 	declare-internal(declare-symbols) =  
 		? desugared-module-def
 		; origin-track-forced(declare-spxmodules-all(declare-symbols)) => annotated-moduleDef
 		; !annotated-moduleDef => Module(attrb* , modname , section*)  // updating module definitions
 		; with-spxverify(
-			 <get-annotation(get-package-annotation)>modname => Package( package-qname)
+			 		<get-annotation(get-package-annotation)>modname => Package( package-qname)
 			  ; mId := <get-module-typed-qname>(package-qname, modname)
-			  ; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
+				; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
   	  )
-  //	; <debug(!"desugared : ")><ppterm> desugared-module-def
-	//  ; <debug(!"analyzeed : ")><ppterm> annotated-moduleDef
+  	
   	    
 rules 
 	
 	declare-spxmodules-all(s):
 		Module(attrb* , modname , section*) -> Module(attrb* , modname , m-sections*)
-		where
-			<alltd(s)>section* => m-sections*
+		where	<alltd(s)>section* => m-sections*
 
 	declare-local-symbols:
 		SDFSection(definition*) -> SDFSection(declared-definition*)
 		where <declare-sdf-usage-main>definition* => declared-definition*  
+	
+	declare-local-symbols:
+		KeywordSection(definition*,words*,restriction) -> KeywordSection(declared-definition*, words*,restriction)
+		where <declare-sdf-usage-main>definition* => declared-definition*
+		  
+	
 				 
 	declare-local-symbols:
 		SDFSectionEH(s,definition*) -> SDFSectionEH(s,declared-definition*)
@@ -72,21 +74,18 @@ rules
 
 	declare-local-symbols:
 	  STRSection(def*) -> STRSection(m-definition*)
-    where
-    	<declare-str-local-definition-main>def* => m-definition*
+    where	<declare-str-local-definition-main>def* => m-definition*
        
   declare-local-symbols: ESVSection(def*) -> <id>
 
   declare-local-symbols:
     TemplateSection(definition*) -> TemplateSection(declared-definition*)
-    with
-     <declare-template-definition-main> definition* => declared-definition* 
+    where with-spxverify(<declare-template-definition-main> definition* => declared-definition*) 
 
   // FIXME: move to spoofax.configuration?
   declare-local-symbols:
   	TemplateOptions(option*) -> TemplateOptions(declared-option*)
-  	with
-  	  <declare-template-options-main> option* => declared-option* 
+  	where with-spxverify(<declare-template-options-main> option* => declared-option*) 
 
 rules
 
@@ -182,7 +181,6 @@ rules
 		
 	newDefData(rename): 
  	(scope@Package(QName(_)) , type, x) -> defData   
-	 where 
-	 		x'  := <rename(|scope)>x;
-	 		defData  := DefData(scope,  type, Internal() , x , x')
+	 where	x'  := <rename(|scope)>x;
+	 				defData  := DefData(scope,  type, Internal() , x , x')
 		     

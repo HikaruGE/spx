@@ -30,7 +30,7 @@ rules
 		def@Module(attrb* , s@SPXModuleName(m) , section*) -> (s, $[Multiple declaration of module '[m]' ])
 		where
 			module-qname := <GetEnclosingModuleName>
-			; <get-enclosed-modules-of-package><GetEnclosingPackageName>
+			; activate-scope(m* := <get-enclosed-modules-of-package><GetEnclosingPackageName> |<GetEnclosingPackageName> )
 			; filter(?module-qname)
 			; is-not-empty-list 
 			; require(ensure-is-unique)  // if declaration is not unique, it means that module with this names is declared multiple times in the current package scope
@@ -41,9 +41,9 @@ rules
 		m@Module(attrb* , modname , section*)  -> (merrors',[],[]) 
 		where 
 			<collect-all(
-				module-constraint-error, 
-				conc)
-			> m  => merrors'
+					module-constraint-error, 
+					conc
+				)> m  => merrors'
 
 		
 	// analyzes module errors and appened it with the existing problems  
@@ -86,7 +86,8 @@ rules
 			+ ?SDFSection(_) 
 			+ ?ESVSection(_) 
 			+ ?STRSection(_) 
-			+ ?SDFSectionEH(_, _))
+			+ ?SDFSectionEH(_, _)
+			+ ?KeywordSection(_, _,_))
 			)
 		; dbg-analysis(! $[ErrorChecking | Ignoring Section: [<print-as-string>]]| "analyze-section" , <debug-level-INFO>) 
 		; !([], [], [])		

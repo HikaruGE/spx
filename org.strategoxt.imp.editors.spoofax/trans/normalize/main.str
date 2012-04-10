@@ -53,36 +53,31 @@ rules
 strategies 	 
 	normalize-all =
 		?(spx-compilation-unit, current-spx-file-path );
- 	  <origin-track-forced(desugar-compilation-unit(|current-spx-file-path))>spx-compilation-unit              
+ 	  <origin-track-forced(desugar-spx(|current-spx-file-path))>spx-compilation-unit              
       
 strategies 
 	
-	desugar-compilation-unit (| cu-location):
-		CompilationUnit(moduledef*) -> 	<desugar-compilation-unit(|cu-location)>CompilationUnit([] , [appended-default-package-declaration])
+	desugar-spx(| cu-location):
+		CompilationUnit(moduledef*) -> 	<desugar-spx(|cu-location)>CompilationUnit([] , [appended-default-package-declaration])
 		where  appended-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
 
-	desugar-compilation-unit(| cu-location):
+	desugar-spx(| cu-location):
 		c@CompilationUnit(import* , package*)	-> 	CompilationUnit( import* , modified-packages)
 		where	with-spxverify( <index-compilation-unit>(cu-location, c),	!" Failed to index compilation unit"	)
-		where	<alltd(origin-track-forced(desugar-imports(|cu-location)))> import*;
-					<alltd(origin-track-forced(desugar-spx-package(|cu-location)))> package* => modified-packages
+		where	<alltd(origin-track-forced(desugar-spx(|cu-location)))> import*;
+					<alltd(origin-track-forced(desugar-spx(|cu-location)))> package* => modified-packages
 	
-	desugar-imports(|namespace):
-		i@Imports(import*) -> i
-		where	<store-import-declaration>(namespace, i)
+	desugar-spx(|namespace):
+		i@Imports(import*) -> i	where	<store-import-declaration>(namespace, i)
 								
 rules
-	
-	desugar-spx-package(|cu-location):
-		Package(Name(package-name) , modules* ) -> 
-			normalized-package-definition
-		where
-			debug-compiler(!$[Desugaring Packages [<print-as-string>package-name]])
-		where 
-			!QName([package-name]) => package-qname;
-			<desugar-spx-package(|cu-location)>Package(package-qname, modules*) => normalized-package-definition
+	desugar-spx(|cu-location):
+		Package(Name(package-name) , modules* ) -> normalized-package-definition
+		where	debug-compiler(!$[Desugaring Packages [<print-as-string>package-name]])
+		where	!QName([package-name]) => package-qname;
+					<desugar-spx(|cu-location)>Package(package-qname, modules*) => normalized-package-definition
 
-	desugar-spx-package(|cu-location):
+	desugar-spx(|cu-location):
 		p@Package(package-qname , modules* ) -> modifiedPackageDescription
 		where	!package-qname => QName(_)
 		where debug-compiler(!$[Desugaring Packages [<print-as-string>package-qname]])
@@ -90,13 +85,11 @@ rules
 						<index-package-declaration>(Package(package-qname) , cu-location)
 						, !"Indexing Package Declaration failed"
 					)			
-		where
-			{| GetEnclosingPackageName:
-					<declare-current-package-scope>Package(package-qname);
-			   	<alltd(origin-track-forced(desugar-spx(|cu-location)))> modules*  => desugared-modules*
-			|}
-		where
-			!Package( package-qname , desugared-modules*) => modifiedPackageDescription
+		where	{| GetEnclosingPackageName:
+						 	<declare-current-package-scope>Package(package-qname);
+			   			<alltd(origin-track-forced(desugar-spx(|cu-location)))> modules*  => desugared-modules*
+					|}
+		where	!Package( package-qname , desugared-modules*) => modifiedPackageDescription
 	  
 rules
 
@@ -120,7 +113,7 @@ rules
 						//-----------------------
 						// TODO FIX : obsolete :
 						//; sections' := <conc>(<reverse><bagof-PackageCommonImports>, <alltd( origin-track-forced(desugar-spx))>section*)
-						; sections' := <alltd( origin-track-forced(desugar-spx + desugar-imports(|enclosing-module-qname)))>section*
+						; sections' := <alltd( origin-track-forced(desugar-spx + desugar-spx(|enclosing-module-qname)))>section*
 						; dbg-symboltable(! $[ Storing enclosing namespace : [<print-as-string>enclosing-module-qname]] | "desugar-spx" , "Info")
 						; with-spxverify(
 								!Module(attrb* , modname-with-annotation , sections') => modifiedModuleDescription
@@ -133,7 +126,7 @@ rules
 									)
 									, !"Indexing Module Declaration failed . " 		
 								)
-				  	; with-spxverify( <index-enclosed-modules>(package , enclosing-module-qname), !" Failed to index enclosed moduled")   
+				  	; with-spxverify(<index-enclosed-modules>(package , enclosing-module-qname), !" Failed to index enclosed moduled")   
 			|}
 				
 rules
@@ -151,6 +144,32 @@ rules
 		where
     	<templatelang-desugar-sdf-top> sectionDef => sectionDef'
   
+  desugar-spx: 
+  	KeywordSection(s* , w* , None()) -> 
+  	KeywordSection( 
+  		s*
+  	, w* 
+  	, Some(
+		    FollowRestriction(
+		      single(
+		        char-class(
+		          simple-charclass(
+		            present(
+		              conc(
+		                range(short("a"), short("z"))
+		              , conc(
+		                  range(short("A"), short("Z"))
+		                , range(short("0"), short("9"))
+		                )
+		              )
+		            )
+		          )
+		        )
+		      )
+		    )
+  		)
+		) 
+		
 rules
 	//Desugaring STR sections
 	desugar-spx : 
@@ -159,9 +178,8 @@ rules
 			<basic-stratego-desugar-top> sectionDef => sectionDef'
 				
 rules
-	//Desugaring ESV Sections
-	desugar-spx : 
-		ESVSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> <id>
+	desugar-spx:	ESVSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> <id>
+	
 		
 rules
 	//Desugaring template sections
@@ -170,4 +188,8 @@ rules
   	where
   		<templatelang-desugar-top> sectionDef => sectionDef'
   		
-  
+rules 
+	basic-sdf-desugar-top = topdown(try(origin-track-forced(basic-sdf-desugar)))
+	
+	basic-sdf-desugar : QualifiedSort(Name(x), t2) -> QualifiedSort(QName([x]), t2)
+	  

@@ -99,7 +99,8 @@ public class CloseSpxIndexCommand implements ISpxlangCommand<Set<IProject>, Bool
 	public Boolean getResult() {
 		return isSuccessful;
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	public void setContext(Set<IProject> projects) {
 		this.projects  = projects;
 	}

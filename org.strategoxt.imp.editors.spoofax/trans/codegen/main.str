@@ -139,22 +139,7 @@ rules
     	<debug>$[------Index Cleanup is done ------]
   	)
 
-	build-incrementally-service:
-		(selected, position, ast, path, project-path) -> None()
-		where	HasErrors;
-					<debug>$[Compilation Failed.Please fix the errors before building the artifacts : [<print-as-string>path]]
-			
-			
-	build-incrementally-service:
-		(selected, position, ast, path, project-path) -> None()
-		where	not(HasErrors)
-		where	spxlang-editor-init(|project-path);
-					with-spxverify(
-  					abs-path := <concat-strings>[project-path, "/" ,path]
-						; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
-	  				; <build-spx-incrementally>(ast, abs-path) 
-	   			)
-  
+				
 	editor-build-all:
 		(selected, position, ast, path, project-path) -> None()
 		where verify-if-has-errors  

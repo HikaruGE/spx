@@ -639,7 +639,9 @@ signature
   
 
   constructors
-    //SymbolDef : namespace * key * sort( constructor ) * symboldef * symbolsort(overridable | unique)
+    //SymbolDef : namespace * key * category * symboldef * symbol properties (overridable | unique). TODO : could be a list of property. 
+    //currently we only require only one property for the current symbol table implementation
+    //hence, we are using a SymbolSort instead of  List(SymbolSort). 
     SymbolDef : Namespace * Term * Type  * Term * SymbolSort -> Def
     
     //TODO : use tuple . extract the terms and create a tuple and store it 
