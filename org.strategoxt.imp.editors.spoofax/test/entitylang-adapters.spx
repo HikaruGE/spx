@@ -20,12 +20,12 @@ module Entitylang-Adapters
 	// Reference resolving and hover help
 	references
 	  reference _ : editor-resolve
-	  hover _     : editor-hover
+	  hover _     : editor-hover   
 
 
 module Builders  
 	 	
-	rules 
+	rules		
 		// Transforms a selection to Java
 		generate-java:
 			(selected, position, ast, path, project-path) -> (filename, result)
@@ -45,7 +45,7 @@ module Builders
 			(selected, position, ast, path, project-path) -> (filename, result)
 			with
   			filename := <guarantee-extension(|"pp.spo")> path;
-  			result   := <pp-entitylang>selected // we just return the input term
+  			result   := <pp-entitylang>selected // we just return the input term 
 
 module Reference-Resolver  
 	
@@ -64,7 +64,7 @@ module Reference-Resolver
 		
 	 
 
-module Code-Completion-Proposer
+module Code-Completion-Proposer   
 
 rules
 	 // Completes an identifier when the user presses control-space

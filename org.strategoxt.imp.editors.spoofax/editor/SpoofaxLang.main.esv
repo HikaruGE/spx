@@ -14,3 +14,4 @@ language General properties
   extensions    : spx
   table         : include/SpoofaxLang.tbl
   start symbols : Start
+  unmanaged table : Stratego*

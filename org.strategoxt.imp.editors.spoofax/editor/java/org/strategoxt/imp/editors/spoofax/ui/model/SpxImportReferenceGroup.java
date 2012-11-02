@@ -5,7 +5,7 @@ import java.util.HashSet;
 
 public class SpxImportReferenceGroup  extends SpxBaseDescriptor{
 
-	public static final String IMPORT_DECLARATIONS_LABEL_TEXT = "import declarations";
+	public static final String IMPORT_DECLARATIONS_LABEL_TEXT = "imports";
 	public static final String DEPENDANTS_LABEL_TEXT   = "dependants";
 	
 	

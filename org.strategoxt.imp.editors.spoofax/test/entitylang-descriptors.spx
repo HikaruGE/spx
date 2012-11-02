@@ -3,8 +3,6 @@ package languages.entitylang
 module Entitylang-Descriptor
 	imports languages.entitylang.generated 
 	language General properties 
-                  
-	  name          : entitylang
 	  id            : SpoofaxEntityLanguage
 	  extends       : Root
 	                  
@@ -13,6 +11,7 @@ module Entitylang-Descriptor
 	                  
 	  extensions    : spo 
 	  start symbols : Start   
+	  name : test         
      
 
 	

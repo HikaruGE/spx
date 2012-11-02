@@ -1,23 +1,25 @@
-package languages.entitylang     
+package languages.entitylang      
 
 // Following module define the main langauge constructs for this language
 module Language-Constructs-Main
 	imports languages.entitylang.generated 
 	
 	context-free syntax    
-    "module" ID Definition*       	-> Start      {"Module"} 
-   	"entity" ID "{" Property* "}" 	-> Definition {"Entity"}
+    "module" ID Definition*       	-> Start      {"Module"}
+    "entity" Type@=Entity@=ID "{" Member* "}"	-> Definition {"Entity", scope(Property, Function)} 
+     
+   	//"entity" ID "{" Property* "}" 	-> Definition {"Entity"}
     ID  ":" Type               			-> Property   {"Property"} 
 	
 	rules 
 		// Semantic analyses
 		// Reports an error if an entity is defined more than once.
 		// This constraint is implemented by testing if the "bag" of
-		// all entities x is not a singleton list.
+		// all entities x is not a singleton list. 
 		constraint-error:
 		  Entity(x, _) -> (x, $[Duplicate entity name])
 		  where
-		    not(<bagof-GetEntity> x => [_])
+		    not(<bagof-GetEntity> x => [_]) 
 		
 		constraint-warning:
 		  Entity(x, _) -> (x, $[Entity names must start with a capital])
@@ -33,7 +35,7 @@ module Language-Constructs-Main
 		to-java: Module(x, d*) ->
     $[ package [x];
        
-       [d'*]
+       [d'*]  
      ]
     with
       d'* := <to-java> d*
@@ -53,7 +55,7 @@ module Language-Constructs-Main
           return [x];
       }
       
-      public void set_[x] ([<to-java>type] [x]) {
+      public void set_[x] ([<to-java>type] [x]) {   
           this.[x] = [x];    
       }
   	 ]     
@@ -115,7 +117,7 @@ module Type-System
 		
 		pp-entitylang : IntegerType() -> "Int"
     
-    pp-entitylang : StringType() -> "String"  
+    pp-entitylang : StringType() -> "String"    
 
 	
 
@@ -126,7 +128,7 @@ module Semantic-Analyzer
 imports languages.entitylang.generated
 	
 	rules
-	  // Analysis: does a topdown traversal of the tree,
+	  // Analysis: does a topdown traversal of the tree,   
 	  // and tries to apply the record-entity rule.
 	  analyze:
 	    t -> t

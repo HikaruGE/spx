@@ -66,7 +66,7 @@ rules
 			?index-summary
 			 	
 	 /**
-   * Remove all the index entry related ti a compilation unit 
+   * Remove all the index entry related to a compilation unit 
    * located at resource-location.
    * 
    */

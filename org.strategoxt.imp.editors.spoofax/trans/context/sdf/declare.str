@@ -58,6 +58,11 @@ rules
  
  declare-sdf-usage-main = alltd(declare-sdf-usage)
 
+	declare-legacy-sdf-imports = 	
+		   activate-global-scope(
+		   		alltd(declare-sdf-definition-main)			
+		   )
+		   
 rules
 	declare-sdf-definition :
 		context-free-start-symbols(s*) -> <id>
@@ -99,7 +104,9 @@ rules
 	      		end
 	    			, !"Failed while storing sort.cons references at declare.declare-sdf-definition-internal"      
      		 	)
-    where	with-spxverify(
+	 	where with-spxverify(GetEnclosingModuleName ,"Failed, since current module scope is not declared at declare.declare-sdf-definition-internal." )
+	  where	with-spxverify(
+      			 
       			<index-symbol-definition>(x, SDFDeclaration(),prod );
       			<index-symbol-definition>(x , SortDeclaration(), (x, sortType));
     	  		dbg-declaration(

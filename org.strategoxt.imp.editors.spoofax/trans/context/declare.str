@@ -31,7 +31,9 @@ rules
 		debug-compiler(!$[----Declaring global Symbols for: [<print-as-string>]]);
 		list-loop(
 				{| GetEnclosingModuleName
-				 : 	declare-current-module-scope;
+				 : 	
+				 		declare-current-module-scope ;
+				 	  where(<debug(!"declare-global-symbols for following scope:  ")><get-current-scope>);
 			 			with-spxverify(
 							get-desugared-module-ast;
 							declare-internal(declare-global-symbols)
@@ -157,9 +159,8 @@ rules
 		where
 		   < has-extension(|"sdf") 
 			 + has-extension(|"def")
-			 > resolved-path
-		   ; <alltd(
-		   	   declare-sdf-definition-main) >legacy-content
+			 > resolved-path ;
+		    <declare-legacy-sdf-imports> legacy-content
 
 	declare-legacy-artifact(|resolved-path) : 
 		legacy-content -> legacy-content

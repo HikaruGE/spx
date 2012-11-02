@@ -37,11 +37,16 @@ rules
   // (the completion identifier in the AST provides additional context information)
   editor-complete:
     (node, position, ast, path, project-path) -> proposals*
-    where debug 
+    where debug(!"code-completions |  ")  
     where editor-init
-    where <alltd(compute-proposals)> ast 
-    where <Proposals>() <+	![] => proposals* 
-    where <debug(!"Final Proposals : ")>proposals*
+    where <alltd(compute-proposals)> ast
+    where 
+    	(	<Proposals>() 
+    	<+	
+    		![]
+    	)
+    	; ?proposals*   	  
+    where <debug(!"Final proposals : ")> proposals* 
 			
 rules
 	
@@ -83,14 +88,18 @@ rules
     	   			 :		rules(GetEnclosingModuleName := mId) 	
       	  					;	<collect-one(compute-proposals)>section*   		
       	  		|}
+     where <debug(!"4: ")><Proposals>()	
       	    	
 	compute-proposals:
 		ImportPackage(Name(COMPLETION(_))) -> <id>
 		where pId := <GetEnclosingPackageName> 
 		where debug
 		where get-package-list 
-					;	filter(not( ?pId ))   
+					; debug(!"package list: ")
+					;	filter(not( ?pId ))
+				 	; debug(!"filtered package list: ")   
 					;	map(?Package(<id>);convert-qname(|".")) => proposals
+				 	; debug(!"proposals ")
 					; rules(Proposals: () -> proposals) 	
 	
 	compute-proposals:

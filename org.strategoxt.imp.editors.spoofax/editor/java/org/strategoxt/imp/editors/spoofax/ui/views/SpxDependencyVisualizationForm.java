@@ -39,7 +39,7 @@ class SpxDependencyVisualizationForm {
 	 * These are all the strings used in the form. These can probably be
 	 * abstracted for internationalization
 	 */
-	private static String SpoofaxProject_Dependency_Analysis = "SpoofaxLang Package Dependency Analysis";
+	private static String SpoofaxProject_Dependency_Analysis = "SpoofaxLang Dependency Analyzer";
 
 	/*
 	 * Some parts of the form we may need access to

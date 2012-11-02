@@ -15,7 +15,7 @@ strategies
     | <import-term(include/Test.tbl)>
     )
 
-  parse-string = parse-test-string 
+  parse-string = parse-test-string  
   parse-test-string = 
     parse-string( 
       strsglr-report-parse-error

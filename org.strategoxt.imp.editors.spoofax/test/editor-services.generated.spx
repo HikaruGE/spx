@@ -40,7 +40,7 @@ module builders-generated
   // while newly inserted nodes are pretty printed using a custom pretty-print strategy,                   
   // or the layout definitions in the pp-table.                                                            
   //   pp-table: get-pp-table                                                                              
-  //   pretty-print: prettyprint                                                                           
+  //   pretty-print: prettyprint                                                                            
   //                                                                                                       
   // Refactorings can be specified as shown below, whereby Property* indicates on which constructs the     
   // refactoring is specified (<sort>.<constructor>).                                                      

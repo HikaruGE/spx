@@ -46,6 +46,9 @@ public class SpoofaxlangDependencyViewImages {
 	public static final String IMG_OPEN = "opentype.gif";
 	public static final String IMG_IMPORT_REFS_GROUP = "impc_obj.gif";
 	public static final String IMG_IMPORT = "imp_obj.gif";
+	public static final String IMG_NEW_PROJ = "spx-project.png";
+	public static final String IMG_NEW_LANG = "spx-language.png";
+	
 	
 	
 	public static final ImageDescriptor DESC_SNAPSHOT = create(PATH_OBJ, IMG_SNAPSHOT);
@@ -65,6 +68,8 @@ public class SpoofaxlangDependencyViewImages {
 	public static final ImageDescriptor DESC_OPEN = create(PATH_OBJ, IMG_OPEN);
 	public static final ImageDescriptor DESC_IMPORT_GROUP = create(PATH_OBJ, IMG_IMPORT_REFS_GROUP);
 	public static final ImageDescriptor DESC_IMPORT       = create(PATH_OBJ, IMG_IMPORT);
+	public static final ImageDescriptor DESC_NEW_PROJ       = create(PATH_OBJ, IMG_NEW_PROJ);
+	public static final ImageDescriptor DESC_NEW_LANG       = create(PATH_OBJ, IMG_NEW_LANG);
 	
 	private static final void initialize() {
 		PLUGIN_REGISTRY = Activator.getInstance().getImageRegistry();
@@ -85,6 +90,8 @@ public class SpoofaxlangDependencyViewImages {
 		manage(IMG_OPEN, DESC_OPEN);
 		manage(IMG_IMPORT, DESC_IMPORT);
 		manage(IMG_IMPORT_REFS_GROUP, DESC_IMPORT_GROUP);
+		manage(IMG_NEW_PROJ, DESC_NEW_PROJ);
+		manage(IMG_NEW_LANG, DESC_NEW_LANG);
 		}
 
 	private static ImageDescriptor create(String prefix, String name) {

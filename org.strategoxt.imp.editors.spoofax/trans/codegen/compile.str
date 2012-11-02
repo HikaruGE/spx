@@ -241,7 +241,7 @@ rules
 						<is-string>resolving-path // Verify that the resource has a known extension.
 						;	<has-known-extensions>resolving-path 
 						; {| GetEnclosingModuleName 
-					  	 : 		internal-module-qualified-name := <get_internal_module_qtname> <GetEnclosingPackageName>;
+					  	 : 		internal-module-qualified-name := <get_internal_module_qtname><GetEnclosingPackageName>;
     								<declare-current-module-scope>internal-module-qualified-name ;
 										// Known Extension found. Handling it.
 										// Parsing the legacy content.

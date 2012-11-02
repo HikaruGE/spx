@@ -1,0 +1,129 @@
+module analysis-generated
+
+signature
+  constructors
+    Entity2  : Namespace
+    Type     : Namespace
+    Module   : Namespace
+    Function : Namespace
+    Entity   : Namespace
+    Var      : Namespace
+    Property : Namespace
+
+
+rules
+
+  nam-get-scope-types :
+    Module(_, _) -> [Entity(), Module()]
+
+  nam-get-scope-types :
+    Entity(_, _) -> [Property(), Function()]
+
+  nam-get-scope-types :
+    Function(_, _, _) -> [Var()]
+
+  nam-get-scope-types :
+    Block(_) -> [Var()]
+
+  nam-get-definition-key :
+    Module(x, _) -> x
+
+  nam-get-definition :
+    Module(x, _) -> <nam-get-def(|Module())> x
+
+  nam-get-definition-key :
+    Entity(x, _) -> x
+
+  nam-get-definition :
+    Entity(x, _) -> <nam-get-def(|Entity2())> x
+
+  nam-get-definition-key :
+    Property(x, _) -> x
+
+  nam-get-definition :
+    Property(x, _) -> <nam-get-def(|Property())> x
+
+  nam-get-definition-key :
+    Function(x, _, _) -> x
+
+  nam-get-definition :
+    Function(x, _, _) -> <nam-get-def(|Function())> x
+
+  nam-get-definition-key :
+    Param(x, _) -> x
+
+  nam-get-definition :
+    Param(x, _) -> <nam-get-def(|Var())> x
+
+  nam-get-definition-key :
+    VarDecl(x, _) -> x
+
+  nam-get-definition :
+    VarDecl(x, _) -> <nam-get-def(|Var())> x
+
+  nam-get-definition-key :
+    VarDeclInit(x, _, _) -> x
+
+  nam-get-definition :
+    VarDeclInit(x, _, _) -> <nam-get-def(|Var())> x
+
+  nam-annotate-names(|def-path):
+    Module(r_5273, s_5273) -> Module(r_5273{def-path}, s_5273)
+
+  nam-annotate-names(|def-path):
+    Entity(p_5273, q_5273) -> Entity(p_5273{def-path}, q_5273)
+
+  nam-annotate-names(|def-path):
+    Import(o_5273) -> Import(<nam-annotate-use(|Module())> o_5273)
+
+  nam-annotate-names(|def-path):
+    Property(m_5273, n_5273) -> Property(
+                                  m_5273{def-path}
+                                , <nam-annotate-use(|Entity())> n_5273
+                                )
+
+  nam-annotate-names(|def-path):
+    Function(j_5273, k_5273, l_5273) -> Function(j_5273{def-path}, k_5273, l_5273)
+
+  nam-annotate-names(|def-path):
+    Param(h_5273, i_5273) -> Param(
+                               h_5273{def-path}
+                             , <nam-annotate-use(|Entity())> i_5273
+                             )
+
+  nam-annotate-names(|def-path):
+    Call(f_5273, g_5273) -> Call(
+                              <nam-annotate-use(|Function())> f_5273
+                            , g_5273
+                            )
+
+  nam-annotate-names(|def-path):
+    VarDecl(d_5273, e_5273) -> VarDecl(
+                                 d_5273{def-path}
+                               , <nam-annotate-use(|Entity())> e_5273
+                               )
+
+  nam-annotate-names(|def-path):
+    VarDeclInit(a_5273, b_5273, c_5273) -> VarDeclInit(
+                                             a_5273{def-path}
+                                           , <nam-annotate-use(|Entity())> b_5273
+                                           , c_5273
+                                           )
+
+  nam-annotate-names(|def-path):
+    Assign(y_5272, z_5272) -> Assign(
+                                <nam-annotate-use(|Var())> y_5272
+                              , z_5272
+                              )
+
+  nam-annotate-names(|def-path):
+    Var(x_5272) -> Var(<nam-annotate-use(|Var())> x_5272)
+
+  nam-annotate-names(|def-path):
+    PropAccess(v_5272, w_5272) -> PropAccess(
+                                    v_5272
+                                  , <nam-annotate-use(|Property())> w_5272
+                                  )
+
+  nam-annotate-names(|def-path):
+    Block(u_5272) -> Block(u_5272)
