@@ -1,0 +1,240 @@
+module unit-tests/resolve-symbol 
+
+imports
+	include/SpoofaxLang 
+	lib/editor-common.generated
+	utils/debug
+imports
+	common
+	context/-
+	normalize/signatures
+	config
+rules
+	
+	get-internal-module-name-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			package-name := Package(QName(["Test" , "A"]));
+			expected 		 := Module( QName(["Test" , "A" , <internal_module_name_string>] ))
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <get_internal_module_qtname>package-name
+		where
+			<debug> $[Verifying Expectaions .... ];
+			!expected  => actual;
+			<debug(!"SUCCESS. Actual and Expected :  ")> [actual, expected]
+		<+ 
+			<debug(!"FAILED. ")> [actual, expected]	
+	
+			        
+	resolving-in-imported-scope-internal-symbol-fail:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			debug(!"starting test now. ");
+			editor-init;
+			enable-debug-all	
+		where	
+			pqname := QName(["A" , "P1"]);
+			mqname := QName(["A" , "P1" , "M1"]);
+			p1 := Package(pqname);
+			m1 := Package(mqname);
+			p2 := Package(QName(["A" , "P2"]))
+			;rules(Using :+ (pqname, mqname) -> p2) 	
+		where
+			symbol1 := "ID";
+			// Symbol is declared in the internal scope of the P2 package
+			<setup-declaration>( p2, <get_internal_module_qtname>p2, symbol1)		
+		where
+			{|GetEnclosingPackageName, GetEnclosingModuleName:	
+					rules(
+						GetEnclosingPackageName      :=  p1  
+						GetEnclosingModuleName			 :=  m1
+					);
+					<debug>$[Test1: Resolve Declaration in imported scopes:-----------------];
+					if not(<resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1) then 
+						<debug>$[ Resolve Failed. Test Successful]
+					end	
+			 |} 
+				
+	resolving-in-package-scope-internal-symbol-success:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			debug(!"starting test now. ");
+			editor-init;
+			enable-debug-all	
+		where	
+			pqname := QName(["A" , "P1"]);
+			mqname := QName(["A" , "P1" , "M1"]);
+			p1 := Package(pqname);
+			m1 := Package(mqname);
+			p2 := Package(QName(["A" , "P2"]))
+			;rules(Using :+ (pqname, mqname) -> p2) 	
+		where
+			symbol1 := "ID";
+			// Symbol is declared in the internal scope of the P2 package
+			<setup-declaration>( p1, <get_internal_module_qtname>p1, symbol1)		
+		where
+			{|GetEnclosingPackageName, GetEnclosingModuleName:	
+					rules(
+						GetEnclosingPackageName      :=  p1  
+						GetEnclosingModuleName			 :=  m1
+					);
+					<debug>$[Test1: Resolve Declaration in imported scopes:-----------------];
+					if (result := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1) then 
+						<debug>$[ Resolve Successful. Test Successful . Resolved Symbol : [<print-as-string>result]]
+					end	
+			 |}
+	
+	
+	// Unit Test to check the resolve symbol is working as expected.	
+	test-resolving-symbol:
+		(selected, position, ast, path, project-path) -> None()
+		where 
+			debug(!"starting test now. ");
+			editor-init
+		where
+		 package1  := Package(QName(["A" , "B"]))
+		 ;module1  := Module(QName(["A" , "B","m1"]))
+		 ;!package1 => Package(pqname)
+		 ;!module1  => Module (mqname) 
+		 ;module2  := Module(QName(["A" , "B","m2"]))
+		 ;p2 := Package(QName(["A" , "P2"]))
+		 ;p3 := Package(QName(["A" , "P3"]))
+		 ;p4 := Package(QName(["A" , "P4"]))
+		 ;m21  := Module(QName(["A" , "P2","m21"]))
+		 ;m22  := Module(QName(["A" , "P2","m22"]))
+		 ;m31  := Module(QName(["A" , "P3","m31"]))
+		 ;m32  := Module(QName(["A" , "P3","m32"]))
+		 ;m4  := Module(QName(["A" , "P4","m4"]))
+		  
+		 ;rules(Using :+ (pqname, mqname) -> p2) 	
+		 ;rules(Using :+ (pqname, mqname) -> p3)
+		 ;rules(Using :+ (pqname, mqname) -> m4) 	
+		where 
+			symbol1 := "ID";
+			symbol2 := "ID2";
+			s21 := "INT";
+			s22 := "CHAR";
+			s41 := "Test41";
+			s51 := "Test51"
+		where
+			enable-debug-all	
+		where
+			<setup-declaration>( package1, module1, symbol1);		// scoped symbol
+			<setup-declaration>( package1, module2, symbol2);		// scoped symbol
+			<setup-declaration>( p2, m21, s21);									// scoped symbol	
+			<setup-declaration>( p2, m22, s22);									// scoped symbol	
+			<setup-declaration>( p4, m4, s41);									// scoped symbol
+			<setup-declaration>( p4, m4, s41);									// scoped symbol
+			<setup-global-declaration> s51 											// global symbol
+		where
+			<debug> $[===============Running Test : 1===============]
+		where
+	 	{|GetEnclosingPackageName, GetEnclosingModuleName:			
+			rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+			<debug>$[Test1: Resolve Declaration:-----------------]
+			;result := <resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration| package1, module1)>symbol1
+			;result' := <resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>symbol1
+			;<debug(!"Result: ")> result
+			;<debug(!"Result': ")> result'
+		|}  
+	 	where
+		<debug> $[===============Running Test : 2===============]
+	
+	
+	 	where
+	 	{|GetEnclosingPackageName, GetEnclosingModuleName:	 		
+	 		rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+	 		lst := [(Package(QName(["A","B"])),Module(QName(["A","B","m1"])),"ID"),(Package(QName(["A","B"])),Module(QName(["A","B","m2"])),"ID2")];
+	 		lst*:= <filter(?(package1,_,symbol2))>lst;
+	 		<debug(!"test :")>lst*
+		|}	
+	 where
+		<debug> $[===============Running Test : 3===============]
+	
+	 where
+	 	{|GetEnclosingPackageName, GetEnclosingModuleName:
+	 		rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+			<debug>$[Test2: Resolve Declaration in parent scope:-----------------];
+			result2 := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration| package1, module1)>symbol2;
+			result2' := <to-scoped-symbol; resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)>symbol2
+			;<debug(!"Result: ")>result2 
+			;<debug(!"Result': ")>result2' 
+		|}
+	where
+		<debug> $[===============Running Test : 4 ===============]
+	where
+		{|GetEnclosingPackageName, GetEnclosingModuleName:	
+			rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+			<debug>$[Test3: Resolve Declaration in imported scopes:-----------------];
+			result3 := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>s22
+			;<debug(!"Result: ")>result3 
+		|}
+	where
+		<debug> $[===============Running Test : 5 ===============]	  
+	where
+		{|GetEnclosingPackageName, GetEnclosingModuleName:	
+			rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+			<debug>$[Test5: Resolve Declaration in imported module:-----------------];
+			result4 := <resolve-symbol-declarations(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>s41
+			;<debug(!"Result: ")>result4
+		|}
+	where
+		<debug> $[===============Running Test : 6 ===============]
+	where	
+	{|GetEnclosingPackageName, GetEnclosingModuleName:
+		
+			rules(
+				GetEnclosingPackageName      := package1  
+				GetEnclosingModuleName			 :=  module1
+			);
+			
+			<debug>$[Test6: Resolve Declaration in Global Scope:-----------------];
+			result5 := <resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>s51
+			;<debug(!"Result: ")>result5
+ |}	
+	where
+		<debug> $[===============Running Test : 7===============]
+	where	
+		<debug>$[Test7: Resolve Declaration in Global Scope:-----------------]
+		;result6 := <resolve-symbol-unique-declaration(all-keys-Declaration , bagof-Declaration)><to-scoped-symbol>s51
+		;<debug(!"Result: ")>result6
+ 	where 
+ 		<debug>$[======================================= ]
+ 	 ;<debug>$[!" Ran 7 Tests. All were ok."] 
+		  
+			
+	setup-global-declaration: x -> x
+	with 
+		scoped-symbol := <to-scoped-symbol>x
+		;rules(Declaration:+  scoped-symbol  -> scoped-symbol)
+	where
+		<debug>$[storing Global declaration [<print-as-string>scoped-symbol]]
+				
+	setup-declaration: x@(p , m , symbol) ->x
+	with
+		{| GetEnclosingPackageName,GetEnclosingModuleName: 
+			rules(
+				GetEnclosingPackageName      := p  
+				GetEnclosingModuleName			 :=  m
+			);				scoped-symbol := <to-scoped-symbol>symbol; 
+				rules(Declaration:+ scoped-symbol  -> symbol)
+		|} 
+	where
+		<debug>$[storing declaration [<print-as-string>scoped-symbol]]
+			

@@ -1,0 +1,101 @@
+module context/esv/declare
+
+imports
+	include/SpoofaxLang
+	context/-
+	context/sdf/-
+	utils/debug
+	utils/path
+	common
+	utils/contract
+	normalize/signatures
+
+rules 
+
+  verify-sdf-sort-declaration-exists =
+  	<verify-symbol-exists> (<id>,SortDeclaration())
+  <+
+    dbg-analysis(! $[ErrorChecking| FAIL| Failed to retrive Sort declaration for symbol [<print-as-string>]] | "resolve-sdf-sort-declaration" ,<debug-level-WARNING>); 
+    fail
+
+rules
+	declare-esv-globals-top = 
+		alltd(declare-esv-definition)
+		
+	declare-esv-definition : 
+		LanguageName(name)  -> <id>
+		where
+			with-spxverify( 
+				store-langauge-properties(|<GetEnclosingModuleName>)
+	 		)
+	 		
+	declare-esv-definition : 
+		LanguageId(id-string)  -> <id>
+		where
+			with-spxverify( 
+				store-langauge-properties(|<GetEnclosingModuleName>)
+			)
+	 
+	declare-esv-definition : 
+		StartSymbols(sorts*)  -> <id>
+		where with-spxverify(
+			store-context-free-start-symbols(|<GetEnclosingModuleName>)
+		)
+
+signature constructors 
+
+	LanguageDefinition : Type
+
+rules
+			
+	store-language-definition = verify((?Module(QName(_)) ,?LanguageDescriptor(_,_,_,_,_))|<id>  , "(Module(QName(_)) ,LanguageDescriptor(_,_,_,_,_)) @store-language-definition") ;    store-declared(|LanguageDefinition())
+
+	get-declared-language-definition = verify(?Module(QName(_)) | <id> , "Module(QName(_))  @get-declared-language-definition") ; get-declared(| LanguageDefinition()) 
+	
+	get-existing-langauge-descriptor  = verify(?Module(QName(_)) | <id> , "Module(QName(_))  @get-existing-langauge-descriptor") ;  get-declared-language-definition <+ !LanguageDescriptor( <id>, [] , [], [], [] )
+	  
+	// Stores langauge name. It keeps mapping of package name and its defined language-names.
+	// extended dynamic rules are used to verify that language name is not declare multple times 
+	// in a package scope. Additional checks will be added to verify a language-name is unique 
+	// in a project scope. 
+	store-langauge-properties(|module-typed-qname) : 
+		LanguageName(name) -> <id>
+		where
+			verify(?Module(QName(_))| module-typed-qname , "Module(QName(_)) @store-langauge-properties") 
+		  ; <get-existing-langauge-descriptor>module-typed-qname => LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, sdfStartSymbols)
+		  ; langDef' := LanguageDescriptor( package-typed-qname, [name|langNames] , langIds, esvStartSymbols, sdfStartSymbols)
+      ; <store-language-definition> (module-typed-qname , langDef')
+      ;	dbg-symboltable(! $[ ScopeTree| [<print-as-string>package-typed-qname] storing  following language name : [<print-as-string>name]] | "store-langauge-properties" , <debug-level-INFO>)
+
+	// Stores Language ID. 
+	store-langauge-properties(|module-typed-qname) : 
+		LanguageId(id-string) -> <id> 
+		where 
+			verify(?Module(QName(_))| module-typed-qname , "Module(QName(_)) @store-langauge-properties");
+		  <get-existing-langauge-descriptor>module-typed-qname => LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, sdfStartSymbols);
+		  langDef' := LanguageDescriptor( package-typed-qname, langNames , [id-string|langIds], esvStartSymbols, sdfStartSymbols); 
+      <store-language-definition> (module-typed-qname , langDef')
+     where
+    	dbg-symboltable(! $[ ScopeTree| [<print-as-string>package-typed-qname] storing  following language Id : [<print-as-string>id-string]] | "store-langauge-properties" , <debug-level-INFO>)  
+	 
+	store-context-free-start-symbols(|module-typed-qname) : 
+	 	StartSymbols(sorts*) -> <id>
+	 	where
+	 	  verify(?Module(QName(_))| module-typed-qname , "Module(QName(_)) @store-langauge-properties");
+	 	  <get-existing-langauge-descriptor>module-typed-qname => LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, sdfStartSymbols);       
+      langDef' := LanguageDescriptor( package-typed-qname, langNames , langIds, <conc>(esvStartSymbols,sorts*), sdfStartSymbols); 
+      <store-language-definition> (module-typed-qname , langDef')
+    where	
+    	dbg-symboltable(!  $[ ScopeTree| [<print-as-string>package-typed-qname] storing  following start symbols found from ESV language description: [<print-as-string>sorts*]] | "store-context-free-start-symbols" , <debug-level-INFO>)
+	 	 
+	store-context-free-start-symbols(|module-typed-qname) : 
+	 	context-free-start-symbols(sorts*) -> <id>
+	 	where
+	 		verify(?Module(QName(_))| module-typed-qname , "Module(QName(_)) @store-langauge-properties");
+      <get-existing-langauge-descriptor>module-typed-qname => LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, sdfStartSymbols);
+      langDef' := LanguageDescriptor( package-typed-qname, langNames , langIds, esvStartSymbols, <conc>(sdfStartSymbols,sorts*)); 
+      <store-language-definition> (module-typed-qname , langDef')
+    where	
+    	dbg-symboltable(! $[ ScopeTree| [<print-as-string>package-typed-qname] storing  following start symbols : [<print-as-string>sorts*]] | "store-context-free-start-symbols" , <debug-level-INFO>)
+   
+   				 				

@@ -1,0 +1,18 @@
+package languages.entitylang 
+	  
+module Entitylang-Descriptor
+	imports languages.entitylang.generated 
+	language General properties 
+                  
+	  name          : entitylang
+	  id            : SpoofaxEntityLanguage
+	  extends       : Root
+	                  
+	  description   : "Spoofax/IMP-generated editor for the Test language"
+	  url           : http://strategoxt.org
+	                  
+	  extensions    : spo 
+	  start symbols : Start   
+     
+
+	

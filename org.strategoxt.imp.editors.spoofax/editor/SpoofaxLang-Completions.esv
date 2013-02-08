@@ -1,0 +1,214 @@
+module SpoofaxLang-Completions
+
+imports SpoofaxLang-Completions.generated
+
+completions
+     // Semantic (identifier) completion:
+     completion proposer:
+            editor-complete
+
+completions
+    // TemplateLang completions
+    completion template TemplateProduction : "template" =
+      <Sort> "." <Cons> " = <<" (cursor) ">>" (blank)
+
+    completion template TemplateProduction : "multiline template" =
+      <Sort> "." <Cons> " = <<\n\t" (cursor) "\n>>" (blank)
+
+    completion template TemplatePart1 : "placeholder" = "<" <text> ":" <Sort> ">"
+    completion template TemplatePart2 : "placeholder" = "[" <text> ":" <Sort> "]"
+
+    completion template PlaceholderOption : "separator" "=\"" (cursor) "\""
+    completion template PlaceholderOptions : "separator" = "; separator=\"" (cursor) "\""
+
+completions
+    //Syntax completion for SDF Definition
+    completion trigger:
+      "->\s*[A-Za-z0-9]+\s*\{"
+
+    completion trigger:
+      "->\s*[A-Za-z0-9]+\s*\{[^}]+,[\ \t]*"
+
+    completion trigger:
+      "->[\ \t]+"
+
+    completion template:
+      "context-free syntax" "\n\t" (blank)
+
+    completion template:
+      "lexical syntax" "\n\t" (blank)
+
+    completion template:
+      "syntax" "\n\t" (blank)
+
+    completion template:
+      "imports" "\n\t" (blank)
+
+    completion template:
+      "exports" "\n\t" (blank)
+
+    completion template:
+      "hiddens" "\n\t" (blank)
+
+    completion template:
+      "context-free restrictions" "\n\t" (blank)
+
+    completion template:
+      "lexical restrictions" "\n\t" (blank)
+
+    completion template:
+      "restrictions" "\n\t" (blank)
+
+    completion template:
+      "context-free start-symbols" "\n\t" <Start> (blank)
+
+    completion template:
+      "lexical start-symbols" "\n\t" <Start> (blank)
+
+    completion template:
+      "start-symbols" "\n\t" <Start> (blank)
+
+    completion template:
+      "sorts" "\n\t" (blank)
+
+    completion template:
+      "variables" "\n\t" (blank)
+
+    completion template:
+      "aliases" "\n\t" (blank)
+
+    completion template:
+      "priorities" "\n\t" (blank)
+
+    completion template : Module =
+      "module" " " <x> "\n\t\nexports\n\t" (blank)
+
+    completion template:
+      "lexical variables" "\n\t" (blank)
+
+    completion template:
+      "{cons" "(\"" <Name> "\")"
+
+    completion template:
+      "{deprecated" "(\"" <explanation> "\")"
+
+    completion keyword:
+      "{reject"
+
+    completion keyword:
+      "{left"
+
+    completion keyword:
+      "{right"
+
+    completion keyword:
+      "{non-assoc"
+
+    completion keyword:
+      "{avoid"
+
+    completion keyword:
+      "{prefer"
+
+    completion keyword:
+      "{bracket"
+
+    completion keyword:
+      "{recover"
+
+    completion template:
+      ", cons" "(\"" <Name> "\")"
+
+    completion template:
+      ", deprecated" "(\"" <explanation> "\")"
+
+    completion keyword:
+      ", reject"
+
+    completion keyword:
+      ", left"
+
+    completion keyword:
+      ", right"
+
+    completion keyword:
+      ", non-assoc"
+
+    completion keyword:
+      ", avoid"
+
+    completion keyword:
+      ", prefer"
+
+    completion keyword:
+      ", bracket"
+
+    completion keyword:
+      ", recover"
+
+    completion template:
+      ",cons" "(\"" <Name> "\")"
+
+    completion template:
+      ",deprecated" "(\"" <explanation> "\")"
+
+    completion keyword:
+      ",reject"
+
+    completion keyword:
+      ",left"
+
+    completion keyword:
+      ",right"
+
+    completion keyword:
+      ",non-assoc"
+
+    completion keyword:
+      ",avoid"
+
+    completion keyword:
+      ",prefer"
+
+    completion keyword:
+      ",bracket"
+
+    completion keyword:
+      ",recover"
+
+
+completions
+
+  completion template : Strategy =
+    "if" " " <e> " then\n\t" <s> "\nend"
+
+  completion template : Strategy =
+    "switch" " " <s> "\n\tcase " <c> ":" " " <s> "\n\totherwise: " <id> "\nend"
+
+  completion template : Strategy =
+    "let" "\n\t" <x> " = " <s> "\nin\n\t" <s> "\nend"
+
+  completion template : Def =
+    "where" "\n\t" (blank)
+
+  completion template : Def =
+    "with" "\n\t" (blank)
+
+  completion template:
+    "strategies" "\n\t" (blank)
+
+  completion template:
+    "rules" "\n\t" (blank)
+
+  completion template : Decl =
+    "imports" "\n\t" <Module> (blank)
+
+  completion template:
+    "signature constructors" "\n\t" (blank)
+
+  completion template:
+    "signature sorts" "\n\t" (blank)
+
+  completion template : Module =
+    "module " <name> "\n\nstrategies\n\n\t"
+

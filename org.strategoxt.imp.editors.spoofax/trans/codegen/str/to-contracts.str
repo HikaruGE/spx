@@ -1,0 +1,65 @@
+module codegen/str/to-contracts
+imports 
+  libstrc
+  lib/editor-common.generated
+  context/str/declare
+  include/SpoofaxLang 
+  common
+
+rules
+  generate-code-contracts:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    where 
+    	with-spxverify(
+      	filename := <guarantee-extension(|"contracts.str")> path;
+      	result   := <generate-contracts-analysis; pp-stratego-string> selected
+    	)
+  
+  generate-contracts-analysis:
+    ast ->  Module( "codecontract-generated", <conc>( imports , str-with-code-contracts))
+		where
+			strsection := <collect-om(?STRSection(<id>), conc)> ast;
+			str-with-code-contracts := <alltd(inject-code-contracts)>strsection;
+			imports := [Imports([Import("utils/contract")])]  
+
+rules	
+	inject-code-contracts:  
+		Rule(t1, t2,c) ->  Rule(t1', t2' , condition*)
+		where
+			t1* := <convert-to-list>t1
+			; t2* := <convert-to-list>t2
+			; c*  := <convert-to-list>c  
+			; with-spxverify( 
+					t1' := <alltd(convert-to-untyped-var)>t1* ;
+					t2' := <alltd(convert-to-untyped-var)>t2* ;
+					condition* := <conc>(<flatten-list><collect-all(fetch-contracts)>t1* , c* , <flatten-list><collect-all(fetch-contracts)>t2* )
+				)  
+			
+	inject-code-contracts: RuleNoCond(t1, t2) -> <inject-code-contracts>Rule(t1, t2,[])  
+		
+rules
+			
+	convert-to-untyped-var :  VarWithType( v@Var(x) , type) -> v
+	 
+	convert-to-untyped-var :  Var(x) -> Var(x)  
+	
+	fetch-contracts :    Var(x)  -> []
+	
+	fetch-contracts :    
+		VarWithType( v@Var(x) , type-rule)   -> 
+										WhereClause(
+                			BA(
+                				Call(
+                  				SVar("contracts")
+                					, [Call(SVar("contract-requires"), [CallNoArgs(SVar(type-rule))])]
+                				)
+                				, Var(x)
+											)
+										)	
+										
+   convert-to-list : 
+   	arg -> arg*
+   	where 
+   		if <not(is-list)>arg then arg* := [arg]
+			else arg* := arg
+			end          												

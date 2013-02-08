@@ -1,0 +1,65 @@
+/**
+* Based on copy from WebDSL revision 4115.
+* Modified version from revision 4115.
+*/
+module lib/annotations
+
+imports
+  libstrategolib
+
+rules
+  add-annotation(|new-anno): elem -> elem{new-anno, anno*}
+		where
+			anno* := <get-annos> elem
+
+	add-annotations(|new-annos): elem -> out
+		where
+			<is-list> new-annos
+		where
+			<gt> (<length> new-annos,0)
+		with (
+			if <?[i]> new-annos
+			then
+				// we are at the last item
+				out := <add-annotation(|<last> new-annos)> elem
+			else
+				// we still have items to go
+				<?[i,ii*]> new-annos;
+				out := <add-annotations(|ii*)> <add-annotation(|i)> elem
+			end
+		)
+
+	copy-annotations(|copyFrom) =
+		?elem;
+		<get-annos>copyFrom => srcAnnos;
+		if <?[]> srcAnnos	then
+			!elem
+		else
+			!<add-annotations(|srcAnnos)> elem
+		end
+
+	copy-add-annotations(|copyFrom,new-annos) : elem -> <copy-annotations(|copyFrom); (add-annotations(|new-annos) <+ add-annotation(|new-annos))> elem
+
+	// Return given anno if found, fail otherwise
+	get-annotation(|anno): elem -> anno
+		where
+			(?_{anno*};
+			!anno*;
+			fetch-elem(?anno))
+
+	// Return anno for which the strategy succeeds, fail otherwise
+	get-annotation(s) = ?_{anno*}; !anno*; fetch-elem(s)
+
+	// Succeed if no anno matches
+	has-no-anno(s) = not(get-annotation(s))
+
+	// Add annotation if not present, fail otherwise
+	add-new-anno(|anno) = where(has-no-anno(?anno)); add-annotation(|anno)
+
+	// remove annotation from a particular term
+	remove-annotations = rm-annotations
+
+  // Succeed if the term anno is present as annotation of the current term
+  has-annotation(|anno):
+    x{a*} -> <id>
+    where <one(?anno)> a*

@@ -1,0 +1,16 @@
+module SpoofaxLang.main
+
+imports SpoofaxLang-Builders SpoofaxLang-Colorer SpoofaxLang-Completions SpoofaxLang-Folding SpoofaxLang-Outliner SpoofaxLang-References SpoofaxLang-Syntax
+
+language General properties
+                  
+  name          : SpoofaxLang
+  id            : org.strategoxt.imp.editors.spoofax
+  extends       : Root
+                  
+  description   : "Spoofax/IMP-generated editor for the SpoofaxLang language"
+  url           : http://strategoxt.org
+                  
+  extensions    : spx
+  table         : include/SpoofaxLang.tbl
+  start symbols : Start

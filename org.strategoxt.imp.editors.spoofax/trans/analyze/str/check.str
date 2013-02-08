@@ -1,0 +1,175 @@
+module analyze/str/check
+
+imports
+   libstratego-lib
+   libstrc
+imports 
+  common
+  lib/editor-common.generated
+  include/SpoofaxLang
+imports
+  utils/debug 
+imports  
+  context/sdf/declare-signature
+  context/str/declare
+  context/str/signature-generator
+
+rules
+  analyze-section: 
+    STRSection(ast) -> ( errors, warnings, [])
+    where
+       dbg-analysis(! $[ErrorChecking | STR Section : [<print-as-string>]] | "analyze-section" , <debug-level-INFO>) 
+	     ; with-spxverify(
+			       {|IsNoConflict
+			       : errors   := <collect-all(stratego-global-constraint-error + stratego-constraint-error, conc)> ast
+			       ; warnings := <collect-all(stratego-constraint-warning, conc)> ast 
+			       |}
+	       )
+	     
+rules 
+  is-declared =
+      one(?_{cookie} + ?SVar(_{cookie}))
+       
+rules // Constraints
+
+  stratego-global-constraint-error:
+    CallT(SVar(x), s*, t*) -> (x, $[Strategy or rule '[x]' not defined])
+    where
+      require(
+         is-declared 
+      )
+      
+  stratego-global-constraint-error:
+    Op(x, t*) -> (x, $[Constructor [x]/[<length> t*] not declared])
+    where
+      require(
+         is-declared 
+      <+ is-declared-signature(|<length> t*)
+    	)
+
+  stratego-global-constraint-error:
+    Var(x) -> (x, $[Variable '[x]' is not declared])
+    where
+      require(
+    	   is-declared
+    	)
+   
+  stratego-global-constraint-error:
+    DynRuleScopeId(x) -> (x, $[Dynamic rule '[x]' not defined])
+    where
+      require(
+    	   is-declared
+    	)
+
+  stratego-global-constraint-error:
+    LabeledDynRuleId(x, _) -> (x, $[Dynamic rule '[x]' not defined])
+    where
+      require(
+      	 is-declared
+    	)
+
+  stratego-constraint-error:
+    AnnoDef(a*, sdef @ SDefT(x, _, _, _)) -> (a*, $[No external strategy or rule '[x]'])
+    where with-spxverify(
+      if not(!a* => []) then
+        sig := <signature-of> sdef;
+        rules(IsNoConflict: sdef)
+      end
+    )  
+    where
+      require(
+        !a* => []
+      + !a* => [Internal()]
+      + <declaration-of> sdef => ExtSDef(_, _, _)
+      )
+
+  stratego-global-constraint-error:
+    SDefT(x{cookie}, s*, t*, s) -> (x, $[Conflicts with external definition of '[x]'])
+    where
+      require(
+         <resolve-str-declaration> cookie => SDefT(_, _, _, _)
+      <+ IsNoConflict
+      )
+	
+	
+	//signature-of => str-sig ; is-declared-stratego(?str-sig)
+	
+	
+  // FIXME: name sdefs after constructors to fix constructor conflict errors 
+  stratego-constraint-error:
+    OpDecl(x{cookie}, s*) -> [(x, $[Conflicts with strategy '[y_name]']),
+                              (y, $[Conflicts with constructor [x]/[<length> s*]])]
+    where
+      require(not(<resolve-str-declaration> cookie => y @ SDefT(y_name, _, _, _)))
+
+  stratego-constraint-error:
+    Build(t) -> <stratego-constraint-error-bad-build> t
+
+  stratego-constraint-error:
+    Assign(_, t) -> <stratego-constraint-error-bad-build> t
+
+  stratego-constraint-error:
+    Rule(_, t, _) -> <stratego-constraint-error-bad-build> t
+  
+  stratego-constraint-error:
+    BA(_, t) -> <stratego-constraint-error-bad-build> t
+  
+  stratego-constraint-error:
+    App(_, t) -> <stratego-constraint-error-bad-build> t
+
+  stratego-constraint-error:
+    Match(t) -> <stratego-constraint-error-bad-match> t
+
+  stratego-constraint-error:
+    Assign(t, _) -> <stratego-constraint-error-bad-match> t
+
+  stratego-constraint-error:
+    AM(_, t) -> <stratego-constraint-error-bad-match> t
+
+  stratego-constraint-error:
+    Rule(t, _, _) -> <stratego-constraint-error-bad-match> t
+
+  stratego-constraint-error-bad-build:
+    t -> matches
+    where
+      collect(?RootApp(_) + ?App(_, _) + Wld + ?As(_, _) + ?BuildDefault(_) + ?BuildDefaultPT(_));
+      filter(not(?RootApp(_) + ?App(_, _)));
+      map(!(<id>, "Match symbol in build pattern")) => matches;
+      require([])
+
+  stratego-constraint-error-bad-match:
+    t -> builds
+    where
+      collect(?StringQuotation1(_, _) + ?StringQuotation2(_, _) + ?StringQuotation3(_, _) + ?StringQuotation4(_, _) + ?BuildDefault(_) + ?BuildDefaultPT(_));
+      filter(not(?RootApp(_) + ?App(_, _)));
+      map(!(<id>, "Build symbol in match pattern")) => builds;
+      require([])
+  
+  //TODO FIX : origin-equal
+  /*
+  stratego-constraint-warning:
+    a@Assign(v @ Var(x), _) -> (x, $[Variable '[x]' may be bound already])
+    where
+      Var(x') := <declaration-of> v;
+      require(<origin-equal(|x)> x');
+    */
+	
+  stratego-constraint-warning:
+    Var(x) -> (x, $[Unparenthesized constructor: use '[x]()' instead])
+    where
+      require(not(is-constructor))
+
+  stratego-constraint-warning:
+    CallT(SVar(<"debug" + "say">), [t], []) -> (s, $[Should be '![s]'])
+    where
+      !t => StrCong(s) + !t => IntCong(s)
+
+  stratego-constraint-warning:
+    Import("Java-15") -> (<id>, "Use 'import libjava-front' instead")
+
+  stratego-constraint-warning:
+    Import(f) -> (f, $[Relative path in import])
+    where
+      <string-starts-with(|"../")> f
+
+  // TODO: overlapping signatures

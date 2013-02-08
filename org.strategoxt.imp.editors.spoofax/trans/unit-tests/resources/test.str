@@ -1,0 +1,76 @@
+module test
+
+imports
+  libstratego-lib
+  libstratego-gpp
+  libstratego-aterm
+  libstratego-sglr
+  libstratego-sdf
+  libstrc
+imports
+  include/SpoofaxLang
+  lib/editor-common.generated
+imports
+  codegen/str/to-stratego
+imports  
+  analyze/sdf/check
+  context/sdf/declare
+  context/str/declare
+imports
+  codegen/buildscripts
+	codegen/compile
+	codegen/esv/to-esv
+	codegen/sdf/to-sdf
+  codegen/sdf/to-signature
+imports 
+	normalize/main
+	normalize/signatures   
+imports 
+	context/-
+imports	 
+	utils/cache
+	common
+  config
+	unit-tests/-
+imports
+	 editor/main
+	 codegen/main
+	
+rules 
+	get-project-path = (ProjectPath <+ project-path)
+ 
+	
+rules  
+   
+  editor-complete:
+    (node, position, ast, path, project-path) -> proposals
+    where
+      proposals := <propose-completion <+ ![]> node
+ 
+  editor-resolve:
+    (sort(x), position, ast, path, project-path) -> target
+    where
+      target := <resolve-atleast-one-sdf-declaration> x
+ 
+ /*  TODO : Fix Editor Resolve 
+  editor-resolve:
+    (unparameterized(x), position, ast, path, project-path) -> target
+    where
+      target := <parse-spoofaxlang-file> <resolve-import> x
+ */
+ 
+rules
+	
+  generate-aterm:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"aterm")> path;
+      result   := ast // we just return the input term
+	
+	generate-desugar:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"aterm.sugar")> path;
+      result   := <normalize-all>ast // we just return the input term
+
+	 

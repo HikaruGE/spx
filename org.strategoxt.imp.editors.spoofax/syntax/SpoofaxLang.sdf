@@ -1,0 +1,133 @@
+%% Grammar for the SpoofaxLang language
+%% By default, based on an example "entities" syntax
+module SpoofaxLang
+
+imports
+  SPXCommon
+  Concepts
+  Naming
+  TemplateLang
+  EditorServiceMix[ESV]
+  Stratego-AttributesMix[STR] [
+    "imports" ImportModName* -> Decl {cons("Imports")}
+      => UNDEFINED -> IGNORED
+  ]
+  SDFMix[SDF] [
+    "definition" Definition -> SDF {cons("Definition")}
+      => -> IGNORED
+    "module" ModuleName list:ImpSection* Sections -> Module {cons("module")}
+      => -> IGNORED
+    "left":Grammar "right":Grammar -> Grammar {assoc, cons("conc-grammars")}
+      => -> IGNORED
+    ImpSection -> Grammar {cons("imp-section")}
+      => -> IGNORED
+  ]
+
+exports
+
+  context-free start-symbols
+    Start
+
+  lexical syntax
+    {ID "/"}+       -> QID
+    {ID ("/"|".")}+ -> QIDWithDots
+
+  context-free syntax
+
+		ImportSection* PackageDefinition* 							-> Start{cons("CompilationUnit") }
+	  Module* 																				-> Start{cons("CompilationUnit") , prefer}
+
+    "package" QName Module*                         -> PackageDefinition {cons("Package")}
+    MainID? "module" SPXModuleName Section*         -> Module {cons("Module")}
+
+    Grammar[[SDF]] -> Section {cons("SDFSection")}
+    Decl[[STR]]    -> Section {cons("STRSection")}
+    Section[[ESV]] -> Section {cons("ESVSection")}
+    ImportSection  -> Section
+    ConceptSection -> Section
+
+    ExportsOrHiddens Grammar[[SDF]] -> Section {cons("SDFSectionEH"), non-assoc}
+    "exports"                       -> ExportsOrHiddens {cons("Exports"), deprecated}
+    "hiddens"                       -> ExportsOrHiddens {cons("Hiddens"), deprecated}
+
+	 context-free syntax
+	 	
+%% 		TODO : Depreciate context-free start symbols after discussing with lennart   
+%%    "start-symbols" Symbols[[SDF]]                -> Grammar[[SDF]]  {cons("kernel-start-symbols"),deprecated} 
+%%    "lexical" "start-symbols" Symbols[[SDF]]      -> Grammar[[SDF]]  {cons("lexical-start-symbols"),deprecated}
+%%    "context-free" "start-symbols" Symbols[[SDF]] -> Grammar[[SDF]]  {cons("context-free-start-symbols"),deprecated}
+
+
+    %% TODO: Support SDF .def "definitions"?
+    %% TODO: Mark deprecated, ast, and maybe other attrs as keyword using a {prefer, ast} production
+
+  context-free syntax
+    QID "[" Symbols[[SDF]] "]" -> QName  {cons("ParamName")}
+    QID		  				           -> LegacyImportName {cons("Name")}
+    {ID "." }+			 -> QName	 {cons("QName")}
+	  ID	 					   -> QName	 {cons("Name"),prefer}
+    ID  					   -> SPXModuleName	 {cons("SPXModuleName")}
+
+	context-free syntax %% Imports
+    %% TODO: SDF: "retains" clause eliminates need for "hiddens" section. except we need something to hide the start symbols
+    %% Maybe a "with start symbols" clause, combined with a warning if the syntax has start symbols but the clause is not specified?
+    "imports" Import*          -> ImportSection {cons("Imports"),prefer}
+    "unimports" Import*        -> ImportSection {cons("Unimports")}
+
+    ImportedModule 		                   -> Import
+    ModuleName                           -> Import {cons("Import")}
+    ModuleName "retain" Renamings[[SDF]] -> Import {cons("ImportRetain")}
+    ModuleName          Renamings[[SDF]] -> Import {cons("ImportRename")}
+    "namespace" QIDWithDots              -> Import {cons("NamespaceImport")}
+    "(" Import ")"                       -> Import {bracket, deprecated}
+
+	context-free syntax
+    LegacyImportName				 		-> ImportedModule{cons("ImportLegacyArtifact")}
+    QName "::" SPXModuleName 				-> ImportedModule{cons("ImportSpxModule"),prefer}
+    QName		   					   		-> ImportedModule{cons("ImportPackage")  , prefer}
+    QName "as" ID					   		-> ImportedModule{cons("ImportPackageWithAlias"),prefer}
+
+	context-free syntax
+		"[" {AttributeDef "," }+ "]"  	-> Attribute{cons("AttributeSection")}
+
+		ID  -> AttributeDef
+		ID Attribute-arguments-> AttributeDef{prefer}
+
+	  Target ":" Attribute -> AttributeDef{non-assoc}
+
+	  EnclosingSymbol  -> Target{cons("Target")}
+
+		ID-> Argument-name{cons("Argument-Name")}
+		ID -> Attribute-argument-expression
+
+		Argument-name? Attribute-argument-expression -> Positional-argument{cons("Positional-argument")}
+		STRING -> Positional-argument{cons("Positional-argument")}
+
+		ID "=" STRING -> Named-argument{cons("Named-argument")}
+
+		"(" {Named-argument ","}+ ")" -> Attribute-arguments
+	  "(" {Positional-argument ","}+ ")" -> Attribute-arguments
+	  "(" {Positional-argument ","}+  "," {Named-argument ","}*")" -> Attribute-arguments{prefer}
+
+
+  context-free syntax
+    Reserved            -> ReservedName[[ESV]]
+    ReservedName[[ESV]] -> ModuleName {reject}
+
+	context-free syntax %% simplified constructors, highlight annos
+    Constructor                 -> Attribute[[SDF]] {prefer, cons("Constructor")}
+    "recover"                   -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"recover\"))))")}
+    "incremental"               -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"incremental\"))))")}
+    "deprecated"                -> Attribute[[SDF]] {prefer, ast("term(default(fun(unquoted(\"deprecated\"))))")}
+    "deprecated" "(" STRING ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"deprecated\"), [fun(quoted(<1>))])))")}
+    "cons" "(" Constructor ")"  -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"cons\"), [fun(quoted(<1>))])))")}
+    StrCon[[SDF]]               -> Constructor
+
+  %% for testing only. playing with code-contracts in spoofax lang.
+  context-free syntax
+    
+    "internal" "strategies" Def[[STR]]*     -> Decl[[STR]] {cons("InternalStrategies")}
+    "internal" "rules"      Def[[STR]]*     -> Decl[[STR]]{cons("InternalRules")}
+    
+		Var[[STR]] "as" ID -> Var[[STR]] {avoid, cons("VarWithType")}
+

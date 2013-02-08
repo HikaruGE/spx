@@ -1,0 +1,22 @@
+module  unit-tests/config
+
+imports 
+	config
+
+rules 
+	
+	get-legacy-extension-names-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			expected 		 := ["sdf" , "def" , "str" , "rtree"]
+		where 
+			<debug>$[Running Test .... ];
+			actual :=  <get-known-legacy-extensions>
+		where
+			<debug> $[Verifying Expectaions .... ];
+			!expected  => actual;
+			<debug(!"SUCCESS. Actual and Expected :  ")> [actual, expected]
+		<+ 
+			<debug(!"FAILED. ")> [actual, expected]	
+				
+

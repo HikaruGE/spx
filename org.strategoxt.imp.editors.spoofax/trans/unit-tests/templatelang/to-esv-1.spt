@@ -1,0 +1,69 @@
+module templatelang-to-esv
+
+language SpoofaxLang
+target language EditorService
+
+setup [[
+  package example
+  module example
+  templates
+]]
+
+target setup [[
+  module example
+  completions
+]]
+
+test empty [[ X.Y = <> ]]
+run test-templatelang-to-esv to [[ ]]
+
+test placeholder [[ X.Y = <foo <Z> bar> ]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo Z bar" = "foo " <Z:Z> " bar"
+]]
+
+test placeholder (text) [[ X.Y = <foo <Z; text=" display text "> bar> ]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo display text bar" = "foo " < display text :Z> " bar"
+]]
+
+test placeholder (option) [[ X.Y = <foo <Z?> bar> ]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo bar" = "foo " <:Z> " bar"
+]]
+
+test placeholder (plus) [[ X.Y = <foo <Z+> bar> ]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo Z bar" = "foo " <Z:Z> " bar"
+]]
+
+test placeholder (star) [[ X.Y = <foo <Z*> bar> ]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo bar" = "foo " <:Z> " bar"
+]]
+
+test n placeholders => one (cursor)-directive [[
+  X.Y = <
+    foo
+      <A?>
+      <B?>
+      <C?>
+    bar
+  >
+]]
+run test-templatelang-to-esv to [[
+  completion template X: "foo bar" = "foo\n\t" (cursor) "\nbar" (blank)
+]]
+
+test if then statement [[
+  Statement.IfThen = <
+    <MetaAnno*; separator="\n">
+    if <Exp> then
+      <Statement*; separator="\n">
+    end
+  >
+]]
+run test-templatelang-to-esv to [[
+  completion template Statement: "if Exp then end" =
+    "if " <Exp:Exp> " then\n\t" (cursor) "\nend" (blank)
+]]

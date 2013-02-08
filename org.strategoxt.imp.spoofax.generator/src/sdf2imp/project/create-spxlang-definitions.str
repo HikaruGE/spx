@@ -1,0 +1,190 @@
+module sdf2imp/project/create-spxlang-definitions
+
+imports 
+	sdf2imp/options
+	sdf2imp/util/-
+
+rules
+	create-spxlang-definitions =
+		where(
+			file-name 		  := <spx-file-name>"-Definitions";
+			file-extension  := ".spx";
+			package-name := <BasePackage <+ default-package-name>
+		);	
+if not(<file-exists> <conc-strings> ("src/", file-name  , file-extension)) then 
+<output-text-file(|["src"] , $[[file-name][file-extension]])>
+$[package [package-name]   
+[<create-main-language-constructs>]
+[<create-lang-type-system>]
+[<create-symantic-analyzer>]
+ ]
+ end
+    	
+    create-main-language-constructs =
+	    where( 
+	    	package-name  := <BasePackage <+ default-package-name>;
+	    	language-name := <get-sdf-main-module>
+			);	 
+!${
+// Following module define the main langauge constructs for {language-name} language
+module {language-name}-MainConstructs
+
+imports {package-name}.generated 
+	
+context-free syntax    
+	"module" ID Definition*             -> Start${$ "Module"$}$ 
+	"entity" ID "${$" Property* "$}$"    -> Definition${$"Entity"$}$
+	ID  ":" Type               		      -> Property${$"Property"$}$ 
+	
+rules 
+	// Semantic analyses
+	// Reports an error if an entity is defined more than once.
+	// This constraint is implemented by testing if the "bag" of
+	// all entities x is not a singleton list.
+	constraint-error:
+		Entity(x, _) -> (x, $[Duplicate entity name])
+		where
+			not(<bagof-GetEntity> x => [_])
+		
+	constraint-warning:
+		Entity(x, _) -> (x, $[Entity names must start with a capital])
+			where
+				not(<string-starts-with-capital> x)
+	  
+	constraint-note:
+		Module(x @ "example", _) -> (x, $[This is just an example program in the "entities" language
+	                                      (this note is defined in src/{<get-sdf-main-module>}-Definitions.spx) ])
+	 
+rules
+	// Generates java codes from {language-name} language.
+	to-java: Module(x, d*) ->
+		$[package [x];
+      [d'*]
+		 ]
+    with
+      d'* := <to-java> d*
+  
+	to-java: Entity(x, p*) ->
+    $[class [x] ${$
+           [p'*]
+       $}$
+		]
+    with
+		p'* := <to-java> p*
+
+	to-java: Property(x, type) -> 
+		$[
+           private [<to-java>type] [x];
+      
+           public [<to-java>type] get_[x] ${$
+              return [x];
+           $}$
+      
+           public void set_[x] ([<to-java>type] [x]) ${$
+              this.[x] = [x];    
+           $}$
+		]     
+  	
+		to-java: t* -> <map(to-java)> t*
+		
+rules
+	
+	// Pretty-prints Abstract Syntax Tree to {language-name} language. 
+	pp-entitylang: Module(x, d*) ->
+		$[module [x]
+     [d'*]
+		]
+		with
+		d'* := <pp-entitylang> d*
+  
+	pp-entitylang: Entity(x, p*) ->
+		$[entity [x] ${$
+         [p'*]
+     $}$
+			]
+		with
+			p'* := <pp-entitylang> p*
+
+	pp-entitylang: Property(x, type) -> 
+		$[[x] : [<pp-entitylang>type] 
+		]     
+  	
+	pp-entitylang: t* -> <map(pp-entitylang)> t*
+}	
+
+
+	create-lang-type-system = 
+		where( 
+	    	language-name := <get-sdf-main-module>
+			);
+!${// Following module defines the Type-System of  {language-name} language
+module Type-System
+	
+context-free syntax
+	ID                              -> Type ${$"Type"$}$
+	"Int"														-> Type ${$"IntegerType", prefer$}$
+	"String"												-> Type ${$"StringType" , prefer$}$
+
+rules 
+	// Semantic analysis of types
+	// Reports an error if a property type is undefined.
+	// This error is reported on the type name 'type'.
+	constraint-error:
+		Type(type) -> (type, $[Type [type] is not defined])
+		where
+			not(<GetEntity> type) // no entity for this type 
+	
+rules
+	// Transforming {language-name} types to java types  
+	to-java: Type(t) -> t
+ 
+	to-java: IntegerType() -> "int"
+    
+	to-java: StringType() -> "string"  
+
+rules
+	// Pretty-prints {language-name}  types 
+	pp-entitylang : Type(t) -> t
+		
+	pp-entitylang : IntegerType() -> "Int"
+    
+	pp-entitylang : StringType() -> "String"  
+}
+
+	create-symantic-analyzer = 	
+		where( 
+	    	language-name := <get-sdf-main-module>;
+	    	 package-name  := <BasePackage <+ default-package-name>
+		);
+!${// Following module performs semantic analyses for {language-name} language
+module Semantic-Analyzer
+imports {package-name}.generated
+
+rules
+	// Analysis: does a topdown traversal of the tree,
+	// and tries to apply the record-entity rule.
+	analyze:
+		t -> t
+		with
+			<topdown(try(record-entity))> t
+	
+	// Records the definition of an entity in a dynamic rule GetEntity.
+	record-entity:
+		Entity(x, body) -> Entity(x, body)
+		with
+			// For a name 'x', GetEntity will return the original 'x' tree node
+			rules(
+				GetEntity :+ x -> x 
+			)
+rules 
+	// Analyzes the current program, returning a tuple with errors, warnings, and notes;
+	// each a list of (term, message) tuples or simply (message) terms.
+	editor-analyze:
+		(ast, path, project-path) -> (ast, errors, warnings, notes)
+		with
+			editor-init;
+			analyze;
+			errors   := <collect-all(constraint-error, conc)> ast;
+			warnings := <collect-all(constraint-warning, conc)> ast;
+			notes    := <collect-all(constraint-note, conc)> ast	
+}		

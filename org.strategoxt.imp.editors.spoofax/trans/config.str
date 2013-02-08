@@ -1,0 +1,415 @@
+module config 
+
+imports 
+	libstratego-lib
+  libstratego-sglr
+  libstratego-gpp
+imports 
+	common
+	spoofaxlang
+imports 	
+	utils/debug
+	lib/Configuration/SpoofaxConfiguration
+	lib/editor-common.generated
+imports 	
+	normalize/signatures
+	context/signatures
+	include/SpoofaxLang
+	utils/path
+	context/scope-tree
+	
+signature constructors 
+	ConfigFlag : Flag 
+	
+	EnableCommandLineConfig : ConfigFlag 
+	
+	IgnoredSpxSourceConfig : ConfigFlag
+	
+	SpxSourceConfig : ConfigFlag
+	
+	AutogenDirConfig : ConfigFlag
+	
+	StrOutputStrategyConfig : ConfigFlag
+	
+	TemplateLangOptionConfig : ConfigFlag
+	
+rules 
+	default_package_name = !"__default"
+	
+	default_src_directory = !"src"
+	
+	root_directory = !"."
+	
+	default_output_directory = !".shadowdir"
+	
+	default_stroutput_strategy = !CTree()
+	
+	internal_module_name_string = !"__internal"
+	
+	get-known-legacy-extensions = !["sdf" , "def" , "str" , "rtree"] 
+	
+	
+	
+rules 
+	
+	fallback-configuration = 
+		!Configuration(
+		  [ Includes([Source(<root_directory> , All())])
+		  , CodeGeneration([OutputDirectory(<default_output_directory>),STROutputMode(<default_stroutput_strategy>)])
+		  , Debug([DebugNone()])  
+		  , SpxProjects([])
+		  , TemplateLang(TemplatelangEnabled())    
+		  ]
+		)	
+	
+	initialize-configuration =
+		where( 
+			parse-spoofaxconfiguration-file
+			; normalize-config
+			; init-output-directory
+			; init-source-directory
+			; init-str-output-strategy     		
+			; set-debug-options
+			; set-templatelang-options  
+			; <init-ignored-directories>[".svn"]
+		  )
+		
+	//TODO  Refactor : Resuse <show-configuration>()
+	show-configuration: 
+		(selected, position, ast, path, project-path) -> (filename, result)
+		with
+			editor-init;
+			initialize-configuration 		
+		where 
+			filename := <guarantee-extension(|"config.resolved")> path;
+			result := $[ Spoofax-lang|Configuration  - [project-path]/spx.config
+		
+			Resolved Source Directories:  
+				[<print-as-string><get-all-declared-by-type(|SpxSourceConfig())>] 
+			
+			Ignored Subdirectories : 
+				[<print-as-string><get-all-declared-by-type(|IgnoredSpxSourceConfig())>]
+			
+			Output Directory : [<print-as-string><get-all-declared-by-type(|AutogenDirConfig())>]
+		
+			STR Output Strategy: [<print-as-string><get-all-declared-by-type(|StrOutputStrategyConfig())>]
+			
+			Debug Options : [<print-as-string> <get-debug-options>]
+			
+			TemplateLang enable/disabled Option: [<print-as-string><get-declared(|TemplateLangOptionConfig())><get-constructor>TemplateLangOptionConfig() ]
+			
+			]
+	//TODO Refactor 					
+	show-configuration : ()-> result
+	where
+		result := $[ Spoofax-lang|Configuration  - [<getcwd>]/spx.config
+	
+		Resolved Source Directories:  
+			[<print-as-string><get-all-spx-sources>]
+		
+		Ignored Subdirectories : 
+			[<print-as-string><get-all-declared-by-type(|IgnoredSpxSourceConfig())>]
+		
+		Output Directory : [<print-as-string><get-all-declared-by-type(|AutogenDirConfig())>]
+		
+		STR Output Strategy: [<print-as-string><get-all-declared-by-type(|StrOutputStrategyConfig())>]
+		
+		TemplateLang enable/disabled Option: [<print-as-string> <get-templatelang-enable-or-disable-option>]
+	]
+	 
+rules
+	get-all-spx-sources =  get-all-declared-by-type(|SpxSourceConfig())  ; (not(?[]) <+ get-project-path) 	
+	
+rules	
+	//enable command line mode
+	// EnableCommandLineConfig
+	enable-command-line-mode =  where(<store-declared(|EnableCommandLineConfig())>("commandline" ,"commandline")) 
+	
+	disable-command-line-mode = where(<undef-declared(|EnableCommandLineConfig())>"commandline") 
+	
+	is-in-command-line-mode = where (<get-declared(|EnableCommandLineConfig())>"commandline" )
+
+rules	
+	init-ignored-directories : [] -> [] 
+	
+	init-ignored-directories: 
+		[current-dir | rest] ->[current-dir | <init-ignored-directories>rest]    
+		where
+			<store-declared(|IgnoredSpxSourceConfig())>(current-dir ,current-dir)
+	
+	is-ignored-spx-directory  = get-declared(|IgnoredSpxSourceConfig()) 
+			
+	init-output-directory : 
+		config-aterm -> config-aterm 
+		where
+  	  	(
+	  	  	get-code-output-directory 
+	  	 		<+ 
+	  	 		default_output_directory
+  	 		)
+  	 		; setup-autogen-root-directory  			
+	
+	
+	init-str-output-strategy : 
+		config-aterm -> <id>
+		where
+			(get-str-output-mode <+ default_stroutput_strategy);
+			setup-str-output-strategy
+			
+	//intializes the source directories . Compiler will only consider this directory as a valid spx sources .
+	init-source-directory : 
+		config-aterm -> config-aterm 
+		where 
+			get-all-includes ; 
+			setup-source-directories			
+
+
+	override-configured-source-directories : localsoucedir -> localsoucedir
+	where
+		remove-existing-configuration-sourcedirs;
+		<setup-source-directories>[(localsoucedir,All())]
+	
+	setup-source-directories: [] -> []	 
+	setup-source-directories: 
+		[configured-directory-setting|rest*] -> [configured-directory-setting|<setup-source-directories>rest*]  
+		where 
+			<store-declared(|SpxSourceConfig())>(configured-directory-setting,configured-directory-setting)
+
+
+	 
+	remove-existing-configuration-sourcedirs=  where(<undef-declared(|SpxSourceConfig())>()) // removing all the configured source directory 
+
+rules
+	setup-str-output-strategy = 
+		?stroutputstrategy;
+		where(
+			<store-declared(|StrOutputStrategyConfig())> ( stroutputstrategy , stroutputstrategy)
+		) 
+	
+	
+	get-str-output-strategy = get-all-declared-by-type(|StrOutputStrategyConfig())  ; ?[<id>|_] <+ default_stroutput_strategy
+				
+	get-autogenerated-artifacts-dir =
+    if not(autogen-dir) then (   
+        get-all-declared-by-type(|AutogenDirConfig()) 
+        ; ?[autogen-directory-name|_]
+    <+ 
+        autogen-directory-name := <default_output_directory>
+        )
+        ; rules(autogen-dir := autogen-directory-name)
+    end	 
+    ; autogen-dir 
+		
+	setup-autogen-root-directory = 
+		?codegen-output-dir;
+		where(
+				<store-declared(|AutogenDirConfig())> ( codegen-output-dir, codegen-output-dir)
+		) 
+
+				
+rules  
+	
+	parse-spoofaxconfiguration-file =
+		config-path := "spx.config";
+		config-full-path := <concat-strings>[<get-project-path>, "//" , config-path];
+		cache-path := <spx-cache-path(|"sig")>config-full-path;
+		if <is-newer> (cache-path, config-full-path) then 
+			 config-ast := <ReadFromFile> cache-path
+		else
+		  !config-full-path;
+		  parse-file(
+	      strsglr-perror, strsglr-report-parse-error
+	    | <import-term(lib/Configuration/SpoofaxConfiguration.tbl)>
+	    )
+	    ; ?config-ast
+	    ; <WriteToBinaryFile> (cache-path, config-ast)
+	  end ;
+	  ! config-ast
+	<+
+		<debug>$[Failed to Load Configuration.Loading Default Configuration. Please check spx.config]
+		; fallback-configuration
+	  
+	
+	//Returns output directory for the code generation
+	get-code-output-directory = collect-one(?OutputDirectory(<id>))
+	
+	get-str-output-mode = collect-one(?STROutputMode(<id>))
+
+	// Returns all the resolved directories 	
+	get-all-includes= 
+		?config-ast
+	 	; <conc>(
+		 		<get-all-sources(|<get-project-path>)> config-ast,   
+		 		<get-sources-from-external-projects>config-ast
+	 		)
+	 	; make-set
+ 
+ 
+	convert-abs-path(|project-path) : 
+		(s, o) -> (s' , o)
+		where
+		 if !s => <root_directory>()   then
+		 		s' := $[[project-path]] 
+		 else
+		 		s' := $[[project-path]/[s]]
+		 end
+	
+	get-all-sources(|project-path) =
+ 		collect-all(?Source(_, _));
+ 		get-local-sources;
+ 		map(convert-abs-path(|project-path))
+ 	<+ 
+		debug(!"Failed to get list of source directory.") 
+		; fail
+ 
+	get-local-sources: [] -> []
+ 
+	get-local-sources: 
+ 	[Source(dir , include-option)|rest] -> result
+ 	where
+ 		![(dir,include-option)] => result';
+ 		<conc>(<get-local-sources>rest, result') => result	 	
+ 		
+rules 
+ 	
+  	// Resolving project References 
+	get-sources-from-external-projects = 
+  	get-all-project-refernces; 
+  	if  ?[_|_]  then
+  		get-external-sources
+		end
+		
+	// Returns all the external sournce collected from the project references 
+ 	get-external-sources: spx-projects* -> result
+		where 
+			not (?[])
+	  	;!spx-projects* => [current-project-path|rest*]
+	 	where
+	 		if not(ref := <resolve-external-sources>current-project-path)  then
+	 			 ref := []
+	 		end
+	 		;result := <conc>( ref , <get-external-sources>rest* )
+	 	
+	get-external-sources: []  -> []
+	 
+	 
+	
+	// Resolves External Project Refernces and returns the directories configured in that configuration file
+	// Transitive imports/inclusion is not allowed. If a->b , b->c != a->c
+	resolve-external-sources =
+		 // not started wtih  ..
+		?current-project-path;
+  	where( 
+  		not(<string-starts-with(|"..")>current-project-path) 
+		);
+  	fail-if-no-directory-found;
+  	fail-if-no-config-found;   
+  	<parse-spoofaxconfiguration-file>$[[current-project-path]/spx.config];
+  	get-all-sources(|current-project-path)
+	
+	  	
+	resolve-external-sources =
+		?current-project-path;
+  	where( 
+  		<string-starts-with(|"..")>current-project-path 
+		);
+		where(
+			current-dir := <getcwd>
+		);
+		(
+	  		<fail-if-no-directory-found>current-project-path;
+	  		<chdir> current-project-path;
+	  		<fail-if-no-config-found><getcwd>; // verifies config file exisit in the current working directory
+	  		<parse-spoofaxconfiguration-file;get-all-sources(|<getcwd>)>"spx.config" => result;
+	  		<chdir>current-dir; 
+	  		!result
+	  	<+
+	  		<chdir>current-dir  
+		)
+	
+	get-templatelang-enable-or-disable-option = 
+		  collect-all(?TemplateLang(<id>), conc) 
+		;	flatten-list 
+	 	; if ?[] then 
+	 	  	 ![TemplatelangEnabled()]
+	 	  end	 
+ 	
+	set-templatelang-options =
+		get-templatelang-enable-or-disable-option; 
+		?[<id>|_] ;  
+		<store-declared(|TemplateLangOptionConfig())>(<get-constructor>TemplateLangOptionConfig() ,<id>) 
+	
+	templatelang-enabled = <get-declared(|TemplateLangOptionConfig())><get-constructor>TemplateLangOptionConfig() ;  ?TemplatelangEnabled() 	
+ 	
+ 	get-debug-options = collect-all(?Debug(<id>), conc) ;	flatten-list
+	 	
+	set-debug-options =
+		where(
+			get-debug-options;  
+			if not(id => []) then
+				list-loop(set-debug-option)
+			end	 
+		)
+	
+	set-debug-option : dbg-option -> <id>
+		where
+			switch !dbg-option
+				case ?DebugCompiler()    : enable-compiler-debugging
+				case ?DebugDeclaration() : enable-declaration-debugging
+				case ?DebugSymbolTable() : enable-symboltable-debugging
+				case ?DebugAnalysis()    : enable-semantic-analysis-debugging
+				case ?DebugAll()         : enable-debug-all
+				otherwise : id
+			end 
+	
+	
+	get-all-project-refernces = 
+  	collect-all(?SpxProjects(<id>), conc) ; 
+  	flatten-list;
+  	filter(?_{<id>};not(<eq>("" , <id>)))
+  <+ 
+  	debug(!"Failed to retrieve list of projects.");
+  	fail 
+	// Utility strategies  
+		// verifies whether current directory exists 
+	fail-if-no-directory-found  = is-dir-exist   <+ throw-directory-not-found-exception(fail) 
+	
+	// verfies whether there is a config file in the provided directory 
+	fail-if-no-config-found = is-spx-config-exist   <+ throw-config-not-found-exception(fail)   
+	
+	throw-directory-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find the directory specified: ") ;post-processing-strategy
+	
+	throw-config-not-found-exception(post-processing-strategy) = debug(!"Configuration | Failed to find spx.config file in the directory specified: ") ;post-processing-strategy
+
+rules	
+	
+	// verifies whether current directory exists 
+	verify-directory-exists  = is-dir-exist   <+ throw-directory-not-found-exception(fail) 
+	
+	// verfies whether there is a config file in the provided directory 
+	verify-config-file-exists = is-spx-config-exist   <+ throw-config-not-found-exception(fail)   
+	
+	is-spx-config-exist = where(<file-exists>$[[<id>]/spx.config])  
+	
+	is-dir-exist =  where(file-exists ; filemode ; isdir)
+
+rules
+	
+	normalize-config: ast -> <alltd(normalized-spxproject-reference)>ast 
+		
+	normalized-spxproject-reference: 
+		SpxProjects(projectrefs*) -> SpxProjects(result) 
+		where
+			result := <map(annotate-project-location)>projectrefs*
+			
+			
+	annotate-project-location : 
+		projectname -> annotatedProjectName
+		where 
+			prim("LANG_get_all_projects_in_Workspace");
+			filter( ?(projectname, _));
+			if not(?[(_, projectlocation)]) then 
+				projectlocation := ""
+			end;
+			annotatedProjectName := projectname{projectlocation}
+					

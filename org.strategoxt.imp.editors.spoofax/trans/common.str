@@ -1,0 +1,151 @@
+module common
+
+imports 
+  libstratego-lib
+  libstratego-sdf
+  libstratego-sglr
+  libstratego-gpp
+  libstratego-aterm
+  libstrc
+  lib/editor-common.generated
+  lib/sdf-desugar
+  lib/sdf-parenthesize
+imports 
+	include/SpoofaxLang
+	normalize/signatures
+imports 
+	utils/debug
+	utils/path
+	utils/contract
+	codegen/main
+	codegen/compile
+	context/symboltable
+	config
+	editor/main
+
+
+rules 
+  //several events regarding the current compiler session. 
+  with-spxverify(s) = with-verify( s ,  compile-unload )  
+  
+  //with-spxverify(s, get-msg) = with-verify( s ,compile-unload<+ fail|msg )
+  
+  with-spxverify(s , msg) = with-verify( s , compile-unload ,  msg)
+	
+rules 
+	get-project-path = (ProjectPath <+ project-path)
+
+	get-project-name = get-project-path ;  base-filename
+	
+	package-qname-to-string : Package(untyped-qname) ->  <convert-qname(|".");string-replace(|"-", ".")> 	untyped-qname
+	
+	
+rules 
+	
+	ppterm = pp-aterm-box ; box2text-string(|100)
+
+	print-as-string = is-string <+ write-to-string
+
+rules
+		/*internal*/ require(s) = not(s)
+
+rules 
+	equal-strings = 
+		?(str1 , str2); 
+		where( 
+			exploded-str1 := <explode-string>str1;
+			exploded-str2 := <explode-string>str2;
+			expected-ret-value := 0
+		);	
+		where(	
+			<strcmp>(exploded-str1 , exploded-str2);
+			?expected-ret-value
+		) 
+		 
+rules	
+	//After ensuring result is unique i.e. list contains only one element, it returns the unique result
+	ensure-is-unique = ?[<id>] <+ dbg-symboltable(!$[SymbolTable| Failed to resolve unique declaration.] | "ensure-is-unique" , "Info");fail
+	
+	// Verifies that the current term is not a empty list 
+	is-not-empty-list = ?[_|_] 
+	
+rules 
+	save-to-file:(fileName, fileContent) -> None()  
+  	where
+    	not(<eq>("", fileContent))
+    where
+    	dbg-compiler(!$[Writing to the following file : [fileName] the following content: 
+      							[<print-as-string>fileContent] 
+    	])
+    with
+    	filedescr := <fopen> (fileName, "w+")
+      ;<fputs>(fileContent , filedescr)
+      ;<fclose>filedescr	
+       
+       
+ rules // scoped renaming
+	
+	/**
+	* executes the renaming strategy s in a new scope
+	* 
+	* declarations inside the new scope will hide existing declarations outside the new scope
+	* multiple declarations with the same name inside the new scope will be renamed to the same name
+	*
+	* @param renaming strategy s: a -> b
+	* @type a -> b
+	*/
+	new-scope(s) :
+		x -> y
+		where 
+			dbg-compiler(!$[Entering scope [<print-as-string> x].])
+		where
+			<newname> x => scope ;
+			{| Renamed, RenamedInScope, CurrentScope:
+				rules (CurrentScope: _ -> scope) ;
+				<s> x => y
+			|} 
+		where 
+			dbg-compiler(!$[Leaving scope [<print-as-string> x].])
+			
+	/**
+	* annotates the current term with a fresh name
+	* can distinguish different namespaces
+	* remembers the renaming by storing two dynamic rules
+	* 
+	* multiple calls on the same term inside the same scope will give identical results
+	* calls inside a new scope will hide the results of calls to the same term from outer scopes
+	*
+	* @param namespace 
+	* @type a -> a
+	*/
+	rename-declaration(|namespace) : 
+		x -> x'
+		where 
+			CurrentScope => scope ;
+			(
+				<RenamedInScope> (namespace, scope, x) => x' <+
+				x' := x{<newname> x}
+			)
+		where rules(
+			RenamedInScope: (namespace, scope, x) -> x' 
+			Renamed: (namespace, x) -> x'
+		)
+		where 
+			dbg-compiler(!$[Renamed declaration [<print-as-string> x] to [<print-as-string> x'] in namespace [<print-as-string> namespace].])
+	
+	/**
+	* annotates the current term with a new name
+	* succeeds only if rename-declaration was called before on the same term
+	* will use the same name as rename-declaration (by calling the dynamic rule stored by rename-declaration)
+	*
+	* @param namespace 
+	* @type a -> b
+	*/
+	rename-reference(|namespace) :
+			x -> x'
+		where
+			<Renamed> (namespace, x) => x'
+		where 
+			dbg-compiler(!$[Renamed reference [<print-as-string> x] to [<print-as-string> x'] in namespace [<print-as-string> namespace].])
+
+ 			 

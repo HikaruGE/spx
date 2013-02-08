@@ -1,0 +1,79 @@
+module parse
+
+
+imports
+	common
+	context/parse-adapter
+	lib/editor-common.generated
+	
+rules 
+	
+	parse-tests : 
+		a@(selected, position, ast, path, project-path) -> None()
+	where
+		<try(parse-sdf-test)>a;
+		<try(parse-str-test)>a;
+		<try(parse-def-test)>a;
+		<try(parse-rtree-test)>a
+			
+		
+	parse-sdf-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.sdf"] 
+		where 
+			<debug>$[Running Test | parse-sdf-test ];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
+		<+ 
+			<debug>$[FAILED...]
+			
+	parse-str-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.str"]
+		where 
+			<debug>$[Running Test | parse-str-test];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
+		<+ 
+			<debug>$[FAILED...]		
+				
+	
+	parse-def-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/SDF.def"]
+		where 
+			<debug>$[Running Test | parse-def-test];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
+		<+ 
+			<debug>$[FAILED...]		
+			
+		parse-rtree-test:
+		(selected, position, ast, path, project-path) -> None()
+		with 
+			file-path := <concat-strings> [project-path , "/trans/" , "unit-tests/resources/test.rtree"]
+		where 
+			<debug>$[Running Test | parse-def-test];
+			actual :=  <parse-legacy-artifact>file-path
+		where
+			<debug> $[Verifying Expectaions .... ];
+			not(!actual => "");
+			<debug>$[SUCCESS.... ParsedContent : [<print-as-string>actual]]
+		<+ 
+			<debug>$[FAILED...]			
+
+
+	
+//C:/work/projects/spoofax/spx-imp/source-codes/trunk/org.strategoxt.imp.editors.spoofax/test2/Concepts.sdf

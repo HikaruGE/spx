@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="SpoofaxGenerator.build" default="all">
+        
+        <!-- Key input modules -->
+    <property name="editorservice" value="EditorService"/>
+    <property name="str-java-editorservice" value="Stratego-Java-EditorService"/>
+        
+    <property name="metasdfmodule" value="Stratego-sdf2imp"/>
+    <property name="strmodule" value="SpoofaxGenerator"/>
+    <property name="outputjar" value="spoofaxgenerator"/>
+    
+    <!-- Project directories -->
+    <property name="trans" location="src"/>
+		<property name="sdf-imp-trans" location="src/sdf2imp/"/>
+		<property name="src-gen" location="src-gen/org/strategoxt/imp/spoofax/generator"/>
+    <property name="syntax"  location="src/syntax/"/>
+    <property name="include" location="include/"/>
+		<property name="lib" location="lib"/>
+    <property name="build" location="bin"/>
+    <property name="dist" location="bin/dist"/>
+    <property name="java-front" location = "${lib}/java-front/syntax"/> 
+		<property name="xml-front" location = "${lib}/xml-front"/> 
+		
+	 	<property name="build.sdf.imports" value="-I &quot;${lib}/stratego-front/syntax/&quot;" />
+		<property name="build.stratego.args" value="
+			-la stratego-lib 
+			-la stratego-sglr 
+			-la stratego-gpp 
+			-la stratego-xtc 
+			-la stratego-aterm
+			-la stratego-rtg
+			-la stratego-sdf
+			-la stratego-tool-doc
+			-I &quot;${sdf-imp-trans}&quot;
+			-I &quot;${trans}&quot;
+      -I &quot;${lib}&quot;
+	  	-I &quot;${include}&quot;
+			-I &quot;${lib}/xml-front/trans&quot; 
+			-I &quot;${lib}/stratego-gpp/trans&quot; 
+			-I &quot;${lib}/sdf-front/trans&quot;
+			-I &quot;${lib}/asfix-tools/trans&quot;
+			-I &quot;${lib}/xtc/tools&quot;
+			-I &quot;${lib}/xtc&quot;
+			-I &quot;${lib}/stratego-libraries/lib/ssl-compat&quot;
+			-I &quot;${lib}/stratego-libraries/lib/spec&quot;
+			-I &quot;${lib}/pgen&quot;
+			-I &quot;${lib}/stratego-front/pp&quot;
+			-I &quot;${basedir}&quot;
+			"/>
+
+		<!-- Environment configuration for command-line builds -->
+    <condition property="build.strategoxt.sdf" value="${eclipse.spoofaximp.nativeprefix}" else="">
+        <isset property="eclipse.spoofaximp.nativeprefix"/>
+    </condition>
+    <property name="build.strategoxt.stratego" location="${user.home}/.nix-profile/bin"/>
+		
+		<import file="build.main.helper.xml"/>
+	 
+		<!-- Main target -->
+    <target name="all" depends="check-classpath,init,pack-sdf-main,ppgen-main,pppack-main,sdf2table-main,stratego.jar,refresh"/>
+  </project>

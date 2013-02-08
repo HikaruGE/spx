@@ -1,0 +1,197 @@
+module codegen/main
+
+imports 
+	codegen/compile
+	codegen/sdf/-
+	codegen/str/-
+	codegen/esv/-
+	
+imports
+	codegen/buildscripts
+	codegen/generate
+	analyze/main
+imports 
+	config 
+	utils/cache
+	lib/editor-common.generated
+	context/-
+  normalize/signatures  
+	include/SpoofaxLang
+	utils/path
+	utils/debug
+	utils/contract
+	common
+imports 	
+	libstratego-gpp
+	libstratego-xtc 
+
+rules 
+		
+	report-failure-with-stacktrace = prim("SSL_stacktrace_get_all_frame_names") ; report-failure
+	
+	editor-build-spoofaxlang-jvm :
+		(selected, position, ast, path, project-path) -> None()
+		where
+			 <build-spoofaxlang-jvm>project-path
+			 
+  build-spoofaxlang-jvm:
+    (current-project-location, build-opt) -> <id>
+    where 
+			verify-if-has-errors;
+			<debug> $[-- Invoking Spoofaxlang Bulid with following arguments [<print-as-string>]] 
+		where 
+			with-spxverify(	
+	  		editor-init; 						         // cleaning up and initializing editors
+				previous-working-dir := <getcwd>;
+				rules(
+					ProjectPath := current-project-location
+				);
+				<chdir>current-project-location				// setting current directory to the project location
+			<+
+				report-failure-with-stacktrace 
+			)
+		where 
+  		with-spxverify(	
+				<debug>$[-- Activating following Project Configuration : ];
+				initialize-configuration;        	// initializes configuration and setting up enviroment variables
+				enable-command-line-mode;
+				<show-configuration;debug>()     //show configuration for this spx project
+			<+
+				report-failure-with-stacktrace 
+			);	
+			with-spxverify(
+				<debug>$[-- SPXLang Build: ];
+				if <equal-strings>(build-opt , "-c")  then
+					index-clearall;
+					<debug>$[-- Initializing clean build.]
+				else
+					<debug>$[-- Initializing Incremental Build.]
+				end;  
+				build-all';  //building all the spx files in the sources directory
+				<debug>$[-- Intermediate artefacts have been generated successfully.]
+			<+
+				report-failure-with-stacktrace 
+			)
+
+			
+rules
+	
+	editor-build-all-after-cleanup:
+		(selected, position, ast, path, project-path) -> None()
+		where
+	 		<debug>$[----------------------------starting compile + build all----------------------------];
+			with-spxverify(	
+				editor-init	
+		 		;rules(ProjectPath := project-path)
+		 		;initialize-configuration
+		 		, "Failed to initialize editor" 
+ 		  );
+	  	clean-spx (| project-path);
+		with-spxverify(
+			abs-path := <concat-strings>[project-path, "/" ,path]
+			;	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; build-all
+	  	)  
+
+	    //TODO delete all the folder from spxcache
+  editor-clean-and-compile-spx-all : 
+  	(selected, position, ast, path, project-path) -> None()
+  	where 
+  		with-spxverify(
+  			editor-init;
+  			rules(ProjectPath := project-path);
+  			initialize-configuration;
+  			compile-init 
+  			, !$[ Compiler-init is failed.]
+  		)
+  		; clean-spx (| project-path)
+  	where	
+  		abs-path := <concat-strings>[project-path, "/" ,path]
+	   	; with-spxverify( 
+	  	 	 	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path , ast)	 
+					; <compile-all>(abs-path , ast)
+					, !"compile-spx failed due to error in complile-all"
+			 	) 
+  
+	editor-compile-spx-all-incrementally:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			 <debug>$[------Starting Compile Incrementally------]
+			 ; editor-init
+			 ; rules(ProjectPath := project-path)
+			 ; initialize-configuration
+		   ; abs-path := <concat-strings>[project-path, "/" ,path]
+		   ; with-spxverify( 
+		   	 	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path , ast)	 
+					; <compile-all>(abs-path , ast)
+					, !"compile-spx failed due to error in complile-all"
+				 )
+
+	editor-clean-spx:  
+		(selected, position, ast, path, project-path) -> None()
+		where
+      compile-init; 
+      clean-spx(|project-path)
+
+	
+rules 
+		clean-spx(|project-path) = 
+			with-spxverify(
+	  			index-clearall;
+	  			<refresh-workspace-file>project-path;
+	      	<debug>$[------Index Cleanup is done ------]
+	  	)
+
+rules
+	
+	build-incrementally-service:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			HasErrors;
+			<debug>$[Compilation Failed.Please fix the errors before building the artifacts : [<print-as-string>path]]
+			
+			
+	build-incrementally-service:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			not(HasErrors)
+		where 
+			with-spxverify(
+				editor-init	
+		 		; rules(ProjectPath := project-path)
+		 		; initialize-configuration
+		 		, !"Failed to initialized editor "  
+	  		);
+			with-spxverify(
+  			abs-path := <concat-strings>[project-path, "/" ,path]
+				; <store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; <build-spx-incrementally>(ast, abs-path) 
+	   )
+  	  
+	
+	editor-build-all:
+		(selected, position, ast, path, project-path) -> None()
+		where
+			verify-if-has-errors  
+		where
+	 		<debug>$[----------------------------starting compile + build all----------------------------];
+			with-spxverify(	
+				editor-init	
+		 		;rules(ProjectPath := project-path)
+		 		;initialize-configuration
+		 		, !"Failed to initialize editor" 
+ 		  );
+		  with-spxverify(
+				abs-path := <concat-strings>[project-path, "/" ,path]
+				;	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path, ast)	 
+	  		; build-all
+	  	)  
+	
+				
+			
+	verify-if-has-errors = 
+			not(HasErrors)
+		<+
+			debug(! "Build Failed.Please fix the errors before building the artifacts");
+			fail
+		

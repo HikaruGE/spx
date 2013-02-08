@@ -1,0 +1,38 @@
+module unit-tests/contracts 
+
+imports
+	include/SpoofaxLang 
+	lib/editor-common.generated
+	utils/debug
+imports
+	common
+imports	
+	context/-
+imports  
+	context/signatures 
+	normalize/signatures
+	utils/contract
+	
+rules
+	test-contracts: 
+		(selected, position, ast, path, project-path) -> selected
+		where 
+			debug(!"starting test on code-contracts now. ");
+			editor-init
+		where
+			debug(!"running Test 1 .... ");
+			if not (<test-dummy-strategy> "test") then  
+				debug(!"Test 1 passed")
+			end
+		where
+			debug(!"running Test 2 .... ");
+			(<test-dummy-strategy> [1,2]);   
+			debug(!"Test 2 passed")
+		
+	
+	test-dummy-strategy : list* -> list* 
+	where contracts(
+		contract-requires( is-list | list*, "list") 
+	)
+					
+		

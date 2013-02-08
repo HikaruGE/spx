@@ -1,0 +1,9 @@
+module analyze/check-project
+
+//TODO : perform static consistency checking of the workspace/project.
+
+//TODO : add rules to verify that langauge names are unique w.r.t packages.
+rules
+	analyze-global: () -> <id>
+	
+	

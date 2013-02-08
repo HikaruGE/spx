@@ -1,0 +1,127 @@
+module sdf2imp/project/create-spxlang-adapters
+
+imports 
+	sdf2imp/options
+	sdf2imp/util/-
+	
+rules
+	create-spxlang-adapters =
+		where(
+			file-name 		  := <spx-file-name>"-Adapters" ;
+			file-extension  := ".spx";
+			package-name := <BasePackage <+ default-package-name>
+		);	
+		if not(<file-exists> <conc-strings> ("src/", file-name  , file-extension)) then 
+		 	<output-text-file(|["src"] , $[[file-name][file-extension]])>
+$[package [package-name]   
+[<create-main-adapters>]
+[<create-builders-definition>]	
+[<create-reference-resolver-definition>]
+[<create-semantic-completion-definition>]
+]
+  	end
+   
+   
+   create-main-adapters = 
+    where( 
+	    	package-name  := <BasePackage <+ default-package-name>;
+	    	language-name := <get-sdf-main-module>
+			);	 
+		
+!${// This module acts as adapter between editor services and respective custom transformations. 
+	// It specifies Stratego transformation rules to be executed for different types of editor services. 
+	// See editor-services.generated.spx for a brief introduction on the available editor services.
+	module {language-name}-MainAdapters
+ 					
+		// Builders may carry out custom transformations on a file or selection.
+		builders
+			observer : editor-analyze         	                                                                          
+	  
+			builder  : "Show abstract syntax (for selection)" = generate-aterm (openeditor) (realtime) (meta) (source)
+			builder  : "Generate Java code (for selection)"   = generate-java (openeditor) (realtime)
+			builder  : "Pretty-printing (for selection)"      = prettyprint-entitylang(openeditor) (realtime)
+
+			// on save: generate-java
+						
+		// Content completion proposer and trigger is specified in the following section.
+		completions
+			completion proposer                  : editor-complete
+			completion trigger                   : ":"
+	
+		// Reference resolving and hover help
+		references
+			reference _ : editor-resolve
+			hover _     : editor-hover
+}
+		  	 	
+		create-builders-definition = 
+    where( 
+	    	package-name  := <BasePackage <+ default-package-name>;
+	    	language-name := <get-sdf-main-module>;
+	    	extensions := <require-option(EditorExtensions |"File extensions (-e)")>;
+      	extension  := <string-tokenize(|[',']); Hd> extensions
+			);	 
+!${module Builders  
+	 	
+rules 
+	// Transforms a selection to Java
+	generate-java:
+		(selected, position, ast, path, project-path) -> (filename, result)
+		with
+			filename := <guarantee-extension(|"java")> path;
+			result   := <to-java> selected
+	 		
+	// Prints the abstract syntax ATerm of a selection.
+	generate-aterm:
+		(selected, position, ast, path, project-path) -> (filename, result)
+		with
+			filename := <guarantee-extension(|"aterm")> path;
+			result   := selected // we just return the input term
+	
+	// Prints the abstract syntax ATerm of a selection.
+	prettyprint-entitylang:
+		(selected, position, ast, path, project-path) -> (filename, result)
+		with
+			filename := <guarantee-extension(|"pp.{extension}")> path;
+			result   := <pp-entitylang>selected // we just return the input term
+}
+
+		create-reference-resolver-definition = 
+		where( 
+	    	package-name  := <BasePackage <+ default-package-name>;
+	    	language-name := <get-sdf-main-module>
+			);	 
+!${module Reference-Resolver  
+	
+rules
+	// Resolves a reference when the user control-clicks or presses F3 in the editor.
+  editor-resolve:
+		(node, position, ast, path, project-path) -> elem
+		where 
+			<id> node => elem
+	    		 
+	// Returns "hover help" information for a particular node in the editor.
+	// For references, this rule is invoked using the resolved term.
+	editor-hover:
+		(target, position, ast, path, project-path) -> $[Hover help: [<write-to-string> target]]
+}	
+	 	
+	create-semantic-completion-definition = 
+		where( 
+	    	package-name  := <BasePackage <+ default-package-name>;
+	    	language-name := <get-sdf-main-module>
+			);	 
+!${module SemanticCompletion
+	
+imports {package-name}.generated
+
+rules
+		// Completes an identifier when the user presses control-space
+		// (the completion identifier in the AST provides additional context information)
+		editor-complete:
+			(node, position, ast, path, project-path) ->["String", "Int" | proposals]
+			where
+				if !node => Type(COMPLETION(prefix)) then
+					proposals := <all-keys-GetEntity>
+				end
+}

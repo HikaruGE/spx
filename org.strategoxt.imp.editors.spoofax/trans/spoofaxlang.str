@@ -1,0 +1,82 @@
+module spoofaxlang
+
+imports
+  libstratego-lib
+  libstratego-gpp
+  libstratego-aterm
+  libstratego-sglr
+  libstratego-sdf
+  libstrc
+imports
+  include/SpoofaxLang
+  lib/editor-common.generated
+imports
+  codegen/str/to-stratego
+imports
+  analyze/sdf/check
+  context/sdf/declare
+  context/str/declare
+imports
+	codegen/buildscripts
+	codegen/compile
+	codegen/esv/to-esv
+	codegen/sdf/to-sdf
+	codegen/sdf/to-name-analysis
+ 	codegen/sdf/to-signature
+  	codegen/main
+   	codegen/template/-
+imports
+	normalize/main
+	normalize/signatures
+	context/-
+imports
+	utils/cache
+	common
+	config
+imports
+	 editor/main
+	 codegen/main
+/*
+	unit-tests/templatelang/-
+	unit-tests/utils/-
+	unit-tests/-
+*/
+
+rules
+
+  editor-complete:
+    (node, position, ast, path, project-path) -> proposals
+    where
+      proposals := <propose-completion <+ ![]> node
+
+  editor-resolve:
+    (sort(x), position, ast, path, project-path) -> target
+    where
+      target := <resolve-atleast-one-sdf-declaration> x
+
+ /*  TODO : Fix Editor Resolve
+  editor-resolve:
+    (unparameterized(x), position, ast, path, project-path) -> target
+    where
+      target := <parse-spoofaxlang-file> <resolve-import> x
+ */
+
+rules
+
+  generate-aterm:
+    (selected, position, ast, path, project-path) -> (filename, result)
+    with
+      filename := <guarantee-extension(|"aterm")> path;
+      result   := selected // we just return the input term
+
+strategies
+
+  //testing only
+  main =
+    editor-analyze;
+    generate-aterm;
+    test-templatelang-to-esv;
+    test-templatelang-to-sdf;
+    test-templatelang-to-str;
+    build-spoofaxlang-jvm;
+    editor-clean-and-compile-spx-all

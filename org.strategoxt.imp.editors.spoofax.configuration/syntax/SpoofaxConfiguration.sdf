@@ -1,0 +1,83 @@
+%% Grammar for the SpoofaxConfiguration language
+%% By default, based on an example "entities" syntax
+module SpoofaxConfiguration
+
+imports Common
+
+exports
+
+  	context-free start-symbols
+    	Start
+
+  	context-free syntax
+  
+	    "configuration"  ConfigSection*         -> Start {cons("Configuration")}
+	    
+			"src" ":"  IncludeDefinition+    				-> ConfigSection{cons("Includes")}
+	    RelativePath IncludeOption 							-> IncludeDefinition {cons("Source")}
+	    
+	    "projectreferences" ":" ProjectName* 	-> ConfigSection {cons("SpxProjects")}
+	    
+	    "log" ":" {DebugOption ","}* 	-> ConfigSection {cons("Debug")}
+	    
+	    "templatelang" ":" TemplateLangOption 	-> ConfigSection {cons("TemplateLang")}
+	    
+	    "enabled"																	-> TemplateLangOption{cons("TemplatelangEnabled")}
+  		"disabled"																-> TemplateLangOption{cons("TemplatelangDisabled")}	
+	    
+	    
+	    "compiler" -> DebugOption{cons("DebugCompiler")}
+	    "declaration" -> DebugOption{cons("DebugDeclaration")}
+	    "analysis" -> DebugOption{cons("DebugAnalysis")}
+	    "symboltable" -> DebugOption{cons("DebugSymbolTable")}
+	    "all" -> DebugOption{cons("DebugAll")}
+	    "none" -> DebugOption{cons("DebugNone")}
+	    
+	    "codegen:" CodeGenDefinition*    			 	-> ConfigSection{cons("CodeGeneration")}
+	    "todir" ":" RelativePath				  			-> CodeGenDefinition {cons("OutputDirectory")}
+	    "stroutputmode" ":" STROutputMode				-> CodeGenDefinition {cons("STROutputMode")}
+
+	    "ctree"																	-> STROutputMode{cons("CTree")}
+	    "jar"																		-> STROutputMode{cons("Jar")}	
+	    
+	    "|" "**"	 															->   IncludeOption{cons("All")}
+	    "|" "."												  				->   IncludeOption{cons("ThisOnly")}
+
+	lexical syntax 
+		[a-zA-Z][a-zA-Z0-9\_\-\.]* 					-> ProjectName
+		%%STRING -> RelativePath
+		PathChar                                   	-> RelativePath
+		PathChar (PathChar | Slash)* PathChar       -> RelativePath
+		[A-Za-z0-9\_\-\.\+]                         -> PathChar
+		"/"                                         -> Slash
+    Slash RelativePath				                  -> AbsolutePath
+		[a-zA-Z]":" Slash RelativePath              -> AbsolutePath
+		".." Slash RelativePath                     -> AbsolutePath{prefer}
+		
+	lexical syntax     
+    
+    "SpxProjects"        			  -> Reserved
+    "Sources"          					-> Reserved
+    "SpxSources"        		    -> Reserved
+    "Configuration"     		   	-> Reserved
+    "Includes"        					-> Reserved		
+    "AllDirectories"   					-> Reserved		
+    "CodeGeneration"            -> Reserved   
+    "RootDirectory" 				  	-> Reserved		
+   
+    Reserved -> RelativePath{reject}
+	    
+	    
+	lexical restrictions
+	  	Slash        -/-  [\/]
+	  	RelativePath -/-  [A-Za-z0-9\_\-\/\.\+]
+		ProjectName  -/- [A-Za-z0-9\_\-\.]
+		
+		"SpxProjects" 
+		"Sources" 
+		"SpxSources"
+		"Configuration" 
+    	"CodeGeneration" 
+		"Includes"
+		"AllDirectories"
+		"RootDirectory" -/- [A-Za-z0-9\_]

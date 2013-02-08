@@ -1,0 +1,234 @@
+module context/resolve-symbols
+
+imports
+	include/SpoofaxLang
+	lib/editor-common.generated
+imports
+	context/signatures
+	context/store-imports
+	context/scope-tree
+	context/resolve-declarations
+	normalize/signatures
+	codegen/compile
+imports
+	common
+	config
+	utils/annotations
+	utils/path
+	utils/debug
+
+rules
+	get_internal_module_qtname =
+		?package-qt-name;
+		where(!package-qt-name => Package(QName(package-name-part*)));
+		!Module(QName([package-name-part*| [<internal_module_name_string>]]))
+
+rules
+	// Add scopes for the symbol
+	to-global-symbol =
+		!(Globals(), <id>)
+	<+
+		dbg-symboltable(! $[Type| FAIL | Failed to convert it to Global symbol. <symbol> [<print-as-string>]] | "to-global-symbol" , "Warning") 
+		;fail
+
+	to-intenal-scoped-symbol =
+		!(<GetEnclosingPackageName> , <GetEnclosingPackageName;get_internal_module_qtname> , <id>)
+		<+
+		to-global-symbol //if enclosing scope is not declared, then considering the namespace of the Symbol to be global
+		<+
+		dbg-symboltable(! $[Type| Failed to convert it to scoped symbol.
+										<enclosing package> [<print-as-string><GetEnclosingPackageName>] <enclosing module>[<print-as-string><GetEnclosingModuleName>] <symbol> [<print-as-string>]] | "to-intenal-scoped-symbol" , "Warning")
+		;fail
+
+
+	to-scoped-symbol =
+		!(<GetEnclosingPackageName> , <GetEnclosingModuleName> , <id>)
+	<+
+		to-global-symbol //if enclosing scope is not declared, then considering the namespace of the Symbol to be global
+	<+
+		dbg-symboltable(! $[Type| Failed to convert it to scoped symbol.
+										<enclosing package> [<print-as-string><GetEnclosingPackageName>] <enclosing module>[<print-as-string><GetEnclosingModuleName>] <symbol> [<print-as-string>]] | "to-scoped-symbol" , "Warning")
+		;fail
+
+  to-package-scoped-symbol =
+    !(<GetEnclosingPackageName> , <id>)
+  <+
+    to-global-symbol //if enclosing scope is not declared, then considering the namespace of the Symbol to be global
+  <+
+    dbg-symboltable(!  $[Type| FAIL | Failed to convert it to scoped symbol.
+                    <enclosing package> [<print-as-string><GetEnclosingPackageName>] <symbol> [<print-as-string>]] | "to-package-scoped-symbol" , "Warning") 
+    ;fail
+
+	// Strip Scope and retuns the symbol
+	remove-scope-from-symbol = ?(Package(_), Module(_), <id>) + ?(Globals(), <id>) <+ id
+  
+  get-scope-from-symbol = ?(_,<id>,_) + ?(<id> ,_)
+  
+  
+  
+rules
+	//resolving symbol in global scope and returing list of result
+	resolve-symbol-global-declarations(key-resolver, value-resolver)=
+		?symbol; // NOTE : symbol does not contain any scope information
+		where(not(?(_,_) <+ ?(_,_,_)));
+		// Looking for the symbol in the Globals() Scope
+		dbg-symboltable(! $[SymbolResolver| Resoving Symbol in Global Scope.] | "resolve-symbol-global-declarations" , <debug-level-INFO>);
+		<resolve-symbol-declarations-internal(key-resolver, value-resolver,?(Globals() , symbol))>symbol;
+		dbg-symboltable(! $[SymbolResolver| Resoving Symbol in Global Scope. Result: [<print-as-string>]] |  "resolve-symbol-global-declarations" , <debug-level-INFO>);
+		is-not-empty-list
+	<+
+		dbg-symboltable(! $[SymbolTable| Failed to resolve following symbol [<print-as-string>] in Global Scope] |  "resolve-symbol-global-declarations" , "Warning");
+		fail
+
+	//resolving symbol in global scope only and ensuring result is unique
+	resolve-symbol-unique-declaration(key-resolver, value-resolver)=
+		where(?( Globals(), symbol ))
+		;<resolve-symbol-global-declarations(key-resolver, value-resolver)> symbol
+		;ensure-is-unique // verify as resolved unique declaration
+	<+
+		dbg-symboltable(! $[SymbolTable| FAIL| Failed to retrieve uniqe declaration in global scope."] | "resolve-symbol-unique-declaration" , "Warning")
+		; fail
+
+
+	// Resolving unique declaration of symbol in the scope (current-package, current-module)
+	// Symbol is resolved using the specified strategy parameter, i.e. using key-resolved and value-resolved
+	resolve-symbol-unique-declaration(key-resolver, value-resolver)=
+		?( current-package , current-module, symbol )
+		;<resolve-symbol-unique-declaration(
+		 		key-resolver, 
+		 		value-resolver
+	 		| current-package , 
+	 		  current-module)>symbol
+
+
+	// resolving unique declaration - generic implementation
+	resolve-symbol-unique-declaration(key-resolver, value-resolver|current-package , current-module)=
+		resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)
+		;ensure-is-unique // verify as resolved unique declaration
+	<+
+		dbg-symboltable(! $[SymbolTable| Failed to retrieve unique declaration.] | "resolve-symbol-unique-declaration" , "Warning") 
+		; fail
+
+	// resolving declaration in global scope
+	resolve-symbol-declarations(key-resolver, value-resolver) =
+		?( Globals(), symbol )
+		;<resolve-symbol-global-declarations(key-resolver, value-resolver)> symbol
+
+	// resolving declartion in the scope mentioned
+	resolve-symbol-declarations(key-resolver, value-resolver) =
+		?( current-package , current-module,symbol )
+		;<resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)> symbol
+
+rules
+	// resolving declarations incrementally
+	resolve-symbol-declarations(key-resolver, value-resolver|current-package , current-module)=
+		?symbol; // NOTE : symbol does not contain any scope information
+		(
+				// Looking for the symbol in the current Module Scope
+				<value-resolver>(current-package , current-module, symbol);
+				is-not-empty-list
+			<+
+				// Looking for the symbol in the parent or enclosing scope => Package Scope
+				<resolve-symbol-declarations-internal(
+					key-resolver,
+					value-resolver,
+					?(current-package , _ , symbol) + ?(Globals() , symbol) // NOTE : Currently we combined Globals() + Enclosing package search in ONE lookup.
+				)>symbol;
+			 	is-not-empty-list
+			<+
+				where(
+					// current package and module's untyped QName to create the scope
+					!current-package => Package(untyped-package-qname);
+					!current-module  => Module(untyped-module-qname)
+
+					// getting all the packages used by current module  untyped-module-qname
+                    // design decision: 
+                    // hence, it is required to specify import stmt in every module definition. 
+                    // plus : analysis faster since dont need to lookup in all the imported scopes by   untyped-package-qname     
+                    // minus : need to specify import in evey module 
+                    //-----------------------------------------------------
+					;<get-all-usings>( untyped-package-qname , untyped-module-qname) => imported-typedqname*
+			
+				);
+				<resolve-imported-symbol-declarations(key-resolver  , value-resolver)>(symbol, imported-typedqname*);
+				is-not-empty-list
+			<+
+				dbg-symboltable(! $[SymbolTable| FAIL| Failed to resolve following symbol [<print-as-string>] in namespace [<print-as-string>(current-package , current-module)]] |  "resolve-symbol-declarations" , <debug-level-INFO>);
+				fail
+		)
+
+rules
+	//TODO : refactor
+
+	resolve-imported-symbol-declarations'(key-resolver,value-resolver , eq): scopes* -> resolved*
+	where
+		if !scopes* => [] then
+			fail
+		else
+			!scopes* => [currentscope|rest*]
+		end
+	where
+			if !currentscope => Package(_) then
+				internal_module_qname := <get_internal_module_qtname>currentscope;
+				resolved* := <is-not-empty-list>
+												<resolve-symbol-declarations-internal(
+														key-resolver,
+														value-resolver,
+														(
+															//Filter scopes to search in the imported scopes.
+															//In addition, skipping package's intenral scope.
+															?(currentscope, _ , _) ; not(?(currentscope, internal_module_qname , _));eq
+														)
+												)>
+			else
+				if !currentscope => Module(_) then
+					resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(_ , currentscope , symbol))>symbol
+				end
+			end;
+			dbg-symboltable(! $[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<print-as-string>resolved*]. Found in :[<print-as-string>currentscope] ] | "resolve-imported-symbol-declarations" ,"Warning")
+		<+
+			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> rest*
+
+	// Resolving Symbol in the imported scopes
+	resolve-imported-symbol-declarations(key-resolver,value-resolver):
+		(symbol, scopes*) -> resolved*
+		where
+			if !scopes* => [] then
+				dbg-symboltable(! $[Failed to resolve following symbol: [<print-as-string>symbol] as there is no scope specified. ] | "resolve-imported-symbol-declarations" , <debug-level-WARNING>);
+				fail
+			else
+				!scopes* => [currentscope|rest*]
+			end
+		where
+			if !currentscope => Package(_) then
+				internal_module_qname := <get_internal_module_qtname>currentscope; //getting internal module name of the current package
+				resolved* := <is-not-empty-list>
+												<resolve-symbol-declarations-internal(
+														key-resolver,
+														value-resolver,
+														(
+															//Filter scopes to search in the imported scopes.
+															//In addition, skipping package's intenral scope.
+															?(currentscope, _ , symbol) ; not(?(currentscope, internal_module_qname , symbol))
+														)
+												)>symbol
+			else
+				if !currentscope => Module(_) then
+					resolved* := <is-not-empty-list><resolve-symbol-declarations-internal(key-resolver, value-resolver,?(_ , currentscope , symbol))>symbol
+				end
+			end;
+			dbg-symboltable(!$[SymbolResolver| Resoving Symbol in Imported Scopes. Result: [<print-as-string>resolved*]. Found in :[<print-as-string>currentscope] ] | "resolve-imported-symbol-declarations" , <debug-level-INFO>)
+		<+
+			resolved* := <resolve-imported-symbol-declarations(key-resolver  , value-resolver)> ( symbol, rest*)
+
+rules
+
+	// Internal strategy to resolve symbol using a matcher
+	resolve-symbol-declarations-internal(key-resolver,value-resolver,namespace-filter) =
+		key-resolver
+		; filter(namespace-filter)
+		; mapconcat(value-resolver)
+
+	<+
+		dbg-symboltable(! $[SymbolTable| FAIL | resolve-symbol-declarations | Failed to resolve following symbol [<print-as-string>]] | "resolve-symbol-declarations-internal" , <debug-level-WARNING>) 
+		; fail

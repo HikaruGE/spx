@@ -1,0 +1,83 @@
+module context/signatures
+
+// signature visibility 
+
+// Importing depth > 1 => visibility is internal
+// IDEA : how to implement this depth
+// build a tree and during resolving search in only one level up 
+ 
+signature constructors
+	Public	:	 Visibility
+	Private	:	 Visibility
+	Internal:  Visibility	
+
+
+//Signature scopes	
+signature constructors
+	Modules										: ScopedSymbol
+	Packages			 						: ScopedSymbol
+	Globals										: ScopedSymbol
+	
+	ScopeSymbol								: Symbol 
+	
+	//consider declaring the following 
+	STRSection								: Symbol
+	ESVSection								: Symbol
+	SDFSection								: Symbol
+	
+	Unresolved								: Symbol
+	Resolved								: Symbol
+
+
+signature constructors 
+
+    OperationSignature : Type 
+    OperationDeclaration : Type 
+    
+ 
+signature constructors
+	DeclaredEnclosedModuleQName : Type
+ 	   
+signature constructors 
+	// symbol types
+		
+	ModuleType				: Type
+	PackageType				: Type
+	SDFType				  	: Type
+	 
+	
+	
+	STRDef                    : Type
+	STRCookie                 : Type
+	STRSignature              : Type
+	SortDeclaration           : Type
+
+	SDFDeclaration            : Type  
+	NamespaceSortDeclaration  : Type
+	SDFUsage 									:	Type
+	//templatelang 
+	TemplateOptions   : Type
+	CanNotBeBlankFlag : Type   
+	
+	BooleanType : Type
+	True : BooleanType
+	False : BooleanType
+	
+	Flag : Type  
+
+signature constructors 
+
+	CompileFlag : Flag 
+	
+	CurrentlyCompilingFlag : CompileFlag
+	
+	CompiledModuleFlag : CompileFlag 
+	
+	AnalyzedPackageFlag : CompileFlag
+	
+	AnalyzedModuleFlag : CompileFlag
+	
+	ReinitCompileSessionFlage : CompileFlag
+	
+	ResolvedExternalArtifactFlag : Namespace ->  CompileFlag 		 
+		
