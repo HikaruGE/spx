@@ -1,1 +1,0 @@
-Module("entity-lang",[Imports([Import("entity/lang/common"),Import("entity/lang/common-signature"),Import("entity/lang/entity-builders"),Import("entity/lang/entity-builders-signature"),Import("entity/lang/module-main"),Import("entity/lang/module-main-signature")])])
