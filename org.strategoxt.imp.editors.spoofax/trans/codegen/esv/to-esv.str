@@ -1,7 +1,7 @@
 module codegen/esv/to-esv
 imports
 	libstratego-lib
-	libstrc
+	include/libtemplatelang
 imports
   common
   config
@@ -15,7 +15,6 @@ imports
 imports
 	codegen/main
 	codegen/generate
-	codegen/template/to-esv
 	context/-
 imports
 	lib/editor-common.generated
@@ -61,9 +60,9 @@ rules
 		module-qname'* -> <id>
 		where
 			with-spxverify(	
-		 		project-path             := <ProjectPath>
-		 		; Package(package-qname)   := <GetEnclosingPackageName>
-		 		, !" Failed to get current-project-path or enclosing package name @generate-esv-main"
+		 		project-path             := <ProjectPath>;
+		 		Package(package-qname)   := <GetEnclosingPackageName>,
+		 		!" Failed to get current-project-path or enclosing package name @generate-esv-main"
 		 	)
  			; dbg-compiler(!$[CodeGen | ESV | Generate-esv-main  : [<print-as-string>package-qname]])
 			; with-spxverify(
@@ -82,8 +81,10 @@ rules
  				<inject-package-ctree><get-main-file-name><GetEnclosingPackageName>,   // adding ctree import by default
 	 			<inject-table-definition><get-main-file-name><GetEnclosingPackageName>,   // default table definition
 	 			esv-sections*
-	 	 	)
-	 	 	; get-templatelang-specific-esv-sections(|<GetEnclosingPackageName>,module-qname'*)// Performing templatelang related transformations   
+	 	 	);
+	 	 	if templatelang-enabled then  
+	 	 		get-templatelang-specific-esv-sections(|<GetEnclosingPackageName>,module-qname'*)// Performing templatelang related transformations   
+ 			end
  			; ensure-lang-id-added(|<GetEnclosingPackageName>)
  			; esv-aterm := Module(package-esv-main-name, Import([]), <id>) // Final esv-aterm
  			; <save-artifact(WriteToBinaryFile | package-qname , root-directory , <get-main-output-path(|$[[<get-main-file-name><GetEnclosingPackageName>].main], "esv")>(root-directory , package-qname))>esv-aterm
@@ -98,11 +99,11 @@ rules
  				//modules to consider for creating packed.esv
 				<get-all-imported-modules>package-id  => imported-modules*;
 				<conc;make-set>( module-qname'* , imported-modules*) => module-qname*; 
- 				<conc>(<map(get-original-module-definition; template-module-to-esv)> module-qname* ,  sections)
+        <conc>(<map(get-original-module-definition; ?Module(_, _, <templatelang-desugar-top; template-sections-to-esv>))> module-qname* ,  sections)
  			else
  				!sections
- 			end	  
-		 	
+ 			end
+
 	ensure-lang-id-added(|package-id) =
 		?sections;
 		// Adding language Id if not already added with language description

@@ -4,11 +4,10 @@ imports
   lib/editor-common.generated
  	common
  	utils/debug
- 	utils/attributes
   context/sdf/-
   context/-
   include/SpoofaxLang
-  utils/attributes
+  include/libtemplatelang
 rules
 	verify-sdf-symbol-declaration-exists =
 		<verify-symbol-exists>( <id>, SDFDeclaration())
@@ -244,13 +243,19 @@ rules // TemplateLang - Local checks
     where
       <gti> (<filter(fetch-cons); length> attr*, 1)
 
-  context-free-templates-warning:
-    Template([head | _]) ->
-      (head, "Insert a linebreak between the start of a multi line template and its first element")
-    where
-    	<eq> (<origin-line>, <origin-line> head)
+  // FIXME: disabled because of StringIndexOutOfBoundsExceptions from
+  // NullTokenizer when running Ant builds of SpoofaxLang projects,
+  // originating from calls to origin-text...
 
-  context-free-templates-warning:
-    Layout(t) -> (t, "Do not use tab characters in templates")
-    where
-    	origin-text; explode-string; one('\t')
+  context-free-templates-warning = fail
+
+  // context-free-templates-warning:
+  //   Template([head | _]) ->
+  //     (head, "Insert a linebreak between the start of a multi line template and its first element")
+  //   where
+  //   	<eq> (<origin-line>, <origin-line> head)
+
+  // context-free-templates-warning:
+  //   Layout(t) -> (t, "Do not use tab characters in templates")
+  //   where
+  //   	origin-text; explode-string; one('\t')

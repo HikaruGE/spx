@@ -5,8 +5,8 @@ imports
   context/sdf/declare-signature
   context/sdf/declare
   include/SpoofaxLang
+  include/libtemplatelang
   analyze/sdf/check
-  utils/attributes
   common
 
 rules
@@ -109,11 +109,13 @@ rules
     )
     where
       cons := <getfirst(fetch-cons-name)> a*
-    	; with-spxverify(
-	      p'*            := <filter(is-non-terminal)> p*;
-	      vars           := <map(non-terminal-to-new-var)> p'*;
-	      annotated-vars := <zip(add-namespace-anno-1 <+ add-namespace-anno-2)> (p'*, vars)
-      )
+    with
+        p'*            := <filter(is-non-terminal)> p*;
+        vars           := <map(non-terminal-to-new-var)> p'*;
+        annotated-vars := <zip(add-namespace-anno-1; try(?at-least-one)
+                               <+ add-namespace-anno-2)> (p'*, vars)
+    where
+      !at-least-one
 
 rules
 

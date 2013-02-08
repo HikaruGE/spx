@@ -1,12 +1,12 @@
 module context/resolve-declarations
 
 imports
-	include/SpoofaxLang 
+	include/SpoofaxLang
+	include/libtemplatelang 
 	lib/editor-common.generated
 imports 
 	context/-
-	context/str/declare
-	context/template/declare
+	context/str/-
 imports  
   	normalize/signatures
 	codegen/compile
@@ -58,12 +58,14 @@ rules
 
 rules
   get-declared-packages-qname = 	
-  		dbg-symboltable(! $[Index | get-all-declared-packages-qname [<print-as-string>]] | "get-declared-packages-qname" , <debug-level-INFO>);  
+  		verify( String | <id> "String expected @get-declared-packages-qname ");
+  		dbg-symboltable(! $[Index | get-declared-packages-qname by file [<print-as-string>]] | "get-declared-packages-qname" , <debug-level-INFO>);  
 			project-package-declarations(package-typed-qname)   
   
   get-all-declared-packages-qname =   
   		dbg-symboltable(! $[Index | get-all-declared-packages-qname [<print-as-string>]] | "get-all-declared-packages-qname" , <debug-level-INFO>);
   		project-all-package-declarations(package-typed-qname)
+  		
 
 rules 
 	get-package-declaration = where(?Package(QName(_))) ; get-indexed-package-declaration
@@ -80,7 +82,7 @@ rules
   * @param None()
   * @returns List of Packages' Typed-QName , i.e. , Package(QName(_))
   */              
-  get-package-list = get-all-declared-packages-qname
+  get-package-list = get-all-declared-packages-qname 
   
 rules 
 
@@ -98,6 +100,7 @@ rules
   * @type module-qname-> Module(_,SPXModuleName(_),_)
   */              
   get-desugared-module-ast  = (get-cached-annotated-module-ast <+ get-indexed-module-definition(module-annotated-ast)); verify(?Module(_,SPXModuleName(_),_) | <id> , "Module(_,SPXModuleName(_),_)  @get-desugared-module-ast" )
+  
   /**
   * Returns the original module ast given module qualified name. For the provided   
   * module qualified name as the current term, it tires to resolve in the local cache. If not found 
@@ -106,7 +109,10 @@ rules
   * @param None()
   * @type module-qname-> Module(_,SPXModuleName(_),_)
   */              
+  
   get-module-ast  = (get-cached-module-ast <+ get-indexed-module-definition(module-original-ast)); verify(?Module(_,SPXModuleName(_),_) | <id> , "Module(_,SPXModuleName(_),_) @get-module-ast")
+  
+  
   // TODO : rename it to get-initial-module-definition 
   /**
   * Returns the original module definition for the given module qualified name.  

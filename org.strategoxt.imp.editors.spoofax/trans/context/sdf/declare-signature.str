@@ -2,10 +2,10 @@ module context/sdf/declare-signature
 
 imports
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	common
 	libstrc
-	utils/attributes
 	utils/debug
 	utils/contract
 	
@@ -22,6 +22,10 @@ imports
 // TODO : write a pretty printer to convert Get-Operation-Declaration to Signatures' Aterm
 rules 
 	  
+  get-declared-signature = 
+  	? Var(x)
+  	; <verify-declared-construction-by-name> x 
+  
   is-declared-signature(|actual-arity)=
     one(
         ( ?<id>
@@ -29,8 +33,21 @@ rules
         ; verify-declared-constructor(|actual-arity)
     )
 
-  verify-declared-constructor(| arity) = 
-  	?opName
+	verify-declared-construction-by-name = 
+		? opName;
+		where (
+			candidate-op-signatures := <getOperationSignatures>opName
+		 	; rec x( 
+		 	  	[?(opName ,arity) | id] 
+				<+
+	  		   [id | x]	
+	  		 )
+		);
+		!(opName ,arity) 
+		  
+		  	
+  verify-declared-constructor(|arity) = 
+  	? opName
   	;	candidate-op-signatures := <getOperationSignatures>opName
     ;	dbg-analysis(! $[operation name : [<print-as-string>opName] . Associated Signatures Found :  [<print-as-string> candidate-op-signatures]] | "verify-declared-constructor" , <debug-level-WARNING>)
     ;	<assert-eq-opname-arity(|opName, arity)>candidate-op-signatures

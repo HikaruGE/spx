@@ -1,6 +1,7 @@
 module context/symboltable
 imports 
 	include/SpoofaxLang
+	include/libtemplatelang
 imports 
   common
   utils/contract
@@ -52,11 +53,15 @@ signature
 		
 		UniqueSymbol      : SymbolSort
 		
+	constructors
+		LookupLocalScope : LookupType // only looks up in current scope 
+	 	LookupAllScope   : LookupType // only looks up in All Scopes 
+		
 rules 
     // constant terms 
-    ALL = !"*"    
+    ALL_AS_SET = !"*"    
     
-    ALL_WITH_DUPLICATES = !"**"   
+    ALL_AS_SEQUENCE = !"**"   
     
     ONLY_ONE   = !"."
 		
@@ -98,17 +103,19 @@ rules
     
 	index-invalidate-global-cache     = prim("SPX_exec_index_manage_command" , <get-project-path> , "INVALIDATE_GLOBAL_CACHE")
 	
+	// get everything since last on-complete-code-gen
 	index-on-init-code-generation     = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_CODEGEN")
 	
 	index-on-complete-code-generation = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_COMPLETE_CODEGEN")
 	
+	// get everything since last updating-complete
 	on-init-index-updating = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INIT_INDEX_UPDATING")
 	
 	on-index-updating-completed = prim("SPX_exec_index_manage_command" , <get-project-path> , "ON_INDEX_UPDATING_COMPLETED")
-	
 	  
 	index-lang-desc =  prim( "SPX_index_language_descriptor" , <get-project-path> , <id>)
-
+	
+	spx-origin-equal(|t) = prim("SPX_symtab_verify_symbols_have_equal_origin", <id>, t) 
 	
   index-language-descriptor:
   	l@LanguageDescriptor(Module(QName(_)) ,_ ,_,_,_) -> <id>
@@ -130,28 +137,45 @@ rules
     
   project-from-symboldef-to-symbol: SymbolDef(_,_ ,_, symbol,_) -> symbol
   
-  resolve-all-symbol-definitions-with-duplicates: (scoped-symbol-key , typeCtor) -> <resolve-all-symbol-definitions(project-from-symboldef-to-symbol |<ALL_WITH_DUPLICATES>) >(scoped-symbol-key , typeCtor)
+  resolve-all-of-current-scope-by-type:  
+  	typeCtor 
+	  -> <resolve-all-symbol-definitions( 
+					project-from-symboldef-to-symbol 
+				| ( LookupLocalScope() , <ALL_AS_SET>)
+				)
+			 >(<ALL_AS_SET> ,  typeCtor)
+  
+  resolve-all-symbol-definitions-by-type:  
+  	typeCtor 
+  	-> <resolve-all-symbol-definitions> (<ALL_AS_SET> ,  typeCtor)
      
-  resolve-all-symbol-definitions: (scoped-symbol-key , typeCtor) -> <resolve-all-symbol-definitions(project-from-symboldef-to-symbol |<ALL>) >(scoped-symbol-key , typeCtor) 
+  override resolve-all-symbol-definitions: 
+  	(scoped-symbol-key , typeCtor) 
+  	-> <resolve-all-symbol-definitions( project-from-symboldef-to-symbol | (LookupAllScope() ,<ALL_AS_SET>) ) >(scoped-symbol-key , typeCtor) 
   
-  resolve-all-symbol-definitions-by-type:  typeCtor -> <resolve-all-symbol-definitions>( <ALL> ,  typeCtor)  
+  resolve-all-symbol-definitions-with-duplicates: 
+  	(scoped-symbol-key , typeCtor) 
+  	-> <resolve-all-symbol-definitions(project-from-symboldef-to-symbol | ( LookupAllScope() ,<ALL_AS_SEQUENCE>)) >(scoped-symbol-key , typeCtor)
   
-  resolve-symbol-definition:(scoped-symbol-key , typeCtor) -> <resolve-symbol-definition(project-from-symboldef-to-symbol)>(scoped-symbol-key , typeCtor)
-  
-  
+  override resolve-symbol-definition:
+  	(scoped-symbol-key , typeCtor) 
+  	-> <resolve-symbol-definition(project-from-symboldef-to-symbol)>(scoped-symbol-key , typeCtor)
+
+
   // Resolving all symbol definition with the specified search criteria
   // Following Strategy try to find all the symbol definitions that 
   // have the same properties as the specified search criteria. 
   // It also resolves symbol from the imported scopes/namespace. Please
   // note that: during symbol resolve in the imported scopes, Internal 
   // scopes are avoided due to visibility rules
-  resolve-all-symbol-definitions(post-processor | filter-type): 
+  resolve-all-symbol-definitions(post-processor | lookup-config): 
     (symbol-key , typeCtor) -> result 
     where
       dbg-symboltable(!$[with following search criteria: [<print-as-string>(symbol-key , typeCtor) ]]|"resolve-all-symbol-definitions(s)" ,<debug-level-INFO>)
     where
       with-spxverify(
-        result' := <resolve-symbol-definitions-internal>  ( symbol-key , typeCtor , filter-type)
+        //lookup-config  := ( LookupAllScope() , filter-type);
+        result' := <resolve-symbol-definitions-internal>  ( symbol-key , typeCtor , lookup-config)
         , !"Error occured at symboltable.resolve-all-symbol-definitions(post-processor)"
       )
     where
@@ -162,6 +186,7 @@ rules
     where
       dbg-symboltable(!$[Found following symbols: [<print-as-string>result]]|"resolve-all-symbol-definitions(s)" , <debug-level-INFO>)
 
+
   // Resolving symbol definition with the specified search criteria
   // Following Strategy try to find only one symbol definition 
   // if multiple symbols exists with the specified criteria
@@ -171,7 +196,8 @@ rules
       dbg-symboltable(!$[with following search criteria: [<print-as-string>(symbol-key , typeCtor) ]]|"resolve-symbol-definition" , <debug-level-INFO>)
     where
       with-spxverify(
-        result' := <resolve-symbol-definitions-internal>  ( symbol-key , typeCtor , <ONLY_ONE>)
+      	lookup-config  := ( LookupAllScope() , <ONLY_ONE>);
+        result' := <resolve-symbol-definitions-internal>  ( symbol-key , typeCtor , lookup-config  )
       )
     where
     	<map(post-processor) 
@@ -209,7 +235,7 @@ rules
   
   
   resolve-symbol-definitions-internal:
-    (symbol-key , typeCtor, search-mode) -> resolved-symbols
+    (symbol-key , typeCtor, lookup-config ) -> resolved-symbols
     where
       with-spxverify(
         if CurrentScope then 
@@ -228,9 +254,9 @@ rules
         , !"Failed to get the symbol-key."
       )
     where 
-      dbg-symboltable(!$[ with : [<print-as-string>(namespace, key,typeCtor,search-mode)]] |"resolve-symbol-definitions-internal" ,<debug-level-INFO>)
+      dbg-symboltable(!$[ with : [<print-as-string>(namespace, key,typeCtor, lookup-config)]] |"resolve-symbol-definitions-internal" ,<debug-level-INFO>)
     where
-      !(namespace, key,typeCtor,search-mode)
+      !(namespace, key, typeCtor, lookup-config)
       ; with-spxverify(
         	prim( "SPX_symtab_resolve_symbols" , <get-project-path> , <id>)
       	; ?resolved-symbols
@@ -271,7 +297,7 @@ rules
   // TODO : refactor index-symbol-definition and index-unique-symbol-definition      
   // It has almost all the common logic . Only diff is the provided argument : 
   // UniqueSymbol() or OverridableSymbol().      
-  index-symbol-definition:
+  override index-symbol-definition:
   	(symbol-key , symbol-type , symbol) -> <id>
     where
         dbg-symboltable(!$[with: [<print-as-string>(symbol-key , symbol-type , symbol)].]|"index-symbol-definition" , "info")
@@ -298,7 +324,7 @@ rules
       	 	, !"Index Symbol failed."
         )          
 		
-		index-unique-symbol-definition:
+	index-unique-symbol-definition:
 			(symbol-key , symbol-type , symbol) -> <id>
     	where
         dbg-symboltable(!$[with: [<print-as-string>(symbol-key , symbol-type , symbol)].]|"index-unique-symbol-definition" , "info")
@@ -335,7 +361,7 @@ rules
         dbg-symboltable(!$[Entering new-internal-scope [<print-as-string> x].]|"activate-internal-scope(s)" , "info")
     where
       with-spxverify(
-         {| CurrentScope :
+         {| CurrentScope,GetScopeType:
               with-spxverify(
                 if not(GetEnclosingPackageName) then
                   fail 
@@ -343,8 +369,8 @@ rules
               , !$[ Could not find any enclosing package to create an internal scope]  
               )
               ; scope_id :=  <get_internal_module_qtname><GetEnclosingPackageName> 
-              ; rules (CurrentScope: _ -> scope_id) 
-              
+              ; rules (CurrentScope : _ -> scope_id)
+              ; rules (GetScopeType := InternalScope()) 
               ; <s>x => y // performing transformation
         |}
         , !$[Failed to create an internal scope.]  
@@ -356,14 +382,17 @@ rules
   activate-global-scope(s):
     x -> y 
     where 
-    	dbg-symboltable(!$[enter global-scope with [<print-as-string>x].]|"activate-global-scope(s)" , "info")
+  		dbg-symboltable(!$[enter global-scope with [<print-as-string>x].]|"activate-global-scope(s)" , "info")
     where
     	with-spxverify(
-        activate-scope(s|Globals()) => y 
-        , !"Failed to activate global scope"
-      )
+    		{| GetScopeType:
+    			    rules (GetScopeType := GlobalScope()); 
+  						activate-scope(s | Globals()) => y 
+       	|}
+     		, !"Failed to activate global scope"
+     	)		
     where 
-        dbg-symboltable(!$[exit global-scope [<print-as-string> x].]|"activate-global-scope(s)" , "info") 
+    	dbg-symboltable(!$[exit global-scope [<print-as-string> x].]|"activate-global-scope(s)" , "info") 
         
   	
    activate-scope(s|scope):
@@ -502,7 +531,7 @@ rules
 	  ; with-spxverify(rules(SPXModuleAST:(OriginalModuleAST(),mid) -> ast))
 	
 	cache-annotated-module-ast	= 
-		verify( ?(mQname@Module(QName(_)), annotatedAst)| <id> , "(Module(QName(_)), _)@cache-annotated-module-ast"); 
+		verify( ?(mQname@Module(QName(_)), annotatedAst)| <id> , "(Module(QName(_)), _)@cache-annotated-module-ast");
 		with-spxverify(
 			rules(SPXModuleAST:(AnnotatedModuleAST(),mQname) -> annotatedAst)
 		)  
@@ -515,6 +544,7 @@ rules
 	get-cached-annotated-module-ast = 
 		verify(?mid@Module(QName(_)) | <id> , "Module(QName(_))  @get-cached-annotated-module-ast" )
 		; <SPXModuleAST>(AnnotatedModuleAST() , mid)
+	  
 
 rules
   
@@ -555,7 +585,7 @@ rules
   *
   * @type _ -> List(PackageDeclaration) 
   */  
-  get-all-indexed-package-declarations = prim("SPX_index_get_package_declarations_of", <get-project-path> , <ALL>)
+  get-all-indexed-package-declarations = prim("SPX_index_get_package_declarations_of", <get-project-path> , <ALL_AS_SET>)
   
   /**
   * Returns all related files of the specified package 
@@ -588,7 +618,7 @@ rules
   
   get-indexed-module-declarations = verify(List| <id> , "List @get-indexed-module-declarations"); mapconcat(get-indexed-module-declarations)
   
-  get-all-indexed-module-declarations =  ALL ; get-indexed-module-declarations
+  get-all-indexed-module-declarations =  ALL_AS_SET ; get-indexed-module-declarations
   
   get-indexed-module-declarations' = prim("SPX_index_get_module_declarations_of", <get-project-path> , <id> )
   	; verify(
@@ -601,7 +631,7 @@ rules
   		String
   		|<id> , "String @get-indexed-module-declarations"
   		)
-  	; !(<id> , <ALL>) 
+  	; !(<id> , <ALL_AS_SET>) 
   	; get-indexed-module-declarations'   
   	  
   get-indexed-module-declarations = 
@@ -609,7 +639,7 @@ rules
   		?Package(QName(_)) 
   		| <id> , "Package(QName(_)) @get-indexed-module-declarations"
   		)
-		; !(<id> , <ALL>) 
+		; !(<id> , <ALL_AS_SET>) 
   	; get-indexed-module-declarations'   
 
   get-indexed-dirty-module-declaration = 

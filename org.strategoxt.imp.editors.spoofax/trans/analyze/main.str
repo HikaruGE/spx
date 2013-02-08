@@ -7,6 +7,7 @@ imports
 	normalize/signatures
 imports 
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	common
 	utils/annotations
@@ -81,7 +82,7 @@ rules	// Package specific semantic error checking
 		where 
 			
 			if not(<is-a-analyzed-module>module-typed-qname) then
-				<get-module-definition-with-location>module-typed-qname => (module-decl,location);
+				<get-module-definition-with-location> module-typed-qname => (module-decl,location);
 				{| GetEnclosingModuleName
 			   : rules( GetEnclosingModuleName := module-typed-qname)
 				 ; <analyze-module-definition>module-decl
@@ -106,7 +107,7 @@ rules
 			  ) 
 		  => problems-at-modules*
 		where	
-			get-declared-packages-qname
+			<get-declared-packages-qname>file-abs-path
 			; get-semantic-problems(
 					get-semantic-problmes-at-package-level
 				) 

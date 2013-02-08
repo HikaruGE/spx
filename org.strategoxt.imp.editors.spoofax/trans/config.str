@@ -1,5 +1,5 @@
 module config 
-
+ 
 imports 
 	libstratego-lib
   libstratego-sglr
@@ -34,9 +34,10 @@ signature constructors
 	TemplateLangOptionConfig : ConfigFlag
 	
 rules 
-	default_package_name = !"__default"
+  
+	default_package_name = !"__default" // provided to support backward compatibility for modules without package name 
 	
-	default_src_directory = !"src"
+	default_src_directory = !"src"  // 
 	
 	root_directory = !"."
 	
@@ -48,8 +49,6 @@ rules
 	
 	get-known-legacy-extensions = !["sdf" , "def" , "str" , "rtree"] 
 	
-	
-	
 rules 
 	
 	fallback-configuration = 
@@ -58,7 +57,7 @@ rules
 		  , CodeGeneration([OutputDirectory(<default_output_directory>),STROutputMode(<default_stroutput_strategy>)])
 		  , Debug([DebugNone()])  
 		  , SpxProjects([])
-		  , TemplateLang(TemplatelangEnabled())    
+		  , TemplateLang(TemplatelangDisabled())    
 		  ]
 		)	
 	
@@ -82,12 +81,15 @@ rules
 			initialize-configuration 		
 		where 
 			filename := <guarantee-extension(|"config.resolved")> path;
-			result := $[ Spoofax-lang|Configuration  - [project-path]/spx.config
+			config-file-path := <file-exists <+ !"Default Configuration"> $[[project-path]/spx.config];   
+			result := $[ Spoofax-lang|Configuration  
+			
+			Using : [config-file-path]
 		
-			Resolved Source Directories:  
+			Source Directories:  
 				[<print-as-string><get-all-declared-by-type(|SpxSourceConfig())>] 
 			
-			Ignored Subdirectories : 
+			Ignoring sub-directories: 
 				[<print-as-string><get-all-declared-by-type(|IgnoredSpxSourceConfig())>]
 			
 			Output Directory : [<print-as-string><get-all-declared-by-type(|AutogenDirConfig())>]
@@ -97,8 +99,8 @@ rules
 			Debug Options : [<print-as-string> <get-debug-options>]
 			
 			TemplateLang enable/disabled Option: [<print-as-string><get-declared(|TemplateLangOptionConfig())><get-constructor>TemplateLangOptionConfig() ]
-			
 			]
+		 
 	//TODO Refactor 					
 	show-configuration : ()-> result
 	where
@@ -114,8 +116,8 @@ rules
 		
 		STR Output Strategy: [<print-as-string><get-all-declared-by-type(|StrOutputStrategyConfig())>]
 		
-		TemplateLang enable/disabled Option: [<print-as-string> <get-templatelang-enable-or-disable-option>]
-	]
+		TemplateLang enable/disabled Option: [<print-as-string><get-declared(|TemplateLangOptionConfig())><get-constructor>TemplateLangOptionConfig() ]
+ ]
 	 
 rules
 	get-all-spx-sources =  get-all-declared-by-type(|SpxSourceConfig())  ; (not(?[]) <+ get-project-path) 	
@@ -406,7 +408,7 @@ rules
 	annotate-project-location : 
 		projectname -> annotatedProjectName
 		where 
-			prim("LANG_get_all_projects_in_Workspace");
+			prim("SSL_EXT_get_all_projects_in_workspace");
 			filter( ?(projectname, _));
 			if not(?[(_, projectlocation)]) then 
 				projectlocation := ""

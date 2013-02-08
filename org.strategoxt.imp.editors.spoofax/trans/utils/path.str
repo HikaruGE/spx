@@ -9,6 +9,7 @@ imports
 	utils/debug
 	include/SpoofaxLang
 	spoofaxlang
+	normalize/signatures
 
 rules 
 		get-normalized-path = string-replace(|"\\", "/")			
@@ -32,7 +33,9 @@ rules
 	qname-to-path = 	convert-qname(|"/")
 	
 	qname-to-string =	convert-qname(|"-")
-		
+	
+	package-qname-to-string =  ?Package(QName(<id>)) ; convert-qname(|".") 
+		 	
 	convert-qname(|seperator) =
 		?QName(qname-parts*)
 		;<separate-by(|seperator);concat-strings>qname-parts*

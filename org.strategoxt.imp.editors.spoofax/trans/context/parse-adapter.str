@@ -1,14 +1,14 @@
 module context/parse-adapter
 
 imports
+	libstrc
 	include/SpoofaxLang
+  	include/libtemplatelang
 	context/signatures
 	normalize/signatures
 	lib/Configuration/SpoofaxConfiguration
 	lib/editor-common.generated
 imports
-	context/sdf/parse
-	context/str/parse
 	codegen/-
 imports
 	utils/path
@@ -85,7 +85,7 @@ rules
 		where
 			has-extension(|"str")
 		where
-			parsed-string:= <parse-stratego>resolved-path
+			parsed-string:= <parse-stratego-file>resolved-path
 
 
 	parse-legacy-artifact:

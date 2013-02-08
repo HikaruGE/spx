@@ -32,17 +32,20 @@ context-free syntax
 
 %%  "scope" "(" "*" ")" -> Attribute[[SDF]] {prefer, ast("term(default(appl(unquoted(\"scope\"), [fun(quoted(\"*\"))])))")}
 
-context-free priorities
-  
-  %% FIXME: priorities for @= and @ don't work
-    
-    Symbol[[SDF]] "?"              -> Symbol[[SDF]] >
-    Symbol "?"              -> Symbol >
-    %%{Symbol[[SDF]] "?"              -> Symbol[[SDF]]
-    %%Symbol[[SDF]] "*"               -> Symbol[[SDF]]
-    %%Symbol[[SDF]] "+"               -> Symbol[[SDF]]} >
-    %%Symbol[[SDF]] "|" Symbol[[SDF]] -> Symbol[[SDF]] >
-    Namespace "@=" Symbol[[SDF]]    -> Symbol[[SDF]]   
+priorities
+
+    {
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "?"            -> <Symbol[[SDF]]-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "*"             -> <Symbol[[SDF]]-CF>
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "+"             -> <Symbol[[SDF]]-CF>
+    }
+    >
+    <Symbol[[SDF]]-CF> <LAYOUT?-CF> "|" <LAYOUT?-CF> <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF>
+    >
+    {
+     <Namespace-CF> <LAYOUT?-CF> "@=" <LAYOUT?-CF> <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF>
+     <Namespace-CF>              "@"               <Symbol[[SDF]]-CF> -> <Symbol[[SDF]]-CF> 
+    } 
 
 lexical restrictions
   

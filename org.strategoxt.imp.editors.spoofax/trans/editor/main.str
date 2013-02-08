@@ -10,6 +10,8 @@ imports
 	utils/debug
 	editor/resolve/-
 	normalize/main
+	codegen/-
+	context/-
 
 rules
 	// Resolves a reference when the user control-clicks or presses F3 in the editor.
@@ -36,6 +38,8 @@ rules
 	
 	editor-analyze: 
  		(ast, path, project-path) -> (analyzed-ast, errors, warnings, infos)
+    where
+      not(<string-ends-with(|".spt")> path)
  		where
 	    	with-spxverify(
 					editor-init
@@ -49,9 +53,19 @@ rules
 			  	Compiling following SPX file: [<print-as-string>abs-path]
 		  	]); 
 			with-spxverify(
-	    	<store-currently-analyzing-ast>(<string-replace(|"\\", "/")>abs-path  , ast);
-	    	<compile-packages-of> (ast, abs-path)  => (analyzed-ast , issues)
+	    	<store-currently-analyzing-ast> (
+	    		<string-replace(|"\\", "/")>abs-path  , ast
+  			);
+    		<compile-packages-of(
+					should-compile-forward-references, 
+					get-used-by, 
+					id )
+				> (ast, abs-path) => (analyzed-ast , issues)
 	    	, !"Failed to compile-package-of"
 	    );  
 		  !issues => ( errors, warnings, infos)
-		  
+
+  editor-analyze: 
+    (ast, path, project-path) -> (ast, [], [], [])
+    where
+      <string-ends-with(|".spt")> path

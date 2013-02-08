@@ -1,7 +1,8 @@
 module unit-tests/contracts 
 
 imports
-	include/SpoofaxLang 
+	include/SpoofaxLang
+	include/libtemplatelang 
 	lib/editor-common.generated
 	utils/debug
 imports

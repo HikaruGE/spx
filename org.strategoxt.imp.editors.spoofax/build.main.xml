@@ -29,6 +29,14 @@
                         -la stratego-lib -la stratego-sglr -la stratego-gpp -la stratego-xtc -la stratego-aterm
         	              -la strc -la stratego-sdf"/>
 
+        <property name="externaljar" value="../org.strategoxt.imp.editors.template/include/libtemplatelang.jar"/>
+        <property name="externaljarflags" value="-la org.strategoxt.imp.editors.template.generated"/>
+        <property name="externalrtree" value="../org.strategoxt.imp.editors.template/include/libtemplatelang.rtree"/>
+
+        <target name="copy-rtree">
+            <copy file="${externalrtree}" todir="${include}" preservelastmodified="true"/>
+        </target>
+
         <!-- Optional: external .def and .jar locations
         <property name="externaldef" location="syntax/${sdfmodule}.def"/>
         <property name="externaljar" value="../lib.jar"/>
@@ -47,58 +55,9 @@
         <target name="all" depends="meta-sdf2table-stratego-sdf2,meta-sdf2table-stratego-esv,meta-sdf2table-strategostratego,spoofaximp.default.jar"/>
 				-->
 				
-		<target name="spoofaximp.edited.jar" depends="meta-sdf2table-stratego-sdf2,meta-sdf2table-stratego-esv,meta-sdf2table-strategostratego,check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,java.jar,spx.stratego.jar,sdf2imp,refresh"/>
+		<target name="spoofaximp.edited.jar" depends="check-classpath,init,sdf2table,meta-sdf2table,ppgen,pppack,stratego.aster,java.jar,spx.stratego.jar,sdf2imp,refresh"/>
 	
 		<target name="all" depends = "spoofaximp.edited.jar"/>
-					
-	
-        <!-- Target to create -Permissive grammar and parse table for Stratego-Sdf2.def -->
-        <available file="include/Stratego-Sdf2.tbl" property="stratego-sdf2.available"/>
-        <target name="meta-sdf2table-stratego-sdf2" unless="stratego-sdf2.available">
-          <fail unless="eclipse.spoofaximp.jars" message="Property eclipse.spoofaximp.jars must point to the directory containing StrategoMix.def" />
-          <antcall target="pack-sdf.helper">
-            <param name="syntax" value="${lib}" />
-            <param name="sdfmodule" value="Stratego-Sdf2" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="sdf2table">
-            <param name="sdfmodule" value="Stratego-Sdf2" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="meta-sdf2table.helper" />
-        </target>
-
-        <!-- Target to create -Permissive grammar and parse table for Stratego-EditorService.def -->
-        <available file="include/Stratego-EditorService.tbl" property="stratego-esv.available"/>
-        <target name="meta-sdf2table-stratego-esv" unless="stratego-esv.available">
-          <fail unless="eclipse.spoofaximp.jars" message="Property eclipse.spoofaximp.jars must point to the directory containing StrategoMix.def" />
-          <antcall target="pack-sdf.helper">
-            <param name="syntax" value="${lib}" />
-            <param name="sdfmodule" value="Stratego-EditorService" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="sdf2table">
-            <param name="sdfmodule" value="Stratego-EditorService" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="meta-sdf2table.helper" />
-        </target>
-
-      	<!-- Target to create -Permissive grammar and parse table for Stratego-EditorService.def -->
-        <available file="include/StrategoStratego.tbl" property="strategostratego.available"/>
-        <target name="meta-sdf2table-strategostratego" unless="strategostratego.available">
-          <fail unless="eclipse.spoofaximp.jars" message="Property eclipse.spoofaximp.jars must point to the directory containing StrategoMix.def" />
-          <antcall target="pack-sdf.helper">
-            <param name="syntax" value="${lib}" />
-            <param name="sdfmodule" value="StrategoStratego" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="sdf2table">
-            <param name="sdfmodule" value="StrategoStratego" />
-            <param name="build.sdf.imports" value="-Idef &quot;${eclipse.spoofaximp.jars}/StrategoMix.def&quot; ${build.sdf.imports}" />
-          </antcall>
-          <antcall target="meta-sdf2table.helper" />
-        </target>
 	
 		<!-- Target Stratego to Java compiler -->
         <target name="spx.stratego.jar" depends="rtg2sig,utils-files">
@@ -114,7 +73,9 @@
             	<targetfileset file="${src-gen2}/${strmodule}.java"/>
 	        </dependset>
         	
+            <available file="${src-gen2}/${strmodule}.java" property="strc-java.available"/>
           	<antcall target="copy-jar"/>
+            <antcall target="copy-rtree"/>
         		<antcall target="spx.stratego.jvm.helper">
 	          	<param name="build.stratego.outputfile" value="${src-gen2}/${strmodule}.java"/>
             	<param name="build.stratego.extraargs" value="-la java-front ${java.jar.import}"/>

@@ -1,6 +1,7 @@
 module utils/cache
-imports 
-	common 
+imports
+  include/libtemplatelang
+	common
 	lib/editor-common.generated 
 	utils/path
 	utils/debug

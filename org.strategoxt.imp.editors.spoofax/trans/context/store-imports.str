@@ -1,6 +1,7 @@
 module context/store-imports 
 imports
-	include/SpoofaxLang 
+	include/SpoofaxLang
+	include/libtemplatelang 
 	lib/editor-common.generated
 imports 
 	context/-

@@ -1,13 +1,15 @@
 module context/declare
 
 imports
+  include/libtemplatelang
+imports
 	context/sdf/declare
-	context/str/declare
+	context/str/-
 	context/esv/declare
-	context/template/declare
 	context/sdf/declare-signature
 	context/-
 	normalize/signatures
+  normalize/stratego
 imports
 	include/SpoofaxLang
 	lib/editor-common.generated
@@ -23,7 +25,7 @@ rules
 	
 	init-declarations = 
 		init-record-signatures;
-		init-template-options
+		templatelang-init-options
     
 rules
   declare-spx-global-symbols =
@@ -36,8 +38,22 @@ rules
 					declare-internal( declare-spxmodules-all( declare-global-symbols))
 			  	)
 			|}	
-	)
-	
+	);
+	with-spxverify(
+    if GetEnclosingPackageName; get-language-name => lang-name then
+      // The parenthesize-<lang-name> strategy is automatically added by build system.
+      dbg-compiler(!$[----Declaring parenthesize-[lang-name] strategy]);
+      <declare-stratego-globals-top><basic-stratego-desugar-top>
+          SDefNoArgs($[parenthesize-[lang-name]], Fail());
+      if templatelang-enabled then
+        // The prettyprint-<lang-name> strategy is added by templatelang code gen.
+        dbg-compiler(!$[----Declaring prettyprint-[lang-name] strategy]);
+        <declare-stratego-globals-top><basic-stratego-desugar-top>
+            SDefNoArgs($[prettyprint-[lang-name]], Fail())
+      end
+    end
+  )
+
 	delcare-spx-scoped-symbols = 
 		dbg-compiler(!$[----Declaring local Symbols for: [<print-as-string>]]);
 		declare-internal(
@@ -54,7 +70,8 @@ rules
 			 <get-annotation(get-package-annotation)>modname => Package( package-qname)
 			  ; mId := <get-module-typed-qname>(package-qname, modname)
 			  ; <index-update-existing-module-definition>(mId  ,  annotated-moduleDef)
-    	  )  
+  	  )
+  	    
 	
 rules 
 	declare-spxmodules-all(s):
@@ -70,7 +87,7 @@ rules
 				 
 
 	declare-local-symbols:
-		SDFSectionEH(_,definition*) -><declare-local-symbols>SDFSection(definition*)
+		SDFSectionEH(_,definition*) -> <declare-local-symbols> SDFSection(definition*)
 
 	declare-local-symbols:
 	  STRSection(def*) -> STRSection(m-definition*)
@@ -80,24 +97,23 @@ rules
       
   declare-local-symbols: ESVSection(def*) -> <id>
 
-  // TemplateLang
-  declare-local-symbols:
-    TemplateSection(definition*) -> TemplateSection(declared-definition*)
-    with
-     <declare-template-definition-main> definition* => declared-definition* 
+  declare-local-symbols: TemplateSection(def*) -> <id>
 
-  // TemplateLang
-  // FIXME: move to spoofax.configuration?
-  declare-local-symbols:
-  	TemplateOptions(option*) -> TemplateOptions(declared-option*)
-  	with
-  	  <declare-template-options-main> option* => declared-option* 
+  declare-local-symbols: TemplateOptions(def*) -> <id>
 
 rules
 
-	declare-global-symbols: SDFSection(def*) -> <id>
+  declare-global-symbols:
+    SDFSection(def*) -> <id>
+    where try(
+      if templatelang-enabled then
+        template-section-to-stratego;
+        basic-stratego-desugar-top;
+        declare-stratego-globals-top
+      end
+    )
 
-	declare-global-symbols: SDFSectionEH(_,def*) -> <id>
+	declare-global-symbols: SDFSectionEH(_,def*) -> <declare-global-symbols> SDFSection(def*)
 
 	declare-global-symbols: s@STRSection(def*) -> STRSection(m-definition*)
 	where
@@ -112,14 +128,41 @@ rules
 			with-spxverify(
 				//storing esv section
 				<index-symbol-definition>(current-package-name, ESVSection() ,  declared-definition*)
+        // Indexing langauge descriptor for this package if it does exists
+        ; try(<index-language-descriptor><get-declared-language-definition><GetEnclosingModuleName>)
 				, !$[Failed to index esv section of [current-package-name]] 
 			) 
-	
-  // TemplateLang
-  declare-global-symbols: TemplateSection(def*) -> <id>
 
-  // TemplateLang
-  declare-global-symbols: TemplateOptions(opt*) -> <id>
+  // Hook up to TemplateLang:
+  // 1) convert syntax templates to SDF; declare the SDF
+  // 2) convert syntax templates to Stratego; declare the Stratego code
+
+  declare-global-symbols:
+    TemplateSection(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section
+      , !"Failed to declare global symbols in TemplateSection :: declare-global-symbols"
+    )
+    where try(
+      // Not using template-section-to-sdf, because we do not want to declare
+      // signatures for generated CONTENTCOMPLETE productions.
+      <map(template-production-to-sdf)> def*;
+      declare-sdf-definition-main
+    )
+    where try(
+      if templatelang-enabled then
+        template-section-to-stratego;
+        basic-stratego-desugar-top;
+        declare-stratego-globals-top
+      end
+    )
+
+  declare-global-symbols:
+    TemplateOptions(def*) -> <id>
+    where with-spxverify(
+      templatelang-declare-section
+      , !"Failed to declare global symbols in TemplateOptions :: declare-global-symbols"
+    )
 
 rules
 
@@ -164,3 +207,20 @@ rules
 			 + has-extension(|"rtree")
 			 > resolved-path
 		   ; <declare-legacy-str-imports> legacy-content
+		     
+rules 
+	
+	rename-id(|namespace) = 
+		?x;
+		namespace-qname-string := <package-qname-to-string> namespace;
+	 	<concat-strings>["__internal" , "_", namespace-qname-string  , "_" , <print-as-string>x] 
+	
+	newDefData:	
+		(scope@Package(QName(_)) , type, x) -> DefData(scope,  type, Internal() , x , x)
+		
+	newDefData(rename): 
+ 	(scope@Package(QName(_)) , type, x) -> defData   
+	 where 
+	 		x'  := <rename(|scope)>x;
+	 		defData  := DefData(scope,  type, Internal() , x , x')
+		     

@@ -6,7 +6,7 @@ imports
   libstratego-aterm
   libstratego-sglr
   libstratego-sdf
-  libstrc
+  include/libtemplatelang
 imports
   include/SpoofaxLang
   lib/editor-common.generated
@@ -15,7 +15,7 @@ imports
 imports
   analyze/sdf/check
   context/sdf/declare
-  context/str/declare
+  context/str/-
 imports
 	codegen/buildscripts
 	codegen/compile
@@ -24,7 +24,6 @@ imports
 	codegen/sdf/to-name-analysis
  	codegen/sdf/to-signature
   	codegen/main
-   	codegen/template/-
 imports
 	normalize/main
 	normalize/signatures
@@ -36,8 +35,10 @@ imports
 imports
 	 editor/main
 	 codegen/main
+imports
+	 emf/main
+	
 /*
-	unit-tests/templatelang/-
 	unit-tests/utils/-
 	unit-tests/-
 */
@@ -68,15 +69,27 @@ rules
     with
       filename := <guarantee-extension(|"aterm")> path;
       result   := selected // we just return the input term
-
+       
 strategies
 
-  //testing only
   main =
+  	// Builders
     editor-analyze;
+    editor-compile-spx-all-incrementally;
+    editor-clean-and-compile-spx-all ;
+    editor-build-all;
+    editor-build-all-after-cleanup;
+    editor-clean-spx;
+    show-configuration;
     generate-aterm;
-    test-templatelang-to-esv;
-    test-templatelang-to-sdf;
-    test-templatelang-to-str;
-    build-spoofaxlang-jvm;
-    editor-clean-and-compile-spx-all
+    normalize;
+    generate-name-analysis;
+    build-incrementally-service;
+    generate-ecore-stage1; generate-ecore-stage2; generate-ecore-stage3;
+    // Completions
+    editor-complete;
+    // References
+    editor-resolve;
+    editor-hover;
+    // meta tooling
+    build-spoofaxlang-jvm

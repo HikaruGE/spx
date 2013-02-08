@@ -1,0 +1,207 @@
+module context/str/declare-globals
+
+imports
+	libstrc		
+	libstratego-lib
+ 	libstratego-gpp
+	libstratego-aterm
+imports
+	lib/editor-common.generated
+	include/SpoofaxLang
+imports	
+	utils/sourcedir
+ 	utils/debug
+ 	utils/contract
+ 	utils/annotations
+ 	common 
+	config 
+imports 
+	context/-
+	normalize/-
+	context/str/-
+	spoofaxlang  
+
+rules 
+  external SRTS-EXT-newint(|)
+ 
+rules
+	// All the legacy symbol are stored in global scope despite of what current scope is .
+	// Hence, after we are overriding current scope to global scope
+	// and then, we are indexing the symbolsl.
+  declare-legacy-str-imports =  activate-global-scope( declare-rules(declare-stratego-globals-top) )
+     
+  // declare all the strategy the rule definition inside 
+  // current rules or strategies block. 
+  // inaddition it also stores it in the symbol table.
+  declare-rules(s) = 
+    ?list-str-def*
+    ; dbg-declaration(! "------------new str analysis" | "STR" , <debug-level-INFO>) 
+    ; with-spxverify(
+	     {| DeclareCookie,  STRDeclaration
+	      : <s>list-str-def* => analyzed-str-defs*
+	      ; index-str-declarations
+	      ; index-str-cookies
+	      |} 
+      )
+  	; !analyzed-str-defs*
+  
+  // Activating internal scope for the current enclosing package 
+  // it actually overrides current module scope and activate 
+  // internal scope to store internal strategies and rules 
+  activate-stratego-internal-scope(s) =
+		activate-internal-scope( 
+	    	declare-rules(s)
+  	) 
+
+      
+strategies 
+	declare-stratego-globals-top = alltd(declare-str-definition) 
+   
+rules
+
+  // Analyzing all the rules and strategies block and store the Declarations  
+  // in symbol table.
+  declare-str-definition : 
+    InternalStrategies(str-defs*) -> InternalStrategies(analyzed-str-defs*)
+    where 
+      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+
+  declare-str-definition : 
+    InternalRules(str-defs*) -> InternalRules(analyzed-str-defs*)
+    where 
+      <activate-stratego-internal-scope(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+
+  declare-str-definition : 
+    Rules(str-defs*) -> Rules(analyzed-str-defs*)
+    where 
+      <declare-rules(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs* 
+
+  declare-str-definition : 
+    Strategies(str-defs*) -> Strategies(analyzed-str-defs*)
+    where 
+      <declare-rules(declare-stratego-globals-top)>str-defs*  =>analyzed-str-defs*
+
+       
+rules
+  
+  declare-str-definition:
+    def@SDefT(x, s*, t*, s) -> SDefT(x', s*, t*, s')
+    where with-spxverify(
+    	x' := x{<declare-definition>};
+      s' := <topdown(try(declare-dynrule))> s
+    )
+   	/*
+   	where
+   		!x' =>  sdefId{cookie};
+ 			if GetScopeType => InternalScope() 
+ 			then 
+	    	with-spxverify(
+	    		defData := <newDefData(rename-id)>(<GetEnclosingPackageName> , STRDef() , sdefId);
+	    		internalId := <?DefData(_,_,_,_,<id>)>defData ;
+	    		<debug(!"index unique symbol: ")> (cookie , RenamedSDefT() , (<signature-of>def , internalId));
+	    		<index-unique-symbol-definition>(cookie , RenamedSDefT() , (<signature-of>def , internalId))
+	    	, ! $[Failed to index renamed SDefT]	
+	    	)	
+	    else
+	    	defData := <newDefData>(<GetEnclosingPackageName> , STRDef() , sdefId)	
+    	end ;
+    	<add-annotation(|defData)> x'  => x-with-defData
+	 */
+  
+	declare-str-definition:
+    o@OpDecl(x, t) -> OpDecl(x', t)
+    where 
+    	with-spxverify(
+	      cookie := <redeclare-definition>;
+	      x'     := x{cookie}
+	      , !$[Failed to redeclare cookie @declare-str-definition with [<print-as-string>o]]
+      );
+      with-spxverify(
+	      // Declare congruence
+	      (x'', n) := <signature-of>;
+	      sig'     := (x'', n, 0);
+	      scoped-sig'  :=<to-scoped-symbol> sig';
+	      rules(
+	        DeclareCookie: scoped-sig' -> cookie
+	      )
+	      , !$[Failed to declare cookie @declare-str-definition with [<print-as-string>o]]
+      )
+    where
+    	dbg-declaration(! $[declare-str-definition [<print-as-string>]| Storing DeclareCookie : [<print-as-string>scoped-sig'] -> [<print-as-string>cookie]] | "STR" , <debug-level-INFO> )  
+  
+   declare-str-definition:
+    ExtSDef(x, s*, t*) -> <id>
+    where  
+    	with-spxverify(
+      	redeclare-definition
+    	)
+	
+  declare-str-definition:
+    ExtOpDecl(x, t) -> <id>
+    where  
+    	with-spxverify(
+   			redeclare-definition
+   		)
+	
+  declare-str-definition:
+    Overlay(x, t, d) -> Overlay(x', t, d)
+    where  
+    	with-spxverify(
+	      cookie := <redeclare-definition>;
+	      x'     := x{cookie}
+  		);
+    	with-spxverify(
+	      // Declare congruence
+	      (x'', n)     := <signature-of>;
+	      sig'         := (x'', n, 0);
+	      scoped-sig'  :=<to-scoped-symbol> sig';
+	      rules(
+	        DeclareCookie: scoped-sig'   -> cookie
+	      )
+      )
+    where
+    	dbg-declaration(!$[declare-str-definition [<print-as-string>] | Storing DeclareCookie : [<print-as-string>scoped-sig'] -> [<print-as-string>cookie]] | "STR" , <debug-level-INFO> )
+    	
+    
+  declare-dynrule:
+    dec @ RDecT(x, s*, t*) -> RDecT(x', s*, t*)
+    where
+      not(!x => COMPLETION(_))
+    where with-spxverify(
+    	x' := x{<declare-cookie-of>}
+    <+
+      cookie := <newterm>;
+      x'  := x{cookie};
+      s'* := <length> s*;
+      t'* := <length> t*;
+      sig := (x, s'*, t'*);
+      scoped-cookie :=<to-scoped-symbol> cookie;
+      scoped-sig    :=<to-scoped-symbol> sig;
+      scoped-x      :=<to-scoped-symbol> x;
+      rules(
+        DeclareCookie:  scoped-sig    -> cookie
+        DeclareCookie:  scoped-x      -> cookie
+        STRDeclaration: scoped-cookie -> dec
+      );
+      // See https://svn.strategoxt.org/repos/StrategoXT/strategoxt/trunk/strc-core/lib/stratego/strc/front/lift-dynamic-rules.str
+      <declare-dr-rule(|x, cookie, 0, 2)> "new";
+      <declare-dr-rule(|x, cookie, 0, 1)> "undefine";
+      <declare-dr-rule(|x, cookie, s'*, <inc> t'*)> "aux";   // FIXME: dependent on number of free variables in lhs
+      <declare-dr-rule(|x, cookie, <inc> s'*, t'*)> "reverse-bagof";
+      <declare-dr-rule(|x, cookie, 1, 0)> "innermost-scope";
+      <map(declare-dr-rule(|x, cookie, s'*, <inc> t'*))>
+        ["break-to-label","continue-to-label"];
+      <declare-dr-rule(|x, cookie, <inc> s'*, <inc> t'*)> "throw";
+      <map(declare-dr-rule(|x, cookie, <inc> s'*, t'*))>
+        ["fold", "bigfold"];
+      <map(declare-dr-rule(|x, cookie, s'*, t'*))>
+        ["once", "bagof", "bigbagof", "all-keys", "innermost-scope", "break", "break-bp", "continue", "chain", "bigchain"]
+		)
+   
+   declare-dr-rule(|x,cookie,s,t) =
+   	?prefix
+    ; sig := ($[[prefix]-[x]], s, t)
+    ; scoped-sig := <to-scoped-symbol> sig
+    ; rules(DeclareCookie: scoped-sig -> cookie)
+		; dbg-declaration(! $[declare-dr-rule [<print-as-string>prefix]| Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]
+		                  | "STR" , <debug-level-INFO> )  

@@ -51,28 +51,27 @@ rules
 				report-failure-with-stacktrace 
 			)
 		where 
-  		with-spxverify(	
+			with-spxverify(	
 				<debug>$[-- Activating following Project Configuration : ];
 				initialize-configuration;        	// initializes configuration and setting up enviroment variables
-				enable-command-line-mode;
 				<show-configuration;debug>()     //show configuration for this spx project
 			<+
-				report-failure-with-stacktrace 
-			);	
+				<debug>$[-- Failed to initialize configuration. ];
+				fail
+		  )	
+		where
 			with-spxverify(
-				<debug>$[-- SPXLang Build: ];
+				<debug>$[-- SPXLang Build: build option : [build-opt]];
+				enable-command-line-mode;
 				if <equal-strings>(build-opt , "-c")  then
-					index-clearall;
+					(index-clearall <+ <debug>$[-- Index cleanup failed . Please clean index by invoking builder from the transform menu before building again.]; fail);
 					<debug>$[-- Initializing clean build.]
 				else
 					<debug>$[-- Initializing Incremental Build.]
 				end;  
-				build-all';  //building all the spx files in the sources directory
+				build-all;  //building all the spx files in the sources directory
 				<debug>$[-- Intermediate artefacts have been generated successfully.]
-			<+
-				report-failure-with-stacktrace 
 			)
-
 			
 rules
 	

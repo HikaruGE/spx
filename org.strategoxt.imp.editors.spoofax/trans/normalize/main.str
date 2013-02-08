@@ -2,12 +2,11 @@ module normalize/main
 
 imports
   libstratego-lib
-  libstrc
+  include/libtemplatelang
   lib/editor-common.generated
 imports
 	normalize/stratego
 	normalize/signatures
-	normalize/templatelang
 imports
 	include/SpoofaxLang
 imports
@@ -24,7 +23,8 @@ imports
 
 rules 
 	 normalize:
-    (selected, position, ast, path, project-path) -> (filename, result)
+    (selected, position, ast, path, project-path) 
+    -> (filename, result)
     with 
     {| currently-precompiling-spx-abspath :
     			current-spx-file-path := <concat-strings> [project-path , "/" , path];
@@ -37,12 +37,14 @@ rules
 rules
 	
 	desugar-compilation-unit:
-		CompilationUnit(moduledef*) -> 	<desugar-compilation-unit>CompilationUnit([] , [appended-default-package-declaration])
+		CompilationUnit(moduledef*) 
+		-> 	<desugar-compilation-unit>CompilationUnit([] , [appended-default-package-declaration])
 		where
 			 appended-default-package-declaration :=  Package(Name(<default_package_name>) , moduledef*)
 
 	desugar-compilation-unit:
-		c@CompilationUnit(import* , package*) -> 	CompilationUnit( import* , modified-packages)
+		c@CompilationUnit(import* , package*) 
+		-> 	CompilationUnit( import* , modified-packages)
 		where 
 				with-spxverify(
 					<index-compilation-unit>(<currently-precompiling-spx-abspath>, c)
@@ -54,8 +56,9 @@ rules
 						<alltd(origin-track-forced(desugar-spx-package))> package* => modified-packages
 			|}
 
+
 	//TODO Implement : update desugared compilation unit in the index . 
-	// TODO  FIX : mark deprecated. remove it from existing implementation
+	//TODO  FIX : mark deprecated. remove it from existing implementation
 	desugar-imports:
 		i@Imports(import*) -> i
 		where	
@@ -133,18 +136,18 @@ rules
 				
 rules
 
-	//Desugaring SDF Sections
+	// Desugaring SDF Sections
 	desugar-spx : 
 		SDFSection ( sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSection( sectionDef' )
 		where
-			<templatelang-desugar-sdf-top> sectionDef => sectionDef'
+			<templatelang-desugar-top> sectionDef => sectionDef'
 	
 		
   // TODO: Maybe SDFSectionEH can be desugared into SDFSection.
 	desugar-spx : 
 		SDFSectionEH ( eh, sectionDef ) -> <add-annotation(|<GetEnclosingModuleName>)> SDFSectionEH( eh, sectionDef' )
 		where
-    	<templatelang-desugar-sdf-top> sectionDef => sectionDef'
+    	<templatelang-desugar-top> sectionDef => sectionDef'
   
 rules
 	//Desugaring STR sections

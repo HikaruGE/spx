@@ -18,6 +18,7 @@ imports
 	config
 imports
 	include/SpoofaxLang
+	include/libtemplatelang
 imports
 	analyze/main
 	lib/editor-common.generated
@@ -29,11 +30,11 @@ rules
   		{| 	GetSemanticProblems, Declared:  
 			dbg-compiler(!$[-----------------::new-compile-session::-----------------]);
 			with-spxverify(
-				compile-init
+				where(compile-init)
 				; s 
-		    	; compile-unload
-		    	, !" new compile session failed unexpectedly. "  
-	        )  
+	    	; compile-unload
+	    	, !" new compile session failed unexpectedly. "  
+        )  
 	   |}
 
 rules				
@@ -41,8 +42,11 @@ rules
 		
 	// Compiler initialization
 	compile-init =
-		where (index-init <+ debug(!"Failed to initialize SemanticIndex at this moment. Please try later"));
-		
+		where (
+			index-init 
+		<+ 
+			debug(! $[Failed to initialize SemanticIndex for [<get-project-path>] at this moment."])
+		);
 		// Getting Source directory to start parsing files if needed.
 		// Otherwise, it reads from the cache
 		where(
@@ -82,15 +86,16 @@ rules
 	
 	// compiling all the package 
 	compile-all =
-		? (file-abs-path, ast)
-		; new-compile-session(
-		  	get-package-list => list-of-package-qname  
-				; <compile-internal>list-of-package-qname
+		 new-compile-session(
+		  	p* := <get-package-list>  
+		  	; <compile-internal> p*
 				; <get-all-analyzed-modules-locations>()
 				; mark-issues-of-file
 			)
 	
-	compile-packages-of: (ast, file-abs-path) -> <compile-packages-of(fail, fail , id)>(ast, file-abs-path) 
+	compile-packages-of: 
+		(ast, file-abs-path) -> 
+		<compile-packages-of(fail, fail , id)>(ast, file-abs-path) 
 		 	
 	// compiles all the packages stored at the filepath specified
 	compile-packages-of (should-compile-forward-refs, get-forward-references, generate-code): 
@@ -98,9 +103,10 @@ rules
 		where
 			new-compile-session(
 			 	<get-declared-packages-qname> file-abs-path => list-of-package-qname 
+				; dbg-compiler(!$[----compile-packages-of:: compiling following packages [<print-as-string>list-of-package-qname] .])
 				; <compile-internal>list-of-package-qname // Compiling
-			  ; dbg-compiler(!$[----compile-packages-of:: compiling and error analysis is done.])
-				; <get-semantic-problmes-by-file>file-abs-path => issues*// getting list of errors
+			  
+			  ; <get-semantic-problmes-by-file>file-abs-path => issues*// getting list of errors
 				; dbg-compiler(!$[----compile-packages-of:: get semantic problems of current file .])
 				; if not(<fail-if-has-errors>issues*) then
 				  	dbg-compiler(!$[----compile-packages-of:: found errors .]);
@@ -115,7 +121,7 @@ rules
 						dbg-compiler(!$[----compile-packages-of:: No errors found.]);
 						// compiling additional packages 
 						// where current packages are imported to ( forward references) 
-						// Lazy/Incremental compilation is employed.
+						// Lazy/Incremental compilation is applied.
 						// only compiling following packages if 
 						// there is no error from compiling current packages and all its depending packages
 						if should-compile-forward-refs then 
@@ -167,20 +173,22 @@ rules
 					  		; with-spxverify ( 
 				  				 rules(HasErrors :=  True() )
 								  )
-						end
-					; spx-compilation-unit-ast := <get-indexed-compilation-unit> file-path 
-				 	;	( <set-spoofax-markers(|file-path)>(spx-compilation-unit-ast,  e, w, n) 
-				 		<+
-			 				<debug(!"Failed to set Error Markers for ")>file-path;
-			 				fail
-		 				) 
+						end;
+						if not(is-in-command-line-mode) then 
+							spx-compilation-unit-ast := <get-indexed-compilation-unit> file-path 
+				 			;	( <set-spoofax-markers(|file-path)>(spx-compilation-unit-ast,  e, w, n)	 
+			 				<+
+			 					<debug(!"Failed to set Error Markers for ")>file-path;
+				 				fail
+			 				)
+			 			end	 
 	  		}	
 			)	
 	
 	// Set markers for a given spoofax file
   // Current term: (ast-desugared, errors, warnings, notes) tuple
   // file-path: path of the spoofax compilation unit
-  set-spoofax-markers(|file-path) = prim("SSL_EXT_set_markers", file-path)
+  set-spoofax-markers(|file-path) =  is-in-command-line-mode < id + prim("SSL_EXT_set_markers", file-path)
 
 rules
 	compile-main =
@@ -221,11 +229,13 @@ rules
 			  	// Start Compiling the dependent Spx Artifacts
 				; <list-loop(compile-depending-spx)>depending-typedqname*
 				;{| GetEnclosingPackageName 
-				  : 	<declare-current-package-scope> package-typed-qname
+				  : 	
+				  	<declare-current-package-scope> package-typed-qname
 						// Now, since all the depending-on artifacts are compiled
 						// start compiling the enclosing modules of this package.
 						// Note: currently we are not considering any nested packages.
-						; modules-to-compile* := <get-enclosed-dirty-modules>package-typed-qname
+						; modules-to-compile* := <get-enclosed-dirty-modules; debug(!"compiling following modules :  ")>package-typed-qname
+						  
 						; dbg-compiler(!$[--Compiling SPX Packages:: compiling following modules(dirty) : [<print-as-string>modules-to-compile*]])
 						; <declare-spx-global-symbols>modules-to-compile* 
 						; <list-loop(compile-spx-module)>modules-to-compile*
@@ -275,8 +285,6 @@ rules
 				
 				; with-spxverify(
 				  	<add-to-compiled-modules>(module-typed-qname,location)
-			  	  // Indexing langauge descriptor for this package if it does exists 
-        		; try(<index-language-descriptor><get-declared-language-definition>module-typed-qname)
     		  	)
 			else
 				dbg-compiler(!$[----Compiling module:: Ignored as already in the queue : [<print-as-string>]]) //this package is not compiled before

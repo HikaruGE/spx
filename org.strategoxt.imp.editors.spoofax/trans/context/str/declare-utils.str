@@ -1,0 +1,194 @@
+module context/str/declare-utils
+
+imports
+	libstrc		
+	libstratego-lib
+ 	libstratego-gpp
+	libstratego-aterm
+imports
+	lib/editor-common.generated
+	include/SpoofaxLang
+	include/libtemplatelang
+imports	
+	utils/sourcedir
+ 	utils/debug
+ 	utils/contract
+ 	utils/annotations
+ 	common 
+	config 
+imports 
+	context/-
+	normalize/-
+	context/str/-
+	spoofaxlang  
+	
+rules 
+	verify-declared-stratego = 
+		remove-annotations;
+	 	verify(String | <id> , "String @is-declared-stratego"); 
+		<verify-symbol-exists>(<id> , STRSignature())
+	<+
+    dbg-analysis(! $[Failed verify-declared-stratego  id [<print-as-string>]] | "STR|verify-declared-stratego" , "Warning" );
+    fail
+	
+	
+	is-declared-stratego(s) = 	
+		 one(
+        ( ?<id>
+        + ?SVar(<id>))
+        ; resolve-str-signatures
+        ; filter(s)
+        ; is-not-empty-list  
+     )
+rules 
+	is-constructor =
+    ?(_, _); 
+    (
+    	resolve-str-cookie; 
+    	resolve-str-declaration 
+    <+ 
+    	declaration-of
+    );
+    (?OpDecl(_, _) + ?ExtOpDecl(_, _))
+  
+  
+ 
+  //TODO FIX: 
+  //<+ ?(name, #of arguments) ; gets signature contructor from declare - signature ; verify it has the same arity 
+  
+  is-congruence-signature:
+    (x, s, 0) -> (x, s, [])
+    where
+      <resolve-str-cookie> (x, s)   
+  
+  declare-cookie-of =
+    signature-of
+    ; resolve-str-cookie
+    
+  declaration-of =
+    signature-of 
+    ; (  ?_{<resolve-str-declaration>} 
+  	 	<+ ?(_{<resolve-str-declaration>}, _) 
+  	 	<+ ?(_{<resolve-str-declaration>}, _, _)
+ 	  )
+ 	 
+ 
+rules 
+  
+  declare-definition:
+    def -> cookie
+    where with-spxverify(
+      sig := <signature-of>
+      ; scoped-sig    :=<to-scoped-symbol> sig
+      ; if not(<DeclareCookie>scoped-sig  <+ <resolve-str-cookie> sig) then
+          // declaring a new cookie 
+          cookie := <newterm>
+          ; scoped-cookie :=<to-scoped-symbol> cookie
+          ; rules(
+              DeclareCookie:  scoped-sig  -> cookie
+              STRDeclaration: scoped-cookie  -> def
+            )
+		      ; dbg-declaration(! $[Storing DeclareCookie : [<print-as-string>scoped-sig] -> [<print-as-string>cookie]]  | "STR|declare-definition" , <debug-level-INFO> ) 
+				  ; dbg-declaration(! $[Storing STRDeclaration : [<print-as-string>scoped-cookie] -> [<print-as-string>def]] | "STR|declare-definition" , <debug-level-INFO> )      
+      else
+       	  // using existing cookie 
+       	  cookie := <resolve-str-cookie> sig 
+      end
+    )
+		
+
+  redeclare-definition:
+    def -> cookie
+    where with-spxverify( 
+    	sig := <signature-of>
+      ; cookie := <newterm>
+      ; scoped-cookie :=<to-scoped-symbol> cookie
+      ; scoped-sig    :=<to-scoped-symbol> sig
+      ; rules(
+         DeclareCookie:  scoped-sig    -> cookie
+         STRDeclaration: scoped-cookie -> def
+       )
+      , ! "Failed at redeclare-definition" 
+   	)
+   	where
+   		dbg-declaration(! $[Storing DeclareCookie : [<print-as-string>scoped-sig] ->    [<print-as-string>cookie]] | "STR|redeclare-definition" , <debug-level-INFO> );
+ 	  	dbg-declaration(! $[Storing STRDeclaration : [<print-as-string>scoped-cookie] -> [<print-as-string>def]]  | "STR|redeclare-definition" , <debug-level-INFO> )
+		
+  
+  external SRTS-EXT-newint(|)
+
+
+rules 
+  
+  index-str-declarations = 
+    dbg-declaration(! $[indexing Stratego Declarations : [<print-as-string><all-keys-STRDeclaration>]]  
+    								| "STR|index-str-declarations " , <debug-level-INFO> );
+		<list-loop(
+        { 
+          ?cookie
+          // cookie  ---> STRDeclaration Mapping 
+          ; dbg-declaration(! $[Indexing: [<print-as-string>cookie] -> STRDef()  ->  [<print-as-string><STRDeclaration>cookie]] | "STR|index-str-declarations " , <debug-level-INFO> ) 
+          ; <index-symbol-definition>(cookie, STRDef() ,  <STRDeclaration>cookie)
+        } 
+      )><all-keys-STRDeclaration>
+      
+  
+  //TODO FIX : strip all the scope . Better not to enclode it with scope.
+  index-str-cookies =      
+  	dbg-declaration(! $[indexing Stratego cookies  : [<print-as-string><all-keys-DeclareCookie>]]  
+    								| "STR|index-str-cookies" , <debug-level-INFO> );
+    <list-loop(
+	    { ?sig
+	      ; dbg-declaration(! $[Indexing: [<print-as-string>sig] -> STRCookie() ->  [<print-as-string><DeclareCookie>sig]] | "STR|index-str-cookies" , <debug-level-INFO>)  
+	      // Signature -------> Cookie Mapping 
+	      ; <index-symbol-definition>(sig, STRCookie() ,  <DeclareCookie>sig)
+	      ; <remove-scope-from-symbol; ?sig'; signature-to-declaration-id>sig => str-id
+	      ;  dbg-declaration(! $[Indexing: [<print-as-string>str-id] -> STRSignature() ->  [<print-as-string>sig]] | "STR|index-str-cookies" , <debug-level-INFO>)
+        // Stratego ID  -------> Signature Mapping 
+        ; <index-symbol-definition>(str-id, STRSignature() , sig')  
+	    }
+    )><all-keys-DeclareCookie>  
+ 
+  resolve-str-declaration =
+    ? cookie
+   	; ( <STRDeclaration> <to-scoped-symbol> cookie
+	  	<+
+    		<resolve-symbol-definition>( <id>, STRDef())
+    		; dbg-declaration(!$[[<print-as-string>cookie] -> STRDef() ->  [<print-as-string><id>]] | "STR|resolve-str-declaration" , <debug-level-INFO> )
+    	)	   
+  <+
+    dbg-declaration(!$[Failed to retrive STRDef for cookie [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-declaration" , "Warning" ) 
+    ; fail
+    
+  resolve-str-cookie =
+    ?sig ;
+    (	<DeclareCookie> <to-scoped-symbol> sig 
+    	<+	
+    	<resolve-symbol-definition>( <id>, STRCookie())
+    	; dbg-declaration(! $[resolve-str-cookie: [<print-as-string>sig] -> STRCookie() ->  [<print-as-string><id>]] | "STR|resolve-str-cookie" , <debug-level-INFO>)
+    )  
+  <+
+    dbg-declaration(!$[Failed to retrive STRCookie for signature [<print-as-string><to-scoped-symbol>]]| "STR|resolve-str-cookie" , "Warning") 
+    ; fail
+  
+  resolve-str-signatures =
+    ?key
+    ; verify(String | key , "String @resolve-str-signatures")
+    ; <resolve-all-symbol-definitions>( <id>, STRSignature())
+    ; dbg-declaration(! $[[<print-as-string>key] -> STRSignature() ->  [<print-as-string><id>]] 
+                      | "STR|resolve-str-signatures" , <debug-level-INFO> )
+  <+
+    dbg-declaration(! $[Failed to retrive STRSignatures* for id [<print-as-string><to-scoped-symbol>]] 
+                      | "STR|resolve-str-signatures" , "Warning" )
+    ; fail
+      
+  resolve-str-signature =
+    ?key
+    ; verify(String | key , "String @resolve-str-signatures")
+		; <resolve-symbol-definition>( <id>, STRSignature())
+  	; dbg-declaration(! $[resolve-str-signature: [<print-as-string>key] -> STRSignature() ->  [<print-as-string><id>]] 
+	                      | "STR|resolve-str-signature" , <debug-level-INFO> )  
+  <+
+    dbg-declaration(! $[Failed to retrive STRSignature for id [<print-as-string><to-scoped-symbol>]] 
+                      | "STR|resolve-str-signature" , "Warning" )  
+    ; fail 

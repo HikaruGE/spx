@@ -7,11 +7,12 @@ imports
 imports
   libstratego-lib
   libstrc
-
+	lib/editor-common.generated
+	
 rules
   basic-stratego-desugar-top =
-    topdown(try(basic-desugar))
-
+	 	topdown(try(origin-track-forced(basic-desugar)))
+  
   basic-desugar:
     SDef(x, a*, s) -> SDefT(x, a*, [], s)
 

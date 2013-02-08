@@ -1,0 +1,95 @@
+module context/str/to-stratego-proposals
+
+imports
+	libstrc		
+	libstratego-lib
+ 	libstratego-gpp
+	libstratego-aterm
+imports
+	lib/editor-common.generated
+	include/SpoofaxLang
+imports	
+	utils/sourcedir
+ 	utils/debug
+ 	utils/contract
+ 	utils/annotations
+ 	common 
+	config 
+imports 
+	context/-
+	normalize/-
+	context/str/-
+	spoofaxlang  
+rules 
+
+	// Content completion
+  propose-completion:
+    completion -> proposals
+    where
+      signature-of; one(?COMPLETION(prefix)) <+ one(?COMPLETION(prefix))
+    with
+      all-signatures := <filter-by-prefix(|prefix)> <all-keys-DeclareCookie>;
+      switch !completion
+        case ?Var(_):
+          all-signatures' := <try(filter(?(_, _)); not([]))> all-signatures
+        case ?SVar(_):
+          all-signatures' := <filter(?(_, _, _))> all-signatures
+        case ?DynRuleScopeId(_):
+          all-signatures' := <filter(?(_, _, _); not(is-congruence-signature))> all-signatures
+        case ?Import(_):
+          all-signatures' := []
+        otherwise: // unknown context
+          all-signatures' := <filter(not(is-congruence-signature))> all-signatures
+      end;
+      proposals := <map(signature-to-proposal)> all-signatures'
+  
+  propose-completion:
+    Rule(lhs, rhs @ Var(COMPLETION(_)), _) -> proposals
+    where
+      <not(oncetd(?RootApp(_) + ?App(_, _)))> lhs
+    with
+      lhs'      := <topdown(try(\As(_, e) -> e\))> lhs;
+      proposals := [([<pp-stratego-string> lhs'], "") | <propose-completion> rhs]
+      
+  
+  filter-by-prefix(|prefix) =
+    filter(one(string-starts-with(|prefix); not(?"")))
+  
+  //TODO fix for spoofaxlang
+  
+  signature-to-proposal:
+    (x, 0) -> [x | parentheses]
+    with
+      if is-constructor then
+        parentheses := ["()"]
+      else
+        parentheses := []
+      end
+
+  signature-to-proposal:
+    (x, n) -> [x, "(", t*, ")"]
+    where
+      <gt> (n, 0)
+    with
+      t* := <separate-by(|", ")> <copy> (n, "t") // TODO: number (Spoofax/231)
+
+  signature-to-proposal:
+    (x, 0, 0) -> [x, ""]
+
+  signature-to-proposal:
+    (x, n, 0) -> [x, "(", t*, ")"]
+    where
+      <gt> (n, 0)
+    with
+      t* := <separate-by(|", ")> <copy> (n, "s")
+
+  signature-to-proposal:
+    (x, n, m) -> [x, "(", s*, "|", t*, ")"]
+    where
+      <gt> (m, 0)
+    with
+      s* := <separate-by(|", ")> <copy> (n, "s");
+      t* := <separate-by(|", ")> <copy> (m, "t")
+
+  signature-to-proposal:
+    (x, [DR_DUMMY()], [DR_DUMMY()]) -> x // strategy param (wildcard arity)

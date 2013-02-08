@@ -1,6 +1,7 @@
 module context/scope-tree
 imports
-	include/SpoofaxLang 
+	include/SpoofaxLang
+	include/libtemplatelang 
 imports 
 	context/signatures 
 	context/resolve-symbols

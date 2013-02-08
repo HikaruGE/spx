@@ -2,7 +2,7 @@
 
 imports 
 	normalize/-
-	include/spoofaxlang
+	include/SpoofaxLang
 	lib/editor-common.generated
 	context/symboltable
 	common
