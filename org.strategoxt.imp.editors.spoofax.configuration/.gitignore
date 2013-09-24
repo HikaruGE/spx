@@ -1,0 +1,12 @@
+bin
+.cache
+.spxcache
+.spxindex
+include
+.settings
+utils
+lib
+lib-refactoring
+editor/java/trans
+editor/*generated*
+syntax/*generated*
