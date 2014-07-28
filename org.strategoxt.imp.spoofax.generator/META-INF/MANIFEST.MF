@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Spoofax/IMP Metatooling
 Bundle-SymbolicName: org.strategoxt.imp.spoofax.generator;singleton:=true
-Bundle-Version: 0.1.2.qualifier
+Bundle-Version: 1.2.0.qualifier
 Bundle-ClassPath: lib/make_permissive.jar,
  lib/sdf2imp.jar,
  lib/aster.jar,
@@ -14,10 +14,9 @@ Require-Bundle: org.spoofax.jsglr,
  org.eclipse.core.resources,
  org.junit,
  org.eclipse.swt,
- org.spoofax.compiler,
  org.strategoxt.strj,
  org.eclipse.ant.core
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: Spoofax.org
 Export-Package: org.strategoxt.aster,

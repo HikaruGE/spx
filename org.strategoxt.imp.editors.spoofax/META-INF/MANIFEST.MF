@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SpoofaxLang Plug-in
-Bundle-SymbolicName: org.strategoxt.imp.editors.spoofax; singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-SymbolicName: org.strategoxt.imp.editors.spoofax;singleton:=true
+Bundle-Version: 1.2.0.qualifier
 Bundle-ClassPath: .,
  include/spoofaxlang.jar
 Require-Bundle: org.eclipse.core.runtime,
@@ -18,7 +18,7 @@ Require-Bundle: org.eclipse.core.runtime,
  org.spoofax.interpreter.library.language,
  org.strategoxt.strj,
  org.strategoxt.imp.editors.template
-Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Export-Package: org.strategoxt.imp.editors.spoofax,
  org.strategoxt.imp.editors.spoofax.generated
